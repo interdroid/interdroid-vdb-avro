@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<interdroid.vdb.sm.ui.AvroEditView
+	android:orientation="vertical" xmlns:android="http://schemas.android.com/apk/res/android"
+	style="@style/fill" android:layout_gravity="fill_horizontal|fill_vertical" android:layout_weight="1">
+	<LinearLayout android:orientation="horizontal" style="@style/row"
+		android:layout_weight="1">
+		<TextView style="@style/wrap" android:layout_marginRight="10px"
+			android:textStyle="bold" android:text="@string/label_name"></TextView>
+		<TextView style="@style/row" android:layout_weight="1"
+			android:tag="name"></TextView>
+	</LinearLayout>
+	<LinearLayout android:orientation="horizontal" style="@style/row"
+		android:layout_weight="1">
+		<TextView style="@style/wrap" android:layout_marginRight="10px"
+			android:textStyle="bold" android:text="@string/label_namespace"></TextView>
+		<TextView style="@style/row" android:layout_weight="1"
+			android:tag="namespace"></TextView>
+	</LinearLayout>
+	<LinearLayout android:orientation="horizontal" style="@style/row"
+		android:layout_weight="1">
+		<TextView style="@style/wrap" android:layout_marginRight="10px"
+			android:textStyle="bold" android:text="@string/label_comment"></TextView>
+		<TextView style="@style/row" android:layout_weight="1"
+			android:tag="comment"></TextView>
+	</LinearLayout>
+	<TextView style="@style/row" android:layout_marginRight="10px"
+		android:textStyle="bold" android:layout_weight="1" android:text="@string/label_fields"></TextView>
+	<ListView style="@style/fill" android:layout_gravity="fill_horizontal|fill_vertical" android:tag="fields"
+		android:layout_weight="2"></ListView>
+</interdroid.vdb.sm.ui.AvroEditView>

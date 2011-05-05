@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<interdroid.vdb.sm.ui.AvroEditView android:id="@+id/avro_edit_view" android:orientation="vertical"
+	xmlns:android="http://schemas.android.com/apk/res/android" style="@style/fill">
+</interdroid.vdb.sm.ui.AvroEditView>

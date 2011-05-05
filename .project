@@ -30,4 +30,11 @@
 		<nature>com.android.ide.eclipse.adt.AndroidNature</nature>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>vdb_src</name>
+			<type>2</type>
+			<locationURI>_android_vdb_1c774/src</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>

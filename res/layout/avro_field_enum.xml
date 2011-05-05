@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<interdroid.vdb.sm.ui.AvroEditView android:orientation="vertical"
+	xmlns:android="http://schemas.android.com/apk/res/android" style="@style/row">
+	<include layout="@layout/avro_field_label" />
+	<EditText android:tag="edit_value" style="@style/wrap" android:layout_weight="2" >
+	</EditText>
+</interdroid.vdb.sm.ui.AvroEditView>

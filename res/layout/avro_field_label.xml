@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/field_name" android:layout_weight="1" android:textStyle="bold" style="@style/fill" android:layout_marginRight="10px"></TextView>

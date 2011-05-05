@@ -3,7 +3,7 @@ package interdroid.vdb.avro.control.handler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.view.AvroBaseEditor;
 import interdroid.vdb.content.EntityUriBuilder;
-import interdroid.vdb.sm.SchemaMakerConstants;
+import interdroid.vdb.avro.AvroSchema;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData.Record;
@@ -36,7 +36,7 @@ public class RecordTypeSelectHandler implements OnClickListener {
 
 	@Override
 	public void onClick(View v) {
-		Intent editIntent = new Intent(Intent.ACTION_INSERT, Uri.withAppendedPath(EntityUriBuilder.branchUri(SchemaMakerConstants.NAMESPACE, "master"), mSchema.getName()));
+		Intent editIntent = new Intent(Intent.ACTION_INSERT, Uri.withAppendedPath(EntityUriBuilder.branchUri(AvroSchema.NAMESPACE, "master"), mSchema.getName()));
 		editIntent.putExtra(AvroBaseEditor.SCHEMA, mSchema.toString());
 		mActivity.launchResultIntent(this, editIntent, AvroBaseEditor.REQUEST_RECORD_SELECTION);
 	}
