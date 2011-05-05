@@ -56,7 +56,7 @@ public class AvroBaseEditor extends Activity {
 	public AvroBaseEditor(String typeName, Schema schema, Uri defaultUri) {
 		this();
 		if (defaultUri == null) {
-			Uri.withAppendedPath(EntityUriBuilder.branchUri(schema.getNamespace(), "master"), schema.getName());
+			defaultUri = Uri.withAppendedPath(EntityUriBuilder.branchUri(schema.getNamespace(), "master"), schema.getName());
 		}
 		mController = new AvroController(this, typeName, defaultUri, schema);
 		Log.d(TAG, "Set controller for schema: " + typeName + " : " + defaultUri + " : " + schema);
