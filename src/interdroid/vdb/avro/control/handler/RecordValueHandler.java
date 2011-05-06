@@ -1,19 +1,21 @@
 package interdroid.vdb.avro.control.handler;
 
 import org.apache.avro.generic.GenericData.Record;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import android.util.Log;
 
 public class RecordValueHandler implements ValueHandler {
-
-	private static final String TAG = "RecordValueHandler";
+	private static final Logger logger = LoggerFactory.getLogger(RecordValueHandler.class)
+	;
 	private final Record mRecord;
 	private final String mFieldName;
 
 	public RecordValueHandler(Record record, String fieldName) {
 		mFieldName = fieldName;
 		mRecord = record;
-		Log.d(TAG, "Constructed for: " + mRecord + "[" + fieldName + "]");
+		logger.debug("Constructed for: " + mRecord + "[" + fieldName + "]");
 	}
 
 	@Override

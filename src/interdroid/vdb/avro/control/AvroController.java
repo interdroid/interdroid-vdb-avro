@@ -6,19 +6,20 @@ import interdroid.vdb.avro.view.AvroViewFactory;
 import interdroid.vdb.content.EntityUriMatcher;
 
 import org.apache.avro.Schema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Toast;
 
 // TODO: The database should be wired to notify the controller and update the view should something else
 // edit the database behind our back.
 
 public class AvroController {
-	private static final String TAG = "AvroController";
+	private static final Logger logger = LoggerFactory.getLogger(AvroController.class);
 
 	public static final int STATE_EDIT = 0;
 	public static final int STATE_INSERT = 1;
@@ -125,7 +126,7 @@ public class AvroController {
 	public Uri setup(Intent intent, Bundle savedState) {
 		if (intent.getData() == null) {
 			if (mDefaultUri == null) {
-				Log.e(TAG, "No URI and no default.");
+				logger.error("No URI and no default.");
 				Toast.makeText(mActivity, "No URI specified and no default.",
 						Toast.LENGTH_SHORT).show();
 				return null;
@@ -137,35 +138,35 @@ public class AvroController {
 
 		mReadOnly = EntityUriMatcher.getMatch(mUri).isReadOnlyCheckout();
 
-		Log.d(TAG, "Setting up for uri: " + mUri);
+		logger.debug("Setting up for uri: " + mUri);
 
 		// Do some setup based on the action being performed.
 		String action = intent.getAction();
-		Log.d(TAG, "Performing action: " + action);
+		logger.debug("Performing action: " + action);
 		if (action == null) {
 			action = Intent.ACTION_INSERT;
 		}
 		if (Intent.ACTION_EDIT.equals(action)) {
-			Log.d(TAG, "STATE_EDIT");
+			logger.debug("STATE_EDIT");
 			mState = STATE_EDIT;
 		} else if (Intent.ACTION_INSERT.equals(action)
 				|| Intent.ACTION_MAIN.equals(action)) {
-			Log.d(TAG, "STATE_INSERT");
+			logger.debug("STATE_INSERT");
 			mState = STATE_INSERT;
-			Log.d(TAG, "Inserting new record.");
+			logger.debug("Inserting new record.");
 			Uri tempUri = null;
 			try {
 				tempUri = mActivity.getApplicationContext()
 					.getContentResolver().insert(mUri, null);
 			} catch (Exception e) {
-				Log.e(TAG, "Insert threw something: ", e);
+				logger.error("Insert threw something: ", e);
 			}
-			Log.d(TAG, "Insert complete.");
+			logger.debug("Insert complete.");
 			// If we were unable to create a new field, then just finish
 			// this activity. A RESULT_CANCELED will be sent back to the
 			// original activity if they requested a result.
 			if (tempUri == null) {
-				Log.e(TAG, "Failed to insert into " + mUri);
+				logger.error("Failed to insert into " + mUri);
 				Toast.makeText(mActivity, "Unable to insert data.",
 						Toast.LENGTH_SHORT).show();
 				mUri = null;
@@ -174,7 +175,7 @@ public class AvroController {
 			mUri = tempUri;
 		} else {
 			// Whoops, unknown action! Bail.
-			Log.e(TAG, "Unknown action, exiting");
+			logger.error("Unknown action, exiting");
 			Toast.makeText(mActivity, "Unknown action.", Toast.LENGTH_SHORT)
 			.show();
 			mUri = null;

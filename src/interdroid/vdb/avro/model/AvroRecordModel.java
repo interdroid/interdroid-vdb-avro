@@ -15,6 +15,8 @@ import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Array;
 import org.apache.avro.generic.GenericData.Record;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -67,7 +69,7 @@ import android.util.Log;
  * values.
  */
 public class AvroRecordModel extends DataSetObservable {
-	private static final String TAG = "AvroRecordModel";
+	private static final Logger logger = LoggerFactory.getLogger(AvroRecordModel.class);
 
 	/* =-=-=-= Helper Constants For More Readable Code In This Class =-=-=-= */
 	private static final String SEPARATOR = AvroContentProvider.SEPARATOR;
@@ -96,7 +98,7 @@ public class AvroRecordModel extends DataSetObservable {
 		if (schema.getType() != Type.RECORD) {
 			throw new RuntimeException("Not a record!");
 		}
-		Log.d(TAG, "Constructed model for: " + schema);
+		logger.debug("Constructed model for: " + schema);
 		mSchema = schema;
 		mUri = rootUri;
 		mResolver = resolver;
@@ -110,7 +112,7 @@ public class AvroRecordModel extends DataSetObservable {
 	 */
 	public void loadOriginals(Bundle savedInstanceState) {
 		if (savedInstanceState != null) {
-			Log.d(TAG, "Loading from bundle.");
+			logger.debug("Loading from bundle.");
 			mCurrentStateModel = BundleHandler.loadRecordFromBundle(savedInstanceState, null,
 					mSchema);
 			if (mOriginalModel == null) {
@@ -125,7 +127,7 @@ public class AvroRecordModel extends DataSetObservable {
 	 * Restores the original values stored by the model to the database.
 	 */
 	public void storeOriginalValue() {
-		Log.d(TAG, "Storing original values.");
+		logger.debug("Storing original values.");
 		if (mOriginalModel != null) {
 			uriHandler.storeRecordToUri(mUri, mOriginalModel);
 		}
@@ -135,7 +137,7 @@ public class AvroRecordModel extends DataSetObservable {
 	 * Stores the current values held by the model to the database.
 	 */
 	public void storeCurrentValue() {
-		Log.d(TAG, "Storing current state to uri: " + mUri);
+		logger.debug("Storing current state to uri: " + mUri);
 		if (mCurrentStateModel != null) {
 			uriHandler.storeRecordToUri(mUri, mCurrentStateModel);
 		}
@@ -145,7 +147,7 @@ public class AvroRecordModel extends DataSetObservable {
 	 * Loads the model from the database.
 	 */
 	public void loadData() {
-		Log.d(TAG, "Loading data from: " + mUri);
+		logger.debug("Loading data from: " + mUri);
 		mCurrentStateModel = uriHandler.loadRecordFromUri(mUri, mSchema);
 		// If there is no original model then load another copy
 		if (mOriginalModel == null) {
@@ -167,7 +169,7 @@ public class AvroRecordModel extends DataSetObservable {
 	 */
 	public void saveState(Bundle outState) {
 		if (mCurrentStateModel != null) {
-			Log.d(TAG, "Saving current state to bundle.");
+			logger.debug("Saving current state to bundle.");
 			BundleHandler.storeRecordToBundle(outState, null, mCurrentStateModel);
 		}
 	}
@@ -186,7 +188,7 @@ public class AvroRecordModel extends DataSetObservable {
 
 	public void put(String mFieldName, Object value) {
 		if (mCurrentStateModel != null) {
-			Log.d(TAG, "Updating field: " + mFieldName + " to: " + value);
+			logger.debug("Updating field: " + mFieldName + " to: " + value);
 			mCurrentStateModel.put(mFieldName, value);
 		}
 	}
@@ -243,7 +245,7 @@ public class AvroRecordModel extends DataSetObservable {
 
 		private static Record loadRecordFromBundle(Bundle saved, String prefix,
 				Schema schema) {
-			Log.d(TAG,
+			logger.debug(
 					"Loading data from bundle: " + prefix + " : "
 					+ schema.getFullName());
 			String dataFullName = NameHelper.getPrefixName(prefix, schema.getFullName());
@@ -251,7 +253,7 @@ public class AvroRecordModel extends DataSetObservable {
 
 			for (Field field : schema.getFields()) {
 				String fieldName = field.name();
-				Log.d(TAG, "Loading field: " + fieldName);
+				logger.debug("Loading field: " + fieldName);
 				String fieldFullName = NameHelper.getFieldFullName(dataFullName, fieldName);
 				data.put(fieldName,
 						loadDataFromBundle(saved, fieldFullName, field.schema()));
@@ -262,7 +264,7 @@ public class AvroRecordModel extends DataSetObservable {
 
 		private static Object loadDataFromBundle(Bundle saved, String fieldFullName,
 				Schema fieldSchema) {
-			Log.d(TAG, "Loading data from bundle: " + fieldFullName);
+			logger.debug("Loading data from bundle: " + fieldFullName);
 			Object value;
 			switch (fieldSchema.getType()) {
 			case ARRAY:
@@ -608,7 +610,7 @@ public class AvroRecordModel extends DataSetObservable {
 		@SuppressWarnings("unchecked")
 		private static void storeArrayToBundle(Bundle outState, String fieldFullName,
 				Schema elementSchema, Array<Object> array) {
-			Log.d(TAG, "Storing to bundle: " + outState + " field: " + fieldFullName + " value: " + array);
+			logger.debug("Storing to bundle: " + outState + " field: " + fieldFullName + " value: " + array);
 			if (array != null) {
 				switch (elementSchema.getType()) {
 				case ARRAY: {
@@ -747,7 +749,7 @@ public class AvroRecordModel extends DataSetObservable {
 	private class URIHandler {
 
 		private Record loadRecordFromUri(Uri rootUri, Schema schema) {
-			Log.d(TAG, "Loading record from uri: " + rootUri + " : " + schema);
+			logger.debug("Loading record from uri: " + rootUri + " : " + schema);
 
 			Cursor cursor = mResolver.query(rootUri, null, null, null, null);
 			Record data;
@@ -760,7 +762,7 @@ public class AvroRecordModel extends DataSetObservable {
 						String fieldName = field.name();
 						Object value = loadDataFromUri(rootUri, cursor, fieldName,
 								field.schema());
-						Log.d(TAG, "Loaded: " + fieldName + " : " + value);
+						logger.debug("Loaded: " + fieldName + " : " + value);
 						data.put(fieldName, value);
 					}
 				} else {
@@ -776,7 +778,7 @@ public class AvroRecordModel extends DataSetObservable {
 
 		private Object loadDataFromUri(Uri rootUri, Cursor cursor,
 				String fieldName, Schema fieldSchema) {
-			Log.d(TAG, "Loading field: " + fieldName + " : " + fieldSchema);
+			logger.debug("Loading field: " + fieldName + " : " + fieldSchema);
 			Object value = null;
 			switch (fieldSchema.getType()) {
 			case ARRAY:
@@ -827,7 +829,7 @@ public class AvroRecordModel extends DataSetObservable {
 				break;
 			case STRING:
 				value = cursor.getString(cursor.getColumnIndex(fieldName));
-				Log.d(TAG, "Loaded value: " + value);
+				logger.debug("Loaded value: " + value);
 				break;
 			case UNION:
 				value = loadUnionFromUri(rootUri, cursor, fieldName, fieldSchema);
@@ -852,15 +854,15 @@ public class AvroRecordModel extends DataSetObservable {
 						NameHelper.getTypeName(fieldName)));
 				String typeName = cursor.getString(cursor.getColumnIndex(
 						NameHelper.getTypeNameName(fieldName)));
-				Log.d(TAG, "Type Type: " + typeType);
-				Log.d(TAG, "Type Name: " + typeName);
+				logger.debug("Type Type: " + typeType);
+				logger.debug("Type Name: " + typeName);
 				Type type = Type.NULL;
 				if (typeName != null) {
 					type = Type.valueOf(typeType);
 				}
 				Schema fieldType = null;
 				for (Schema unionType : elementType.getTypes()) {
-					Log.d(TAG, "Checking type: " + unionType);
+					logger.debug("Checking type: " + unionType);
 					if (unionType.getType().equals(type)) {
 						switch (type) {
 						// TODO: Fixed are named types?
@@ -887,7 +889,7 @@ public class AvroRecordModel extends DataSetObservable {
 		}
 
 		private Map<String, Object> loadMapFromUri(Uri uri, String fieldName, Schema elementType) {
-			Log.d(TAG, "Loading map from uri: " + uri + " : " + fieldName + " : " + elementType);
+			logger.debug("Loading map from uri: " + uri + " : " + fieldName + " : " + elementType);
 			Cursor cursor = mResolver.query(uri, null, null, null, null);
 			Map<String, Object> map;
 			try {
@@ -942,7 +944,7 @@ public class AvroRecordModel extends DataSetObservable {
 		}
 
 		private Array<Object> loadArrayFromUri(Uri uri, String fieldName, Schema elementType) {
-			Log.d(TAG, "Loading array from uri: " + uri + " : " + elementType);
+			logger.debug("Loading array from uri: " + uri + " : " + elementType);
 			Cursor cursor = mResolver.query(uri, null, null, null, null);
 			Array<Object> data;
 			try {
@@ -965,7 +967,7 @@ public class AvroRecordModel extends DataSetObservable {
 		/* =-=-=-= Store To URI =-=-=-= */
 
 		private void storeRecordToUri(Uri rootUri, Record record) {
-			Log.d(TAG, "Storing Record: " + record.getSchema().getName() + " to uri: " + rootUri);
+			logger.debug("Storing Record: " + record.getSchema().getName() + " to uri: " + rootUri);
 			if (record != null) {
 				ContentValues values = new ContentValues();
 
@@ -984,7 +986,7 @@ public class AvroRecordModel extends DataSetObservable {
 		}
 
 		private void updateUriOrThrow(Uri rootUri, ContentValues values) {
-			Log.d(TAG, "Updating: " + rootUri);
+			logger.debug("Updating: " + rootUri);
 			if (values.size() > 0) {
 				// Turns out update returns 0 if nothing changed in the row. Ah well. Nice try.
 				//			int count =
@@ -997,19 +999,19 @@ public class AvroRecordModel extends DataSetObservable {
 		}
 
 		private int deleteUri(Uri rootUri) {
-			Log.d(TAG, "Deleting URI: " + rootUri);
+			logger.debug("Deleting URI: " + rootUri);
 			return mResolver.delete(rootUri, null, null);
 		}
 
 		private Uri insertUri(Uri rootUri, ContentValues values) {
-			Log.d(TAG, "Inserting into: " + rootUri);
+			logger.debug("Inserting into: " + rootUri);
 			return mResolver.insert(rootUri, values);
 		}
 
 		@SuppressWarnings("unchecked")
 		private Uri storeDataToUri(Uri rootUri, ContentValues values,
 				String fieldName, Schema fieldSchema, Object data) {
-			Log.d(TAG, "Storing to: " + rootUri + " fieldName: " + fieldName + " schema: " + fieldSchema);
+			logger.debug("Storing to: " + rootUri + " fieldName: " + fieldName + " schema: " + fieldSchema);
 			Uri dataUri = null;
 			switch (fieldSchema.getType()) {
 			case ARRAY:
@@ -1132,7 +1134,7 @@ public class AvroRecordModel extends DataSetObservable {
 				// row in
 				// case the row is really an array or some other table based row
 				Uri idUri = insertUri(rootUri, values);
-				Log.d(TAG, "Got id uri for map row: " + idUri);
+				logger.debug("Got id uri for map row: " + idUri);
 				Uri dataUri = storeDataToUri(idUri, values, fieldFullName,
 						valueSchema, map.get(key));
 				if (dataUri != null) {
@@ -1154,7 +1156,7 @@ public class AvroRecordModel extends DataSetObservable {
 				values.clear();
 				// First insert a null row
 				Uri idUri = insertUri(rootUri, values);
-				Log.d(TAG, "Got id uri for array row: " + idUri);
+				logger.debug("Got id uri for array row: " + idUri);
 				Uri dataUri = storeDataToUri(rootUri, values, fieldFullName,
 						elementSchema, value);
 				if (dataUri != null) {
@@ -1177,7 +1179,7 @@ public class AvroRecordModel extends DataSetObservable {
 		}
 
 		private void deleteArray(Uri rootUri, String fieldFullName, Schema elementSchema) {
-			Log.d(TAG, "Deleting Array: " + rootUri);
+			logger.debug("Deleting Array: " + rootUri);
 			switch (elementSchema.getType()) {
 			case ARRAY:
 			{
@@ -1239,7 +1241,7 @@ public class AvroRecordModel extends DataSetObservable {
 		}
 
 		private void deleteMap(Uri rootUri, String fieldFullName, Schema valueSchema) {
-			Log.d(TAG, "Deleting Map: " + rootUri);
+			logger.debug("Deleting Map: " + rootUri);
 			switch (valueSchema.getType()) {
 			case ARRAY:
 			{
@@ -1301,7 +1303,7 @@ public class AvroRecordModel extends DataSetObservable {
 		}
 
 		private void deleteRecord(Uri rootUri, Schema schema) {
-			Log.d(TAG, "Deleting Record: " + rootUri);
+			logger.debug("Deleting Record: " + rootUri);
 			for (Field field : schema.getFields()) {
 				String fieldName = field.name();
 				switch (field.schema().getType()) {

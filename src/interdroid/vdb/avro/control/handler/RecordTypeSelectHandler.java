@@ -7,6 +7,8 @@ import interdroid.vdb.avro.AvroSchema;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData.Record;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -16,8 +18,8 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 
 public class RecordTypeSelectHandler implements OnClickListener {
+	private static final Logger logger = LoggerFactory.getLogger(RecordTypeSelectHandler.class);
 
-	private static final String TAG = "RecordTypeSelectHandler";
 	private final AvroBaseEditor mActivity;
 	private final Schema mSchema;
 	private final ValueHandler mValueHandler;
@@ -42,7 +44,7 @@ public class RecordTypeSelectHandler implements OnClickListener {
 	}
 
 	public void setResult(Intent data) {
-		Log.d(TAG, "Got result: " + data.getAction());
+		logger.debug("Got result: " + data.getAction());
 		Record record = mDataModel.loadRecordFromUri(Uri.parse(data.getAction()), mSchema);
 		mValueHandler.setValue(record);
 		mDataModel.storeCurrentValue();

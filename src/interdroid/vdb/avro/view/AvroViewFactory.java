@@ -20,6 +20,8 @@ import org.apache.avro.Schema.Field;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Array;
 import org.apache.avro.generic.GenericData.Record;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import android.app.Activity;
 import android.content.Context;
@@ -44,8 +46,8 @@ import android.widget.TableRow;
 import android.widget.TextView;
 
 public class AvroViewFactory {
+	private static final Logger logger = LoggerFactory.getLogger(AvroViewFactory.class);
 
-	private static final String TAG = "AvroViewFactory";
 	private static final int LEFT_INDENT = 3;
 	private static final int DEFAULT_CAPACITY = 10;
 
@@ -55,7 +57,7 @@ public class AvroViewFactory {
 	}
 
 	public static void buildRootView(AvroBaseEditor activity, AvroRecordModel dataModel) {
-		Log.d(TAG, "Constructing root view: " + dataModel.schema());
+		logger.debug("Constructing root view: " + dataModel.schema());
 		ViewGroup viewGroup = (ViewGroup) getLayoutInflater(activity).inflate(
 				R.layout.avro_base_editor, null);
 		ScrollView scroll = new ScrollView(activity);
@@ -66,7 +68,7 @@ public class AvroViewFactory {
 	}
 
 	public static View buildRecordView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, Record record, ViewGroup viewGroup) {
-		Log.d(TAG, "Building record view.");
+		logger.debug("Building record view.");
 		//		LinearLayout layout = new LinearLayout(activity);
 		//		layout.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 		//		layout.setGravity(Gravity.FILL_HORIZONTAL);
@@ -81,7 +83,7 @@ public class AvroViewFactory {
 
 		// Construct a view for each field
 		for (Field field : record.getSchema().getFields()) {
-			Log.d(TAG, "Building view for: " + field.name() + " in: " + record.getSchema() + " schema:" + field.schema());
+			logger.debug("Building view for: " + field.name() + " in: " + record.getSchema() + " schema:" + field.schema());
 			buildFieldView(isRoot, activity, dataModel, record, viewGroup, field);
 		}
 
@@ -124,9 +126,9 @@ public class AvroViewFactory {
 		case LONG:
 		{
 			if (schema.getProp("ui.widget") != null) {
-				Log.d(TAG, "Building custom ui widget for long/int");
+				logger.debug("Building custom ui widget for long/int");
 				if (schema.getProp("ui.widget").equals("date")) {
-					Log.d(TAG, "Building date view.");
+					logger.debug("Building date view.");
 					view = buildDateView(activity, viewGroup, valueHandler);
 				} else {
 					throw new RuntimeException("Unknown widget type: " + schema.getProp("ui.widget"));
@@ -181,11 +183,11 @@ public class AvroViewFactory {
 		}
 
 		if (schema.getProp("ui.visible") != null) {
-			Log.d(TAG, "Hiding view.");
+			logger.debug("Hiding view.");
 			view.setVisibility(View.GONE);
 		}
 		if (schema.getProp("ui.enabled") != null) {
-			Log.d(TAG, "Disabling view.");
+			logger.debug("Disabling view.");
 			view.setEnabled(false);
 		}
 
@@ -313,16 +315,16 @@ public class AvroViewFactory {
 	}
 
 	private static View buildEditText(AvroBaseEditor activity, ViewGroup viewGroup, Schema schema, int inputType, EditTextHandler textWatcher) {
-		Log.d(TAG, "Building edit text for: " + schema);
+		logger.debug("Building edit text for: " + schema);
 		EditText text = null;
 		if (schema.getProp("ui.resource") != null) {
-			Log.d(TAG, "Inflating custom resource: " + schema.getProp("ui.resource"));
+			logger.debug("Inflating custom resource: " + schema.getProp("ui.resource"));
 			try {
 				LayoutInflater inflater = (LayoutInflater)activity.getSystemService(
 						Context.LAYOUT_INFLATER_SERVICE);
 				text = (EditText) inflater.inflate(Integer.valueOf(schema.getProp("ui.resource")), null);
 			} catch (Exception e) {
-				Log.e(TAG, "Unable to inflate resource: " + schema.getProp("ui.resource"));
+				logger.error("Unable to inflate resource: " + schema.getProp("ui.resource"));
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 				throw new RuntimeException("Unable to inflate UI resource: " + schema.getProp("ui.resource"), e);

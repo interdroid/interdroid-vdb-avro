@@ -8,6 +8,8 @@ import interdroid.vdb.avro.view.AvroViewFactory;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData.Array;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import android.R;
 import android.graphics.Color;
@@ -19,7 +21,7 @@ import android.view.ViewGroup;
 
 public class ArrayHandler implements OnClickListener, OnFocusChangeListener {
 
-	private static final String TAG = "ArrayHandler";
+	private static final Logger logger = LoggerFactory.getLogger(ArrayHandler.class);
 
 	private final AvroBaseEditor mActivity;
 	private final Array<Object> mArray;
@@ -65,13 +67,13 @@ public class ArrayHandler implements OnClickListener, OnFocusChangeListener {
 
 	private void addSubView(int offset) {
 		View subView = AvroViewFactory.buildArrayView(true, mActivity, mDataModel, mArray, mElementSchema, offset, mViewGroup);
-		Log.d(TAG, "Adding view: " + subView);
+		logger.debug("Adding view: " + subView);
 		if (subView != null) {
 			ArrayList<View> focusables = new ArrayList<View>();
 			subView.addFocusables(focusables, View.FOCUS_DOWN, View.FOCUSABLES_ALL);
 
 			for (View focusable: focusables) {
-				Log.d(TAG, "Adding focus listener to: " + focusable);
+				logger.debug("Adding focus listener to: " + focusable);
 				focusable.setOnFocusChangeListener(new FocusBackgroundChanger(subView));
 			}
 		}
@@ -101,7 +103,7 @@ public class ArrayHandler implements OnClickListener, OnFocusChangeListener {
 
 	@Override
 	public void onFocusChange(View subView, boolean focused) {
-		Log.d(TAG, "Focus changed called: " + focused);
+		logger.debug("Focus changed called: " + focused);
 		if (focused) {
 			mViewGroup.setBackgroundColor(R.color.background_light);
 		} else {

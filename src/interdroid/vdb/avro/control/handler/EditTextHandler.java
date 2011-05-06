@@ -1,6 +1,8 @@
 package interdroid.vdb.avro.control.handler;
 
 import org.apache.avro.Schema.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import interdroid.vdb.avro.model.AvroRecordModel;
 import android.text.Editable;
@@ -9,8 +11,8 @@ import android.util.Log;
 import android.widget.EditText;
 
 public class EditTextHandler implements TextWatcher {
+	private static final Logger logger = LoggerFactory.getLogger(EditTextHandler.class);
 
-	private static final String TAG = "EditTextHandler";
 	private final AvroRecordModel mDataModel;
 	private final Type mType;
 	private final ValueHandler mValueHandler;
@@ -73,10 +75,10 @@ public class EditTextHandler implements TextWatcher {
 	public void setWatched(EditText text) {
 
 		if (getValue() != null) {
-			Log.d(TAG, "Setting value: " + getValue() + " for: " + this);
+			logger.debug("Setting value: " + getValue() + " for: " + this);
 			text.setText(String.valueOf(getValue()));
 		} else {
-			Log.d(TAG, "Text watcher has null value: " + this);
+			logger.debug("Text watcher has null value: " + this);
 		}
 
 		// Must come after the setText.
