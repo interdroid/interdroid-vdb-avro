@@ -153,9 +153,14 @@ public class AvroController {
 			Log.d(TAG, "STATE_INSERT");
 			mState = STATE_INSERT;
 			Log.d(TAG, "Inserting new record.");
-			Uri tempUri = mActivity.getApplicationContext()
+			Uri tempUri = null;
+			try {
+				tempUri = mActivity.getApplicationContext()
 					.getContentResolver().insert(mUri, null);
-
+			} catch (Exception e) {
+				Log.e(TAG, "Insert threw something: ", e);
+			}
+			Log.d(TAG, "Insert complete.");
 			// If we were unable to create a new field, then just finish
 			// this activity. A RESULT_CANCELED will be sent back to the
 			// original activity if they requested a result.
@@ -171,7 +176,7 @@ public class AvroController {
 			// Whoops, unknown action! Bail.
 			Log.e(TAG, "Unknown action, exiting");
 			Toast.makeText(mActivity, "Unknown action.", Toast.LENGTH_SHORT)
-					.show();
+			.show();
 			mUri = null;
 			return null;
 		}

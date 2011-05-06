@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.avro.Schema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import interdroid.vdb.R;
 import interdroid.vdb.avro.control.AvroController;
@@ -20,7 +22,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 public class AvroBaseEditor extends Activity {
-	private static final String TAG = "AvroBaseEdit";
+	private static final Logger logger = LoggerFactory.getLogger(AvroBaseEditor.class);
 
 	public static final String ACTION_EDIT_SCHEMA = "interdroid.vdb.sm.action.EDIT_SCHEMA";
 
@@ -41,32 +43,28 @@ public class AvroBaseEditor extends Activity {
 	private RecordTypeSelectHandler mRecordTypeSelectHandler;
 
 	public AvroBaseEditor() {
-		Log.d(TAG, "Constructed AvroBaseEditor: " + this + ":" + mController);
+		logger.debug("Constructed AvroBaseEditor: " + this + ":" + mController);
 	}
 
 	protected AvroBaseEditor(Schema schema) {
-		this(schema.getName(), schema);
+		this(schema, null);
 	}
 
-	public AvroBaseEditor(String typeName, Schema schema) {
-		// TODO: This should be driven by a full schema?
-		this(typeName, schema, null);
-	}
-
-	public AvroBaseEditor(String typeName, Schema schema, Uri defaultUri) {
+	public AvroBaseEditor(Schema schema, Uri defaultUri) {
 		this();
 		if (defaultUri == null) {
+			logger.debug("Using default URI.");
 			defaultUri = Uri.withAppendedPath(EntityUriBuilder.branchUri(schema.getNamespace(), "master"), schema.getName());
 		}
-		mController = new AvroController(this, typeName, defaultUri, schema);
-		Log.d(TAG, "Set controller for schema: " + typeName + " : " + defaultUri + " : " + schema);
+		mController = new AvroController(this, schema.getName(), defaultUri, schema);
+		logger.debug("Set controller for schema: " + schema.getName() + " : " + defaultUri + " : " + schema);
 	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		Log.d(TAG, "onCreate: " + this);
+		logger.debug("onCreate: " + this);
 
 		final Intent intent = getIntent();
 
@@ -81,7 +79,7 @@ public class AvroBaseEditor extends Activity {
 				throw new IllegalArgumentException("A Schema is required.");
 			}
 			Schema schema = Schema.parse(schemaJson);
-			Log.d(TAG, "Building controller for: " + schema.getName() + " : " + defaultUri);
+			logger.debug("Building controller for: " + schema.getName() + " : " + defaultUri);
 
 			mController = new AvroController(this, schema.getName(), defaultUri, schema);
 		}
@@ -89,7 +87,7 @@ public class AvroBaseEditor extends Activity {
 		final Uri editUri = mController.setup(intent, savedInstanceState);
 
 		if (editUri == null) {
-			Log.e(TAG, "No edit URI built.");
+			logger.debug("No edit URI built.");
 			finish();
 			return;
 		}
@@ -101,7 +99,7 @@ public class AvroBaseEditor extends Activity {
 	protected void onPause() {
 		super.onPause();
 
-		Log.d(TAG, "onPause");
+		logger.debug("onPause");
 
 		mController.handleSave();
 	}
@@ -111,7 +109,7 @@ public class AvroBaseEditor extends Activity {
 	protected void onResume() {
 		super.onResume();
 
-		Log.d(TAG, "onResume");
+		logger.debug("onResume");
 
 		// Modify our overall title depending on the mode we are running in.
 		if (mController.getState() == AvroController.STATE_EDIT) {
@@ -126,18 +124,18 @@ public class AvroBaseEditor extends Activity {
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
-		Log.d(TAG, "onSaveInstanceState");
+		logger.debug("onSaveInstanceState");
 		mController.saveState(outState);
 	}
 
 	public void onStop() {
 		super.onStop();
-		Log.d(TAG, "onStop");
+		logger.debug("onStop");
 	}
 
 	public void onDestroy() {
 		super.onDestroy();
-		Log.d(TAG, "onDestroy");
+		logger.debug("onDestroy");
 	}
 
 	@Override
@@ -186,7 +184,7 @@ public class AvroBaseEditor extends Activity {
 
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-		Log.d(TAG, "Result: " + requestCode + " : " + resultCode);
+		logger.debug("Result: " + requestCode + " : " + resultCode);
 		if (requestCode == REQUEST_RECORD_SELECTION) {
 			if (resultCode == RESULT_OK) {
 				mController.setResolver(getContentResolver());
@@ -199,7 +197,7 @@ public class AvroBaseEditor extends Activity {
 		mRecordTypeSelectHandler = recordTypeSelectHandler;
 		editIntent.addCategory(Intent.CATEGORY_DEFAULT);
 		editIntent.setComponent(new ComponentName(this, AvroBaseEditor.class));
-		Log.d(TAG, "TYPE: " + getContentResolver().getType(editIntent.getData()));
+		logger.debug("TYPE: " + getContentResolver().getType(editIntent.getData()));
 		startActivityForResult(editIntent, action);
 	}
 }
