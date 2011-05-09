@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import android.content.Intent;
 import android.net.Uri;
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -38,7 +37,9 @@ public class RecordTypeSelectHandler implements OnClickListener {
 
 	@Override
 	public void onClick(View v) {
-		Intent editIntent = new Intent(Intent.ACTION_INSERT, Uri.withAppendedPath(EntityUriBuilder.branchUri(AvroSchema.NAMESPACE, "master"), mSchema.getName()));
+		Intent editIntent = new Intent(Intent.ACTION_INSERT,
+				Uri.withAppendedPath(EntityUriBuilder.branchUri(mSchema.getNamespace(),
+						AvroSchema.NAMESPACE, "master"), mSchema.getName()));
 		editIntent.putExtra(AvroBaseEditor.SCHEMA, mSchema.toString());
 		mActivity.launchResultIntent(this, editIntent, AvroBaseEditor.REQUEST_RECORD_SELECTION);
 	}

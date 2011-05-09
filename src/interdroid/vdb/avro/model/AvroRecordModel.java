@@ -24,7 +24,6 @@ import android.database.Cursor;
 import android.database.DataSetObservable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 
 /* Handy snipit for building case statements
  switch (valueSchema.getType()) {
@@ -1066,7 +1065,7 @@ public class AvroRecordModel extends DataSetObservable {
 					Uri baseUri;
 					switch (match.type) {
 					case LOCAL_BRANCH:
-						baseUri = Uri.withAppendedPath(EntityUriBuilder.branchUri(match.repositoryName, match.reference),
+						baseUri = Uri.withAppendedPath(EntityUriBuilder.branchUri(match.authority, match.repositoryName, match.reference),
 								GenericContentProvider.escapeName(match.repositoryName, record.getSchema().getNamespace(), record.getSchema().getName()));
 						recordUri = Uri.withAppendedPath(baseUri, match.entityIdentifier);
 						Cursor exists = null;

@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -153,11 +154,11 @@ public class AvroController {
 				|| Intent.ACTION_MAIN.equals(action)) {
 			logger.debug("STATE_INSERT");
 			mState = STATE_INSERT;
-			logger.debug("Inserting new record.");
+			logger.debug("Inserting new record into: " + mUri);
 			Uri tempUri = null;
 			try {
 				tempUri = mActivity.getApplicationContext()
-					.getContentResolver().insert(mUri, null);
+					.getContentResolver().insert(mUri, new ContentValues());
 			} catch (Exception e) {
 				logger.error("Insert threw something: ", e);
 			}

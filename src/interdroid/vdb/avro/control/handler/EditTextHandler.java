@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.widget.EditText;
 
 public class EditTextHandler implements TextWatcher {

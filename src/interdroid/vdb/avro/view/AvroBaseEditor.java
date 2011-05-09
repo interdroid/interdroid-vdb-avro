@@ -17,7 +17,6 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -54,7 +53,7 @@ public class AvroBaseEditor extends Activity {
 		this();
 		if (defaultUri == null) {
 			logger.debug("Using default URI.");
-			defaultUri = Uri.withAppendedPath(EntityUriBuilder.branchUri(schema.getNamespace(), "master"), schema.getName());
+			defaultUri = Uri.withAppendedPath(EntityUriBuilder.branchUri(schema.getNamespace(), schema.getNamespace(), "master"), schema.getName());
 		}
 		mController = new AvroController(this, schema.getName(), defaultUri, schema);
 		logger.debug("Set controller for schema: " + schema.getName() + " : " + defaultUri + " : " + schema);

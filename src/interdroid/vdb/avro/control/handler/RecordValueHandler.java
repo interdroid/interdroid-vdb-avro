@@ -4,8 +4,6 @@ import org.apache.avro.generic.GenericData.Record;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import android.util.Log;
-
 public class RecordValueHandler implements ValueHandler {
 	private static final Logger logger = LoggerFactory.getLogger(RecordValueHandler.class)
 	;
