@@ -55,14 +55,14 @@ public class AvroViewFactory {
 		.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 	}
 
-	public static void buildRootView(AvroBaseEditor activity, AvroRecordModel dataModel) {
+	public static void buildRootView(final AvroBaseEditor activity, AvroRecordModel dataModel) {
 		logger.debug("Constructing root view: " + dataModel.schema());
 		ViewGroup viewGroup = (ViewGroup) getLayoutInflater(activity).inflate(
 				R.layout.avro_base_editor, null);
-		ScrollView scroll = new ScrollView(activity);
+		final ScrollView scroll = new ScrollView(activity);
 		scroll.setLayoutParams(new ViewGroup.LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
 		scroll.addView(viewGroup);
-		activity.setContentView(scroll);
+		activity.runOnUiThread(new Runnable() {public void run() {activity.setContentView(scroll);}});
 		buildRecordView(true, activity, dataModel, dataModel.getCurrentModel(), viewGroup);
 	}
 
@@ -163,7 +163,6 @@ public class AvroViewFactory {
 				button.setOnClickListener(getRecordTypeSelectorHandler(activity, dataModel, schema, valueHandler, viewGroup, button));
 
 				view = button;
-				viewGroup.addView(button);
 			}
 			break;
 		case STRING:
@@ -193,13 +192,17 @@ public class AvroViewFactory {
 		return view;
 	}
 
+	private static void addView(Activity activity, final ViewGroup viewGroup, final View view) {
+		activity.runOnUiThread(new Runnable() {public void run(){viewGroup.addView(view);}});
+	}
+
 	private static View buildDateView(AvroBaseEditor activity,
 			ViewGroup viewGroup, ValueHandler valueHandler) {
 		DatePicker view;
 		view = new DatePicker(activity);
 		DateHandler handler = new DateHandler(view, valueHandler);
 		view.setOnClickListener(handler);
-		viewGroup.addView(view);
+		addView(activity, viewGroup, view);
 		return view;
 	}
 
@@ -230,7 +233,7 @@ public class AvroViewFactory {
 	private static View buildEnum(AvroBaseEditor activity, AvroRecordModel dataModel,
 			ViewGroup viewGroup, Schema schema, ValueHandler valueHandler) {
 		Button selectedText = new Button(activity);
-		viewGroup.addView(selectedText);
+		addView(activity, viewGroup, selectedText);
 		new EnumHandler(activity, dataModel, schema, selectedText, valueHandler);
 		return selectedText;
 	}
@@ -247,8 +250,7 @@ public class AvroViewFactory {
 			label.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT,
 					LayoutParams.WRAP_CONTENT));
 			label.setGravity(Gravity.LEFT);
-
-			viewGroup.addView(label);
+			addView(activity, viewGroup, label);
 		}
 
 		buildView(isRoot, activity, dataModel, viewGroup, field.schema(), new RecordValueHandler(record, field.name()));
@@ -279,7 +281,7 @@ public class AvroViewFactory {
 
 			table.addView(row);
 		}
-		viewGroup.addView(table);
+		addView(activity, viewGroup, table);
 		return table;
 	}
 
@@ -298,7 +300,7 @@ public class AvroViewFactory {
 		addButton.setTag("add");
 		layout.addView(addButton);
 
-		viewGroup.addView(layout);
+		addView(activity, viewGroup, layout);
 
 
 		return layout;
@@ -309,7 +311,8 @@ public class AvroViewFactory {
 		text.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
 		text.setGravity(Gravity.FILL_HORIZONTAL);
 		changeListener.setWatched(text);
-		viewGroup.addView(text);
+		addView(activity, viewGroup, text);
+
 		return text;
 	}
 
@@ -335,7 +338,7 @@ public class AvroViewFactory {
 			text.setGravity(Gravity.FILL_HORIZONTAL);
 			text.setInputType(inputType);
 		}
-		viewGroup.addView(text);
+		addView(activity, viewGroup, text);
 		textWatcher.setWatched(text);
 		return text;
 	}
@@ -343,7 +346,7 @@ public class AvroViewFactory {
 	private static View buildTextView(AvroBaseEditor activity, ViewGroup viewGroup, int textId) {
 		TextView text = new TextView(activity);
 		text.setText(textId);
-		viewGroup.addView(text);
+		addView(activity, viewGroup, text);
 		return text;
 	}
 

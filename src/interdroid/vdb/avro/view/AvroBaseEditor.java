@@ -10,12 +10,13 @@ import org.slf4j.LoggerFactory;
 import interdroid.vdb.R;
 import interdroid.vdb.avro.control.AvroController;
 import interdroid.vdb.avro.control.handler.RecordTypeSelectHandler;
-import interdroid.vdb.content.EntityUriBuilder;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -41,6 +42,8 @@ public class AvroBaseEditor extends Activity {
 
 	private RecordTypeSelectHandler mRecordTypeSelectHandler;
 
+	private AsyncTask<Object, Void, Void> mInit;
+
 	public AvroBaseEditor() {
 		logger.debug("Constructed AvroBaseEditor: " + this + ":" + mController);
 	}
@@ -53,7 +56,7 @@ public class AvroBaseEditor extends Activity {
 		this();
 		if (defaultUri == null) {
 			logger.debug("Using default URI.");
-			defaultUri = Uri.withAppendedPath(EntityUriBuilder.branchUri(schema.getNamespace(), schema.getNamespace(), "master"), schema.getName());
+			defaultUri = Uri.parse("content://" + schema.getNamespace() + "/branches/master/"+ schema.getName());
 		}
 		mController = new AvroController(this, schema.getName(), defaultUri, schema);
 		logger.debug("Set controller for schema: " + schema.getName() + " : " + defaultUri + " : " + schema);
@@ -65,34 +68,106 @@ public class AvroBaseEditor extends Activity {
 
 		logger.debug("onCreate: " + this);
 
-		final Intent intent = getIntent();
+		mInit = new InitTask().execute(this, savedInstanceState);
+	}
 
-		// If we don't have a controller, then create one...
-		if (mController == null) {
-			Uri defaultUri = intent.getData();
-			if (defaultUri == null) {
-				throw new IllegalArgumentException("A Uri is required.");
-			}
-			String schemaJson = intent.getStringExtra(SCHEMA);
-			if (schemaJson == null) {
-				throw new IllegalArgumentException("A Schema is required.");
-			}
-			Schema schema = Schema.parse(schemaJson);
-			logger.debug("Building controller for: " + schema.getName() + " : " + defaultUri);
+	private class LoadTask extends AsyncTask<Object, Void, Void> {
+		private ProgressDialog d;
 
-			mController = new AvroController(this, schema.getName(), defaultUri, schema);
+		protected void onPreExecute() {
+			try {
+				logger.debug("Waiting for Controller...");
+				AvroBaseEditor.this.mInit.get();
+				logger.debug("Controller built.");
+			} catch (Exception e) {
+				// Ignored
+			}
+
+			d = ProgressDialog.show(AvroBaseEditor.this, "Loading..", "Loading data and building user interface...", true, false);
 		}
 
-		final Uri editUri = mController.setup(intent, savedInstanceState);
+		protected void onPostExecute(Void v) {
 
-		if (editUri == null) {
-			logger.debug("No edit URI built.");
-			finish();
-			return;
+			// Modify our overall title depending on the mode we are running in.
+			if (mController.getState() == AvroController.STATE_EDIT) {
+				AvroBaseEditor.this.setTitle(getText(R.string.title_edit) + " " + mController.getTypeName());
+			} else if (mController.getState() == AvroController.STATE_INSERT) {
+				AvroBaseEditor.this.setTitle(getText(R.string.title_create) + " " + mController.getTypeName());
+			}
+
+			d.dismiss();
 		}
 
-		// Everything was setup properly so assume the result will work.
-		setResult(RESULT_OK, (new Intent()).setAction(editUri.toString()));
+		@Override
+		protected Void doInBackground(Object... params) {
+			if (AvroBaseEditor.this.mInit != null) {
+				try {
+					logger.debug("Waiting for UI to finish loading");
+
+					AvroBaseEditor.this.mInit.get();
+					AvroBaseEditor.this.mInit = null;
+				//	d.dismiss();
+					logger.debug("UI Loaded");
+				} catch (Exception e) {
+					logger.error("Error with init task", e);
+					finish();
+				}
+			}
+
+			AvroController mController = (AvroController) params[0];
+
+			mController.loadData();
+			return null;
+		}
+
+	}
+
+	private class InitTask extends AsyncTask<Object, Void, Void> {
+		private ProgressDialog d;
+
+		protected void onPreExecute() {
+			d = ProgressDialog.show(AvroBaseEditor.this, "Loading..", "Building User Interface...", true, false);
+		}
+
+		protected void onPostExecute(Void v) {
+			d.dismiss();
+		}
+
+		@Override
+		protected Void doInBackground(Object... params) {
+
+			final Intent intent = getIntent();
+			final AvroBaseEditor baseEditor = ((AvroBaseEditor)params[0]);
+
+			// If we don't have a controller, then create one...
+			if (mController == null) {
+				Uri defaultUri = intent.getData();
+				if (defaultUri == null) {
+					throw new IllegalArgumentException("A Uri is required.");
+				}
+				String schemaJson = intent.getStringExtra(SCHEMA);
+				if (schemaJson == null) {
+					throw new IllegalArgumentException("A Schema is required.");
+				}
+				Schema schema = Schema.parse(schemaJson);
+				logger.debug("Building controller for: " + schema.getName() + " : " + defaultUri);
+
+				baseEditor.mController = new AvroController(baseEditor, schema.getName(), defaultUri, schema);
+			}
+
+			final Uri editUri = baseEditor.mController.setup(intent, (Bundle) params[1]);
+
+			if (editUri == null) {
+				logger.debug("No edit URI built.");
+				baseEditor.finish();
+			} else {
+				// Everything was setup properly so assume the result will work.
+				setResult(RESULT_OK, (new Intent()).setAction(editUri.toString()));
+			}
+
+			return null;
+		}
+
 	}
 
 	protected void onPause() {
@@ -110,14 +185,11 @@ public class AvroBaseEditor extends Activity {
 
 		logger.debug("onResume");
 
-		// Modify our overall title depending on the mode we are running in.
-		if (mController.getState() == AvroController.STATE_EDIT) {
-			setTitle(getText(R.string.title_edit) + " " + mController.getTypeName());
-		} else if (mController.getState() == AvroController.STATE_INSERT) {
-			setTitle(getText(R.string.title_create) + " " + mController.getTypeName());
-		}
+		logger.debug("Loading Data");
 
-		mController.loadData();
+		new LoadTask().execute(mController);
+
+		logger.debug("Ready");
 	}
 
 	@Override
@@ -195,7 +267,7 @@ public class AvroBaseEditor extends Activity {
 	public void launchResultIntent(RecordTypeSelectHandler recordTypeSelectHandler, Intent editIntent, int action) {
 		mRecordTypeSelectHandler = recordTypeSelectHandler;
 		editIntent.addCategory(Intent.CATEGORY_DEFAULT);
-		editIntent.setComponent(new ComponentName(this, AvroBaseEditor.class));
+		editIntent.setComponent(new ComponentName(this, this.getClass()));
 		logger.debug("TYPE: " + getContentResolver().getType(editIntent.getData()));
 		startActivityForResult(editIntent, action);
 	}

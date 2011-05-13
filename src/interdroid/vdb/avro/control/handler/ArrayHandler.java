@@ -11,8 +11,10 @@ import org.apache.avro.generic.GenericData.Array;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import android.R;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.graphics.Color;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnFocusChangeListener;
@@ -39,7 +41,7 @@ public class ArrayHandler implements OnClickListener, OnFocusChangeListener {
 		public void onFocusChange(View v, boolean hasFocus) {
 			// TODO Auto-generated method stub
 			if (hasFocus) {
-				mSubView.setBackgroundDrawable(mActivity.getResources().getDrawable(R.drawable.screen_background_light));
+				mSubView.setBackgroundDrawable(mActivity.getResources().getDrawable(android.R.drawable.screen_background_light));
 			} else {
 				mSubView.setBackgroundColor(Color.BLACK);
 			}
@@ -78,6 +80,30 @@ public class ArrayHandler implements OnClickListener, OnFocusChangeListener {
 		}
 	}
 
+	DialogInterface.OnClickListener mDoneListener = new DialogInterface.OnClickListener() {
+		public void onClick(DialogInterface dialog, int which) {
+			dialog.dismiss();
+		}
+	};
+
+	DialogInterface.OnClickListener mCancelListener = new DialogInterface.OnClickListener() {
+		public void onClick(DialogInterface dialog, int which) {
+			dialog.dismiss();
+		}
+	};
+
+	public void showArrayDialog(String title, Schema schema) {
+		View dialogView = LayoutInflater.from(mActivity).inflate(interdroid.vdb.avro.R.layout.avro_field_dialog, null);
+
+		AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(mActivity)
+		.setTitle(title)
+		.setView(dialogView)
+		.setPositiveButton(android.R.string.ok, mDoneListener)
+		.setCancelable(true)
+		.setNegativeButton(android.R.string.cancel, mCancelListener);
+		dialogBuilder.show();
+	}
+
 	@Override
 	public void onClick(View arg0) {
 		if ("add".equals(arg0.getTag())) {
@@ -104,9 +130,9 @@ public class ArrayHandler implements OnClickListener, OnFocusChangeListener {
 	public void onFocusChange(View subView, boolean focused) {
 		logger.debug("Focus changed called: " + focused);
 		if (focused) {
-			mViewGroup.setBackgroundColor(R.color.background_light);
+			mViewGroup.setBackgroundColor(android.R.color.background_light);
 		} else {
-			mViewGroup.setBackgroundColor(R.color.background_dark);
+			mViewGroup.setBackgroundColor(android.R.color.background_dark);
 		}
 		mViewGroup.postInvalidate();
 	}
