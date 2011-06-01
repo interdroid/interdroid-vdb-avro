@@ -83,7 +83,7 @@ public class AvroBaseEditor extends Activity {
 				// Ignored
 			}
 
-			d = ProgressDialog.show(AvroBaseEditor.this, "Loading..", "Loading data and building user interface...", true, false);
+			d = ProgressDialog.show(AvroBaseEditor.this, "Loading..", "Loading...", true, false);
 		}
 
 		protected void onPostExecute(Void v) {

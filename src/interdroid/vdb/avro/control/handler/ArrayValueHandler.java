@@ -18,7 +18,7 @@ public class ArrayValueHandler implements ValueHandler {
 
 	@Override
 	public void setValue(Object value) {
-		mArray.put(mOffset, value);
+		mArray.set(mOffset, value);
 	}
 
 	public String toString() {

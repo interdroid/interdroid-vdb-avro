@@ -16,18 +16,19 @@ public class AvroSchema {
 
 	// TODO: It would be nice to support cross namespace records and such.
 	// TODO: Extract constants
-	
+
 	static {
 		// Taken from proposed schema for schemas:
 		String schema =
 			"{\"type\": \"record\", \"name\": \"SchemaDef\", \"namespace\": \"org.apache.avro\","
+			+"\n "
 			+"\n \"fields\": ["
 			+"\n     {\"name\": \"type\", \"type\": ["
 			+"\n         {\"type\": \"record\", \"name\": \"RecordDef\","
 			+"\n          \"fields\": ["
-			+"\n              {\"name\": \"name\", \"type\": \"string\"},"
+			+"\n              {\"name\": \"name\", \"type\": \"string\", \"ui.list\": \"true\"},"
 			+"\n              {\"name\": \"documentation\", \"type\": \"string\"},"
-			+ "\n             {\"name\": \"namespace\", \"type\": \"string\"},"
+			+ "\n             {\"name\": \"namespace\", \"type\": \"string\", \"ui.list\": \"true\"},"
 			+"\n              {\"name\": \"fields\","
 			+"\n               \"type\": {\"type\": \"array\", \"items\":"
 			+"\n                        {\"type\": \"record\", \"name\": \"FieldDef\","

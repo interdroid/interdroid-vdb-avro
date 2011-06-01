@@ -184,8 +184,7 @@ public class AvroController {
 		}
 
 		// Build the model
-		mDataModel = new AvroRecordModel(mActivity.getApplicationContext()
-				.getContentResolver(), mUri, mSchema);
+		mDataModel = new AvroRecordModel(mActivity, mUri, mSchema);
 
 		// Load any savedInstanceState into the model
 		mDataModel.loadOriginals(savedState);

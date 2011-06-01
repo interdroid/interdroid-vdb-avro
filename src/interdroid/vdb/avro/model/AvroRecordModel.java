@@ -18,6 +18,7 @@ import org.apache.avro.generic.GenericData.Record;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -81,6 +82,8 @@ public class AvroRecordModel extends DataSetObservable {
 	/* =-=-=-= Model State =-=-=-= */
 	private final Schema mSchema;
 	private final Uri mUri;
+	private final Activity mActivity;
+
 	private ContentResolver mResolver;
 	private Record mCurrentStateModel;
 	private Record mOriginalModel;
@@ -93,14 +96,15 @@ public class AvroRecordModel extends DataSetObservable {
 	 * @param schema
 	 *            The schema to model
 	 */
-	public AvroRecordModel(ContentResolver resolver, Uri rootUri, Schema schema) {
+	public AvroRecordModel(Activity activity, Uri rootUri, Schema schema) {
 		if (schema.getType() != Type.RECORD) {
 			throw new RuntimeException("Not a record!");
 		}
 		logger.debug("Constructed model for: " + schema);
 		mSchema = schema;
 		mUri = rootUri;
-		mResolver = resolver;
+		mResolver = activity.getContentResolver();
+		mActivity = activity;
 	}
 
 	/**
@@ -1030,7 +1034,7 @@ public class AvroRecordModel extends DataSetObservable {
 				values.put(fieldName, (Double) data);
 				break;
 			case ENUM:
-				values.put(fieldName, (String) data);
+				values.put(fieldName, (Integer) data);
 				break;
 			case FIXED:
 				values.put(fieldName, (byte[]) data);
@@ -1068,6 +1072,7 @@ public class AvroRecordModel extends DataSetObservable {
 						baseUri = Uri.withAppendedPath(EntityUriBuilder.branchUri(match.authority, match.repositoryName, match.reference),
 								GenericContentProvider.escapeName(match.repositoryName, record.getSchema().getNamespace(), record.getSchema().getName()));
 						recordUri = Uri.withAppendedPath(baseUri, match.entityIdentifier);
+						logger.debug("Record URI: {}", recordUri);
 						Cursor exists = null;
 						try {
 							exists = mResolver.query(recordUri, null, null, null, null);
@@ -1342,6 +1347,10 @@ public class AvroRecordModel extends DataSetObservable {
 
 	public Object get(String nameField) {
 		return mCurrentStateModel.get(nameField);
+	}
+
+	public void runOnUI(Runnable runnable) {
+		mActivity.runOnUiThread(runnable);
 	}
 
 }

@@ -71,11 +71,11 @@ public class EditTextHandler implements TextWatcher {
 	}
 
 
-	public void setWatched(EditText text) {
+	public void setWatched(final EditText text) {
 
 		if (getValue() != null) {
 			logger.debug("Setting value: " + getValue() + " for: " + this);
-			text.setText(String.valueOf(getValue()));
+			mDataModel.runOnUI(new Runnable() { public void run() { text.setText(String.valueOf(getValue())); } });
 		} else {
 			logger.debug("Text watcher has null value: " + this);
 		}
