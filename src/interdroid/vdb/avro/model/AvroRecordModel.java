@@ -1007,7 +1007,7 @@ public class AvroRecordModel extends DataSetObservable {
 		}
 
 		private Uri insertUri(Uri rootUri, ContentValues values) {
-			logger.debug("Inserting into: " + rootUri);
+			logger.debug("Inserting into: {} : {}", rootUri, values);
 			return mResolver.insert(rootUri, values);
 		}
 
