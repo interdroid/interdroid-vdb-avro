@@ -67,7 +67,7 @@ public class EnumHandler implements DialogInterface.OnClickListener, OnClickList
 		mValueHandler.setValue(which);
 		mTextView.setText(mSchema.getEnumSymbols().get(which));
 		mTextView.postInvalidate();
-		mDataModel.notifyChanged();
+		mDataModel.onChanged();
 		dialog.dismiss();
 	}
 

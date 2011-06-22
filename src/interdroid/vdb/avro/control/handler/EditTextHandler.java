@@ -51,7 +51,7 @@ public class EditTextHandler implements TextWatcher {
 				throw new RuntimeException("Unsupported type: " + mType);
 			}
 		}
-		mDataModel.notifyChanged();
+		mDataModel.onChanged();
 	}
 
 	@Override

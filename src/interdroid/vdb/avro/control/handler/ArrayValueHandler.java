@@ -1,14 +1,18 @@
 package interdroid.vdb.avro.control.handler;
 
-import org.apache.avro.generic.GenericData.Array;
+import interdroid.vdb.avro.model.AvroRecordModel;
+import interdroid.vdb.avro.model.AvroRecordModel.UriArray;
 
 public class ArrayValueHandler implements ValueHandler {
-	private final Array<Object>mArray;
-	private final int mOffset;
 
-	public ArrayValueHandler(Array<Object> array, int offset) {
+	private final UriArray<Object>mArray;
+	private final int mOffset;
+	private AvroRecordModel mDataModel;
+
+	public ArrayValueHandler(AvroRecordModel model, UriArray<Object> array, int offset) {
 		mArray = array;
 		mOffset = offset;
+		mDataModel = model;
 	}
 
 	@Override
@@ -19,6 +23,7 @@ public class ArrayValueHandler implements ValueHandler {
 	@Override
 	public void setValue(Object value) {
 		mArray.set(mOffset, value);
+		mDataModel.onChanged();
 	}
 
 	public String toString() {

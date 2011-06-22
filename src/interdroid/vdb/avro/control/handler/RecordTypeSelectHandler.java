@@ -1,6 +1,7 @@
 package interdroid.vdb.avro.control.handler;
 
 import interdroid.vdb.avro.model.AvroRecordModel;
+import interdroid.vdb.avro.model.AvroRecordModel.UriRecord;
 import interdroid.vdb.avro.view.AvroBaseEditor;
 import interdroid.vdb.content.EntityUriBuilder;
 import interdroid.vdb.avro.AvroSchema;
@@ -10,6 +11,7 @@ import org.apache.avro.generic.GenericData.Record;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.net.Uri;
 import android.view.View;
@@ -37,19 +39,20 @@ public class RecordTypeSelectHandler implements OnClickListener {
 
 	@Override
 	public void onClick(View v) {
-		Intent editIntent = new Intent(Intent.ACTION_INSERT,
-				Uri.withAppendedPath(EntityUriBuilder.branchUri(mSchema.getNamespace(),
-						AvroSchema.NAMESPACE, "master"), mSchema.getName()));
+		Uri uri;
+		if (mValueHandler.getValue() == null) {
+			// Do an insert so we can stash away the URI for the record
+			uri = Uri.withAppendedPath(EntityUriBuilder.branchUri(mSchema.getNamespace(),
+						AvroSchema.NAMESPACE, "master"), mSchema.getName());
+			uri = mActivity.getContentResolver().insert(uri, new ContentValues());
+			mValueHandler.setValue(new AvroRecordModel.UriRecord(uri, mSchema));
+		} else {
+			uri = ((UriRecord) mValueHandler.getValue()).getUri();
+		}
+		logger.debug("Launching edit on URI: {} type: {}", uri, mActivity.getContentResolver().getType(uri));
+		Intent editIntent = new Intent(Intent.ACTION_EDIT, uri);
 		editIntent.putExtra(AvroBaseEditor.SCHEMA, mSchema.toString());
-		mActivity.launchResultIntent(this, editIntent, AvroBaseEditor.REQUEST_RECORD_SELECTION);
-	}
-
-	public void setResult(Intent data) {
-		logger.debug("Got result: " + data.getAction());
-		Record record = mDataModel.loadRecordFromUri(Uri.parse(data.getAction()), mSchema);
-		mValueHandler.setValue(record);
-		mDataModel.storeCurrentValue();
-		mButton.setText("Edit: " + mSchema.getName());
+		mActivity.launchIntent(editIntent);
 	}
 
 }

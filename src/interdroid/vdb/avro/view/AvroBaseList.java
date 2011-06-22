@@ -65,13 +65,25 @@ public class AvroBaseList extends ListActivity {
 	/**
 	 * The columns we are interested in from the database
 	 */
-	private final String[] PROJECTION;
+	private String[] PROJECTION;
 
 	private Uri mBranchUri;
 	private boolean mReadOnly = true;
 	private Schema mSchema;
 
+	public AvroBaseList() {
+		logger.debug("Constructed AvroBaseList: " + this + ":");
+	}
+
 	protected AvroBaseList(Schema schema, Uri defaultUri) {
+		setup(schema, defaultUri);
+	}
+
+	protected AvroBaseList(Schema schema) {
+		this(schema, null);
+	}
+
+	private void setup(Schema schema, Uri defaultUri) {
 		if (schema.getType() != Schema.Type.RECORD) {
 			throw new RuntimeException("Invalid base type. Must be a record.");
 		}
@@ -90,15 +102,19 @@ public class AvroBaseList extends ListActivity {
 		// Since this is synthetic we add it here.
 		listFields.add("_id");
 		for (Field field : fields) {
-			if (field.getProp("ui.list") != null) {
-				listFields.add(field.name());
+			if (field.getProp("ui.list") == null || !field.getProp("ui.list").equals(Boolean.FALSE)) {
+				switch (field.schema().getType()) {
+				// TODO: Should build projection which can handle more things.
+				case STRING:
+					logger.debug("List field includes: {}", field.name());
+					listFields.add(field.name());
+					break;
+				default:
+					logger.debug("List does not include: {}", field.name());
+				}
 			}
 		}
 		PROJECTION = listFields.toArray(new String[listFields.size()]);
-	}
-
-	protected AvroBaseList(Schema schema) {
-		this(schema, null);
 	}
 
 	@Override
@@ -115,6 +131,19 @@ public class AvroBaseList extends ListActivity {
 		Intent intent = getIntent();
 		if (intent.getData() == null) {
 			intent.setData(mBranchUri);
+		} else {
+			// We need a uri and a schema in the intent extras then.
+			Uri defaultUri = intent.getData();
+			if (defaultUri == null) {
+				throw new IllegalArgumentException("A Uri is required.");
+			}
+			String schemaJson = intent.getStringExtra(AvroBaseEditor.SCHEMA);
+			if (schemaJson == null) {
+				throw new IllegalArgumentException("A Schema is required.");
+			}
+			Schema schema = Schema.parse(schemaJson);
+			logger.debug("Setting up: {} {}", defaultUri, schema);
+			setup(schema, defaultUri);
 		}
 
 		UriMatch match = EntityUriMatcher.getMatch(intent.getData());
@@ -137,6 +166,12 @@ public class AvroBaseList extends ListActivity {
 
 		// Inform the list we provide context menus for items
 		getListView().setOnCreateContextMenuListener(this);
+
+		if (intent.getAction() == Intent.ACTION_PICK) {
+			logger.debug("In pick mode.");
+			// We are canceled if they back out without picking.
+			setResult(RESULT_CANCELED);
+		}
 
 		new InitTask().execute(getIntent());
 	}
@@ -267,7 +302,7 @@ public class AvroBaseList extends ListActivity {
 		menu.setHeaderTitle(cursor.getString(cursor.getColumnIndex(PROJECTION[1])));
 
 		if (!mReadOnly) {
-			// Add a menu item to delete the note
+			// Add a menu item to delete the item
 			menu.add(0, MENU_ITEM_DELETE, 0, "Delete " + mSchema.getName());
 			menu.add(0, MENU_ITEM_EDIT, 1, "Edit " + mSchema.getName());
 		}

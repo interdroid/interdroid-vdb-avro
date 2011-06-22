@@ -19,7 +19,7 @@ public class CheckboxHandler implements OnCheckedChangeListener {
 	public void onCheckedChanged(CompoundButton buttonView,
 			boolean isChecked) {
 		mValueHandler.setValue(isChecked);
-		mDataModel.notifyChanged();
+		mDataModel.onChanged();
 	}
 
 	public void setWatched(CheckBox text) {

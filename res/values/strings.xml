@@ -30,12 +30,15 @@
 
 	<string name="error_title">Error</string>
 	<string name="error_message">Error loading data</string>
+	<string name="error_selecting_record_type">Unknown error while selecting the record type.</string>
 
 	<string name="label_name">Name:</string>
 	<string name="label_comment">Comment:</string>
 	<string name="label_namespace">Namespace:</string>
 	<string name="label_fields">Fields:</string>
 	<string name="label_type">Type:</string>
+	<string name="label_create">Create:</string>
+	<string name="label_edit">Edit:</string>
 
 	<string name="none">- none -</string>
 	<string name="create_copy">Create copy</string>

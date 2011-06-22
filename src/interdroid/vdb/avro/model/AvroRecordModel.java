@@ -1,20 +1,17 @@
 package interdroid.vdb.avro.model;
 
+import java.util.HashMap;
+
 import interdroid.vdb.content.EntityUriBuilder;
 import interdroid.vdb.content.EntityUriMatcher;
 import interdroid.vdb.content.EntityUriMatcher.UriMatch;
 import interdroid.vdb.content.GenericContentProvider;
 import interdroid.vdb.content.avro.AvroContentProvider;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericData.Array;
-import org.apache.avro.generic.GenericData.Record;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +19,7 @@ import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.database.DataSetObservable;
+import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -68,7 +65,7 @@ import android.os.Bundle;
  * cursor and a Bundle and has a model for the original values and updated
  * values.
  */
-public class AvroRecordModel extends DataSetObservable {
+public class AvroRecordModel extends DataSetObserver {
 	private static final Logger logger = LoggerFactory.getLogger(AvroRecordModel.class);
 
 	/* =-=-=-= Helper Constants For More Readable Code In This Class =-=-=-= */
@@ -78,6 +75,7 @@ public class AvroRecordModel extends DataSetObservable {
 	private static final String _VALUE = AvroContentProvider.VALUE_COLUMN_NAME;
 	private static final String _TYPE = AvroContentProvider.TYPE_COLUMN_NAME;
 	private static final String _TYPE_NAME = AvroContentProvider.TYPE_NAME_COLUMN_NAME;
+	private static final String _URI_NAME = AvroContentProvider.TYPE_URI_COLUMN_NAME;
 
 	/* =-=-=-= Model State =-=-=-= */
 	private final Schema mSchema;
@@ -85,9 +83,152 @@ public class AvroRecordModel extends DataSetObservable {
 	private final Activity mActivity;
 
 	private ContentResolver mResolver;
-	private Record mCurrentStateModel;
-	private Record mOriginalModel;
+	private UriRecord mCurrentStateModel;
+	private UriRecord mOriginalModel;
 	private URIHandler uriHandler = new URIHandler();
+	private boolean mDirty;
+
+	// TODO: It would be really nice to have fine grained dirty flags at all levels.
+
+	private static interface UriBound {
+		public Uri getUri();
+		public void setUri(Uri uri);
+	}
+
+	public static class UriUnion implements UriBound {
+		private Uri mUri;
+		private Schema mSchema;
+		private Object mValue;
+		private Type mType;
+		private String mName;
+
+		public UriUnion(Uri uri, Schema schema) {
+			mSchema = schema;
+			mUri = uri;
+		}
+
+		public Object getValue() {
+			return mValue;
+		}
+
+		public void setValue(Object v, Schema schema) {
+			mValue = v;
+			mType = schema.getType();
+			mName = schema.getFullName();
+		}
+
+		private void setType(Type t) {
+			mType = t;
+		}
+
+		public Type getType() {
+			return mType;
+		}
+
+		private void setTypeName(String name) {
+			mName = name;
+		}
+
+		public String getTypeName() {
+			return mName;
+		}
+
+		public Uri getUri() {
+			return mUri;
+		}
+
+		public void setUri(Uri uri) {
+			mUri = uri;
+		}
+
+		public Schema getValueSchema() {
+			for(Schema type : mSchema.getTypes()) {
+				if (type.getType() == mType) {
+					switch (type.getType()) {
+					// TODO: Fixed is a named type
+					case RECORD:
+					case ENUM:
+						if (type.getName().equals(mName)) {
+							return type;
+						}
+						break;
+					default:
+						return type;
+					}
+				}
+			}
+			return Schema.create(Type.NULL);
+		}
+	};
+
+	public static class UriRecord extends GenericData.Record implements UriBound {
+		private Uri mUri;
+
+		public UriRecord(Uri uri, Schema schema) {
+			super(schema);
+			mUri = uri;
+		}
+
+		public Uri getUri() {
+			return mUri;
+		}
+
+		public void setUri(Uri uri) {
+			mUri = uri;
+		}
+	};
+
+	public static class UriMap<K, V> extends HashMap<K, V> implements UriBound {
+		private static final long serialVersionUID = 1L;
+		private Uri mUri;
+
+		public UriMap(Uri uri) {
+			mUri = uri;
+		}
+
+		public Uri getUri() {
+			return mUri;
+		}
+
+		public void setUri(Uri uri) {
+			mUri = uri;
+		}
+	}
+
+	public static class UriFixed extends GenericData.Fixed implements UriBound {
+		private Uri mUri;
+
+		public Uri getUri() {
+			return mUri;
+		}
+
+		public void setUri(Uri uri) {
+			mUri = uri;
+		}
+	}
+
+	public static class UriArray<T> extends GenericData.Array<T> implements UriBound {
+		private static final int DEFAULT_ARRAY_SIZE = 10;
+		private Uri mUri;
+
+		public UriArray(Uri uri, Schema schema) {
+			super(DEFAULT_ARRAY_SIZE, schema);
+			mUri = uri;
+		}
+
+		public UriArray(int count, Uri uri, Schema schema) {
+			super(count, schema);
+			mUri = uri;
+		}
+
+		public Uri getUri() {
+			return mUri;
+		}
+
+		public void setUri(Uri uri) {
+			mUri = uri;
+		}
+	};
 
 	/**
 	 * Constructs a Model for the given Schema. The Schema must be of type
@@ -122,7 +263,6 @@ public class AvroRecordModel extends DataSetObservable {
 				mOriginalModel = BundleHandler.loadRecordFromBundle(savedInstanceState, null,
 						mSchema);
 			}
-			notifyChanged();
 		}
 	}
 
@@ -131,8 +271,8 @@ public class AvroRecordModel extends DataSetObservable {
 	 */
 	public void storeOriginalValue() {
 		logger.debug("Storing original values.");
-		if (mOriginalModel != null) {
-			uriHandler.storeRecordToUri(mUri, mOriginalModel);
+		if (mDirty && mOriginalModel != null) {
+			uriHandler.storeRecordToUri(mOriginalModel);
 		}
 	}
 
@@ -141,8 +281,8 @@ public class AvroRecordModel extends DataSetObservable {
 	 */
 	public void storeCurrentValue() {
 		logger.debug("Storing current state to uri: " + mUri);
-		if (mCurrentStateModel != null) {
-			uriHandler.storeRecordToUri(mUri, mCurrentStateModel);
+		if (mDirty && mCurrentStateModel != null) {
+			uriHandler.storeRecordToUri(mCurrentStateModel);
 		}
 	}
 
@@ -152,15 +292,16 @@ public class AvroRecordModel extends DataSetObservable {
 	public void loadData() {
 		logger.debug("Loading data from: " + mUri);
 		mCurrentStateModel = uriHandler.loadRecordFromUri(mUri, mSchema);
+		mDirty = false;
 		// If there is no original model then load another copy
+		// TODO: Can we do a clone here?
 		if (mOriginalModel == null) {
 			mOriginalModel = uriHandler.loadRecordFromUri(mUri, mSchema);
 		}
-		notifyChanged();
 	}
 
 
-	public Record loadRecordFromUri(Uri rootUri, Schema schema) {
+	public UriRecord loadRecordFromUri(Uri rootUri, Schema schema) {
 		return uriHandler.loadRecordFromUri(rootUri, schema);
 	}
 
@@ -171,7 +312,7 @@ public class AvroRecordModel extends DataSetObservable {
 	 *            the bundle to save to
 	 */
 	public void saveState(Bundle outState) {
-		if (mCurrentStateModel != null) {
+		if (mDirty && mCurrentStateModel != null) {
 			logger.debug("Saving current state to bundle.");
 			BundleHandler.storeRecordToBundle(outState, null, mCurrentStateModel);
 		}
@@ -240,19 +381,28 @@ public class AvroRecordModel extends DataSetObservable {
 			return fieldName + _TYPE_NAME;
 		}
 
+		private static String getTypeNameUri(String fieldName) {
+			return fieldName + _URI_NAME;
+		}
+
+		public static String getTypeUriName(String fieldName) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
 	}
 
 	/* =-=-=-= Load From Bundle =-=-=-= */
 
 	private static class BundleHandler {
 
-		private static Record loadRecordFromBundle(Bundle saved, String prefix,
+		private static UriRecord loadRecordFromBundle(Bundle saved, String prefix,
 				Schema schema) {
 			logger.debug(
 					"Loading data from bundle: " + prefix + " : "
 					+ schema.getFullName());
 			String dataFullName = NameHelper.getPrefixName(prefix, schema.getFullName());
-			Record data = new GenericData.Record(schema);
+			UriRecord data = new UriRecord((Uri)saved.get(dataFullName + _URI_NAME), schema);
 
 			for (Field field : schema.getFields()) {
 				String fieldName = field.name();
@@ -321,12 +471,12 @@ public class AvroRecordModel extends DataSetObservable {
 			return value;
 		}
 
-		private static Map<String, Object> loadMapFromBundle(Bundle saved,
+		private static UriMap<String, Object> loadMapFromBundle(Bundle saved,
 				String fieldFullName, Schema valueType) {
 			String keyName = NameHelper.getMapKeyName(fieldFullName);
 			String valueName = NameHelper.getMapValueName(fieldFullName);
 
-			Map<String, Object> map = new HashMap<String, Object>();
+			UriMap<String, Object> map = new UriMap<String, Object>((Uri)saved.get(fieldFullName + _URI_NAME));
 
 			int count = saved.getInt(NameHelper.getCountName(fieldFullName));
 			for (int i = 0; i < count; i++) {
@@ -337,23 +487,24 @@ public class AvroRecordModel extends DataSetObservable {
 			return map;
 		}
 
-		private static Array<Object> loadArrayFromBundle(Bundle saved,
+		private static UriArray<Object> loadArrayFromBundle(Bundle saved,
 				String fieldFullName, Schema elementSchema) {
-			Array<Object> array = null;
+			UriArray<Object> array = null;
+			Uri uri = (Uri) saved.get(fieldFullName + _URI_NAME);
 			switch (elementSchema.getType()) {
 			case ARRAY: {
 				int count = saved.getInt(NameHelper.getCountName(fieldFullName));
-				array = new Array<Object>(count, elementSchema);
+				array = new UriArray<Object>(count, uri, elementSchema);
 				for (int i = 0; i < count; i++) {
 					array.add(loadArrayFromBundle(saved,
 							NameHelper.getIndexedFieldName(fieldFullName, i),
-							elementSchema.getElementType()));
+							elementSchema));
 				}
 				break;
 			}
 			case BOOLEAN: {
 				boolean[] savedData = saved.getBooleanArray(fieldFullName);
-				array = new Array<Object>(savedData.length, elementSchema);
+				array = new UriArray<Object>(savedData.length, uri, elementSchema);
 				for (boolean value : savedData) {
 					array.add(value);
 				}
@@ -361,7 +512,7 @@ public class AvroRecordModel extends DataSetObservable {
 			}
 			case BYTES: {
 				int count = saved.getInt(NameHelper.getCountName(fieldFullName));
-				array = new Array<Object>(count, elementSchema);
+				array = new UriArray<Object>(count, uri, elementSchema);
 				for (int i = 0; i < count; i++) {
 					byte[] data = saved.getByteArray(NameHelper.getIndexedFieldName(
 							fieldFullName, i));
@@ -371,7 +522,7 @@ public class AvroRecordModel extends DataSetObservable {
 			}
 			case DOUBLE: {
 				double[] savedData = saved.getDoubleArray(fieldFullName);
-				array = new Array<Object>(savedData.length, elementSchema);
+				array = new UriArray<Object>(savedData.length, uri, elementSchema);
 				for (double value : savedData) {
 					array.add(value);
 				}
@@ -379,7 +530,7 @@ public class AvroRecordModel extends DataSetObservable {
 			}
 			case ENUM: {
 				String[] savedData = saved.getStringArray(fieldFullName);
-				array = new Array<Object>(savedData.length, elementSchema);
+				array = new UriArray<Object>(savedData.length, uri, elementSchema);
 				for (String value : savedData) {
 					array.add(value);
 				}
@@ -387,7 +538,7 @@ public class AvroRecordModel extends DataSetObservable {
 			}
 			case FIXED: {
 				int count = saved.getInt(NameHelper.getCountName(fieldFullName));
-				array = new Array<Object>(count, elementSchema);
+				array = new UriArray<Object>(count, uri, elementSchema);
 				for (int i = 0; i < count; i++) {
 					byte[] data = saved.getByteArray(NameHelper.getIndexedFieldName(
 							fieldFullName, i));
@@ -397,7 +548,7 @@ public class AvroRecordModel extends DataSetObservable {
 			}
 			case FLOAT: {
 				float[] savedData = saved.getFloatArray(fieldFullName);
-				array = new Array<Object>(savedData.length, elementSchema);
+				array = new UriArray<Object>(savedData.length, uri, elementSchema);
 				for (float value : savedData) {
 					array.add(value);
 				}
@@ -405,7 +556,7 @@ public class AvroRecordModel extends DataSetObservable {
 			}
 			case INT: {
 				int[] savedData = saved.getIntArray(fieldFullName);
-				array = new Array<Object>(savedData.length, elementSchema);
+				array = new UriArray<Object>(savedData.length, uri, elementSchema);
 				for (int value : savedData) {
 					array.add(value);
 				}
@@ -413,7 +564,7 @@ public class AvroRecordModel extends DataSetObservable {
 			}
 			case LONG: {
 				long[] savedData = saved.getLongArray(fieldFullName);
-				array = new Array<Object>(savedData.length, elementSchema);
+				array = new UriArray<Object>(savedData.length, uri, elementSchema);
 				for (long value : savedData) {
 					array.add(value);
 				}
@@ -421,7 +572,7 @@ public class AvroRecordModel extends DataSetObservable {
 			}
 			case MAP: {
 				int count = saved.getInt(NameHelper.getCountName(fieldFullName));
-				array = new Array<Object>(count, elementSchema);
+				array = new UriArray<Object>(count, uri, elementSchema);
 				for (int i = 0; i < count; i++) {
 					array.add(loadMapFromBundle(saved,
 							NameHelper.getIndexedFieldName(fieldFullName, i),
@@ -431,7 +582,7 @@ public class AvroRecordModel extends DataSetObservable {
 			}
 			case NULL: {
 				int count = saved.getInt(NameHelper.getCountName(fieldFullName));
-				array = new Array<Object>(count, elementSchema);
+				array = new UriArray<Object>(count, uri, elementSchema);
 				for (int i = 0; i < count; i++) {
 					array.add(null);
 				}
@@ -439,7 +590,7 @@ public class AvroRecordModel extends DataSetObservable {
 			}
 			case RECORD: {
 				int count = saved.getInt(NameHelper.getCountName(fieldFullName));
-				array = new Array<Object>(count, elementSchema);
+				array = new UriArray<Object>(count, uri, elementSchema);
 				for (int i = 0; i < count; i++) {
 					array.add(loadRecordFromBundle(saved,
 							NameHelper.getIndexedFieldName(fieldFullName, i), elementSchema));
@@ -448,7 +599,7 @@ public class AvroRecordModel extends DataSetObservable {
 			}
 			case STRING: {
 				String[] savedData = saved.getStringArray(fieldFullName);
-				array = new Array<Object>(savedData.length, elementSchema);
+				array = new UriArray<Object>(savedData.length, uri, elementSchema);
 				for (String value : savedData) {
 					array.add(value);
 				}
@@ -456,11 +607,11 @@ public class AvroRecordModel extends DataSetObservable {
 			}
 			case UNION: {
 				int count = saved.getInt(NameHelper.getCountName(fieldFullName));
-				array = new Array<Object>(count, elementSchema);
+				array = new UriArray<Object>(count, uri, elementSchema);
 				for (int i = 0; i < count; i++) {
 					array.add(loadUnionFromBundel(saved,
 							NameHelper.getIndexedFieldName(fieldFullName, i),
-							elementSchema.getElementType()));
+							elementSchema));
 				}
 				break;
 			}
@@ -476,6 +627,11 @@ public class AvroRecordModel extends DataSetObservable {
 				Schema elementType) {
 			Type type = Type.valueOf(saved.getString(NameHelper.getTypeName(fieldName)));
 			String typeName = saved.getString(NameHelper.getTypeNameName(fieldName));
+			Uri uri = saved.getParcelable(NameHelper.getTypeUriName(fieldName));
+			UriUnion union = new UriUnion(uri, elementType);
+			union.setType(type);
+			union.setTypeName(typeName);
+
 			Schema fieldType = null;
 			for (Schema unionType : elementType.getTypes()) {
 				if (unionType.getType().equals(type)) {
@@ -497,15 +653,18 @@ public class AvroRecordModel extends DataSetObservable {
 				throw new RuntimeException("Unable to find union inner type: "
 						+ type + " : " + typeName);
 			}
-			return loadDataFromBundle(saved, fieldName, fieldType);
+			union.setValue(loadDataFromBundle(saved, fieldName, fieldType), fieldType);
+			return union;
 		}
 
 		/* =-=-=-= Store To Bundle =-=-=- */
 
-		private static void storeRecordToBundle(Bundle outState, String prefix, Record data) {
+		private static void storeRecordToBundle(Bundle outState, String prefix, UriRecord data) {
 			if (data != null ) {
 				String dataFullName = NameHelper.getPrefixName(prefix, data.getSchema()
 						.getFullName());
+
+				outState.putParcelable(dataFullName + _URI_NAME, data.getUri());
 
 				for (Field field : data.getSchema().getFields()) {
 					String fieldName = field.name();
@@ -523,7 +682,7 @@ public class AvroRecordModel extends DataSetObservable {
 				switch (fieldSchema.getType()) {
 				case ARRAY:
 					storeArrayToBundle(outState, fieldFullName,
-							fieldSchema.getElementType(), (Array<Object>) data);
+							fieldSchema.getElementType(), (UriArray<Object>) data);
 					break;
 				case BOOLEAN:
 					outState.putBoolean(fieldFullName, (Boolean) data);
@@ -551,13 +710,13 @@ public class AvroRecordModel extends DataSetObservable {
 					break;
 				case MAP:
 					storeMapToBundle(outState, fieldFullName,
-							fieldSchema.getValueType(), (Map<String, Object>) data);
+							fieldSchema.getValueType(), (UriMap<String, Object>) data);
 					break;
 				case NULL:
 					// No need to do anything.
 					break;
 				case RECORD:
-					storeRecordToBundle(outState, fieldFullName, (Record) data);
+					storeRecordToBundle(outState, fieldFullName, (UriRecord) data);
 					break;
 				case STRING:
 					outState.putString(fieldFullName, (String) data);
@@ -574,30 +733,26 @@ public class AvroRecordModel extends DataSetObservable {
 		private static void storeUnionToBundle(Bundle outState, String fieldFullName,
 				Schema schema, Object object) {
 			if (object != null) {
-				int offset = GenericData.get().resolveUnion(schema, object);
-				Schema dataType = schema.getTypes().get(offset);
-				outState.putString(NameHelper.getTypeName(fieldFullName), dataType.getType()
-						.toString());
-				switch (dataType.getType()) {
-				// TODO: Fixed are named types?
-				case RECORD:
-				case ENUM:
-					outState.putString(NameHelper.getTypeNameName(fieldFullName),
-							dataType.getFullName());
-					break;
-				default:
-					break;
-				}
-				storeDataToBundle(outState, fieldFullName, dataType, object);
+				UriUnion union = (UriUnion)object;
+
+				outState.putString(NameHelper.getTypeName(fieldFullName), union.getType().toString());
+				outState.putString(NameHelper.getTypeNameName(fieldFullName), union.getTypeName());
+				outState.putParcelable(NameHelper.getTypeUriName(fieldFullName), union.getUri());
+
+				storeDataToBundle(outState, fieldFullName, union.getValueSchema(), union.getValue());
+			} else {
+				outState.putString(NameHelper.getTypeName(fieldFullName), Type.NULL.toString());
+				outState.putString(NameHelper.getTypeNameName(fieldFullName), null);
+				outState.putParcelable(NameHelper.getTypeUriName(fieldFullName), null);
 			}
 		}
 
 		private static void storeMapToBundle(Bundle outState, String fieldFullName,
-				Schema valueSchema, Map<String, Object> map) {
+				Schema valueSchema, UriMap<String, Object> map) {
 			if (map != null) {
 				String keyName = NameHelper.getMapKeyName(fieldFullName);
 				String valueName = NameHelper.getMapValueName(fieldFullName);
-
+				outState.putParcelable(NameHelper.getTypeNameUri(fieldFullName), map.getUri());
 				outState.putInt(NameHelper.getCountName(fieldFullName), map.size());
 				int i = 0;
 				for (String key : map.keySet()) {
@@ -612,9 +767,10 @@ public class AvroRecordModel extends DataSetObservable {
 
 		@SuppressWarnings("unchecked")
 		private static void storeArrayToBundle(Bundle outState, String fieldFullName,
-				Schema elementSchema, Array<Object> array) {
+				Schema elementSchema, UriArray<Object> array) {
 			logger.debug("Storing to bundle: " + outState + " field: " + fieldFullName + " value: " + array);
 			if (array != null) {
+
 				switch (elementSchema.getType()) {
 				case ARRAY: {
 					// WTF? Why is array.size() returning a long while the array
@@ -625,7 +781,7 @@ public class AvroRecordModel extends DataSetObservable {
 					for (Object element : array) {
 						storeArrayToBundle(outState,
 								NameHelper.getIndexedFieldName(fieldFullName, i++), subSchema,
-								(Array<Object>) element);
+								(UriArray<Object>) element);
 					}
 					break;
 				}
@@ -704,7 +860,7 @@ public class AvroRecordModel extends DataSetObservable {
 					for (Object element : array) {
 						storeMapToBundle(outState,
 								NameHelper.getIndexedFieldName(fieldFullName, i++), subSchema,
-								(Map<String, Object>) element);
+								(UriMap<String, Object>) element);
 					}
 					break;
 				}
@@ -718,7 +874,7 @@ public class AvroRecordModel extends DataSetObservable {
 					for (Object element : array) {
 						storeRecordToBundle(outState,
 								NameHelper.getIndexedFieldName(fieldFullName, i++),
-								(Record) element);
+								(UriRecord) element);
 					}
 					break;
 				}
@@ -751,16 +907,16 @@ public class AvroRecordModel extends DataSetObservable {
 
 	private class URIHandler {
 
-		private Record loadRecordFromUri(Uri rootUri, Schema schema) {
+		private UriRecord loadRecordFromUri(Uri rootUri, Schema schema) {
 			logger.debug("Loading record from uri: " + rootUri + " : " + schema);
 
 			Cursor cursor = mResolver.query(rootUri, null, null, null, null);
-			Record data;
+			UriRecord data = new UriRecord(rootUri, schema);
 			try {
+				logger.debug("Cursor is: {} {}", cursor, cursor.getCount());
 				if (cursor != null && cursor.getCount() == 1) {
 					cursor.moveToFirst();
 
-					data = new GenericData.Record(schema);
 					for (Field field : schema.getFields()) {
 						String fieldName = field.name();
 						Object value = loadDataFromUri(rootUri, cursor, fieldName,
@@ -768,8 +924,6 @@ public class AvroRecordModel extends DataSetObservable {
 						logger.debug("Loaded: " + fieldName + " : " + value);
 						data.put(fieldName, value);
 					}
-				} else {
-					throw new RuntimeException("Unable to load: " + rootUri);
 				}
 			} finally {
 				if (cursor != null) {
@@ -831,6 +985,7 @@ public class AvroRecordModel extends DataSetObservable {
 				}
 				break;
 			case STRING:
+				logger.debug("Loading {} : columns: {}", fieldName, cursor.getColumnNames());
 				value = cursor.getString(cursor.getColumnIndex(fieldName));
 				logger.debug("Loaded value: " + value);
 				break;
@@ -850,19 +1005,23 @@ public class AvroRecordModel extends DataSetObservable {
 
 		private Object loadUnionFromUri(Uri rootUri, Cursor cursor,
 				String fieldName, Schema elementType) {
-			String value = cursor.getString(cursor.getColumnIndex(NameHelper.getTypeName(fieldName)));
+			UriUnion union = new UriUnion(rootUri, elementType);
+			byte[] value = cursor.getBlob(cursor.getColumnIndex(NameHelper.getTypeName(fieldName)));
 
 			if (value != null) {
 				String typeType = cursor.getString(cursor.getColumnIndex(
 						NameHelper.getTypeName(fieldName)));
 				String typeName = cursor.getString(cursor.getColumnIndex(
 						NameHelper.getTypeNameName(fieldName)));
+				union.setTypeName(typeName);
 				logger.debug("Type Type: " + typeType);
 				logger.debug("Type Name: " + typeName);
+
 				Type type = Type.NULL;
-				if (typeName != null) {
+				if (typeType != null) {
 					type = Type.valueOf(typeType);
 				}
+
 				Schema fieldType = null;
 				for (Schema unionType : elementType.getTypes()) {
 					logger.debug("Checking type: " + unionType);
@@ -885,19 +1044,19 @@ public class AvroRecordModel extends DataSetObservable {
 					throw new RuntimeException("Unable to find union inner type: "
 							+ typeName);
 				}
-				return loadDataFromUri(rootUri, cursor, fieldName, fieldType);
-			} else {
-				return null;
+				union.setType(fieldType.getType());
+				union.setValue(loadDataFromUri(rootUri, cursor, fieldName, fieldType), fieldType);
 			}
+			return union;
 		}
 
-		private Map<String, Object> loadMapFromUri(Uri uri, String fieldName, Schema elementType) {
+		private UriMap<String, Object> loadMapFromUri(Uri uri, String fieldName, Schema elementType) {
 			logger.debug("Loading map from uri: " + uri + " : " + fieldName + " : " + elementType);
 			Cursor cursor = mResolver.query(uri, null, null, null, null);
-			Map<String, Object> map;
+			UriMap<String, Object> map;
 			try {
 				if (cursor != null) {
-					map = new HashMap<String, Object>();
+					map = new UriMap<String, Object>(uri);
 					int keyIndex = cursor
 					.getColumnIndex(AvroContentProvider.KEY_COLUMN_NAME);
 					int valueIndex = cursor
@@ -946,13 +1105,13 @@ public class AvroRecordModel extends DataSetObservable {
 			return map;
 		}
 
-		private Array<Object> loadArrayFromUri(Uri uri, String fieldName, Schema elementType) {
+		private UriArray<Object> loadArrayFromUri(Uri uri, String fieldName, Schema elementType) {
 			logger.debug("Loading array from uri: " + uri + " : " + elementType);
 			Cursor cursor = mResolver.query(uri, null, null, null, null);
-			Array<Object> data;
+			UriArray<Object> data;
 			try {
 				if (cursor != null) {
-					data = new Array<Object>(cursor.getCount(), Schema.createArray(elementType));
+					data = new UriArray<Object>(cursor.getCount(), uri, Schema.createArray(elementType));
 					while (cursor.moveToNext()) {
 						data.add(loadDataFromUri(uri, cursor, fieldName, elementType));
 					}
@@ -969,14 +1128,14 @@ public class AvroRecordModel extends DataSetObservable {
 
 		/* =-=-=-= Store To URI =-=-=-= */
 
-		private void storeRecordToUri(Uri rootUri, Record record) {
-			logger.debug("Storing Record: " + record.getSchema().getName() + " to uri: " + rootUri);
+		private void storeRecordToUri(UriRecord record) {
+			logger.debug("Storing Record: " + record.getSchema().getName() + " to uri: " + record.getUri());
 			if (record != null) {
 				ContentValues values = new ContentValues();
 
 				for (Field field : record.getSchema().getFields()) {
 					String fieldName = field.name();
-					Uri dataUri = storeDataToUri(rootUri, values, field.name(), field.schema(),
+					Uri dataUri = storeDataToUri(record.getUri(), values, field.name(), field.schema(),
 							record.get(fieldName));
 					if (field.schema().getType() == Type.RECORD && dataUri != null) {
 						UriMatch match = EntityUriMatcher.getMatch(dataUri);
@@ -984,7 +1143,7 @@ public class AvroRecordModel extends DataSetObservable {
 					}
 				}
 
-				updateUriOrThrow(rootUri, values);
+				updateUriOrThrow(record.getUri(), values);
 			}
 		}
 
@@ -1021,7 +1180,7 @@ public class AvroRecordModel extends DataSetObservable {
 				Uri arrayUri = Uri.withAppendedPath(rootUri, fieldName);
 				storeArrayToUri(arrayUri,
 						fieldName, fieldSchema.getElementType(),
-						(Array<Object>) data);
+						(UriArray<Object>) data);
 				dataUri = arrayUri;
 				break;
 			case BOOLEAN:
@@ -1051,7 +1210,7 @@ public class AvroRecordModel extends DataSetObservable {
 			case MAP:
 				Uri mapUri = Uri.withAppendedPath(rootUri, fieldName);
 				storeMapToUri(mapUri, fieldName,
-						fieldSchema.getValueType(), (Map<String, Object>) data);
+						fieldSchema.getValueType(), (UriMap<String, Object>) data);
 				dataUri = mapUri;
 				break;
 			case NULL:
@@ -1060,7 +1219,7 @@ public class AvroRecordModel extends DataSetObservable {
 			case RECORD:
 				// What is the right URI for this record?
 				if (data != null) {
-					Record record = (Record)data;
+					UriRecord record = (UriRecord)data;
 					UriMatch match = EntityUriMatcher.getMatch(rootUri);
 
 					// Is there an existing record at this location.
@@ -1071,22 +1230,14 @@ public class AvroRecordModel extends DataSetObservable {
 					case LOCAL_BRANCH:
 						baseUri = Uri.withAppendedPath(EntityUriBuilder.branchUri(match.authority, match.repositoryName, match.reference),
 								GenericContentProvider.escapeName(match.repositoryName, record.getSchema().getNamespace(), record.getSchema().getName()));
-						recordUri = Uri.withAppendedPath(baseUri, match.entityIdentifier);
-						logger.debug("Record URI: {}", recordUri);
-						Cursor exists = null;
-						try {
-							exists = mResolver.query(recordUri, null, null, null, null);
-							if (null != exists && exists.getCount() == 0) {
-								exists.close();
-								exists = null;
-								recordUri = insertUri(baseUri, null);
-							}
-
-							storeRecordToUri(recordUri, record);
-							dataUri = recordUri;
-						} finally {
-							safeClose(exists);
+						if (match.entityIdentifier != null) {
+							recordUri = Uri.withAppendedPath(baseUri, match.entityIdentifier);
+						} else {
+							recordUri = insertUri(baseUri, new ContentValues());
+							record.setUri(recordUri);
 						}
+						storeRecordToUri(record);
+						dataUri = recordUri;
 						break;
 					default:
 						throw new RuntimeException("Can only store to local branches.");
@@ -1109,23 +1260,23 @@ public class AvroRecordModel extends DataSetObservable {
 
 		private void storeUnionToUri(Uri rootUri, ContentValues values,
 				String fieldName, Schema schema, Object object) {
-			int offset = GenericData.get().resolveUnion(schema, object);
-			Schema dataType = schema.getTypes().get(offset);
-			values.put(NameHelper.getTypeName(fieldName), dataType.getType().toString());
-			switch (dataType.getType()) {
-			// TODO: Fixed are named types?
-			case RECORD:
-			case ENUM:
-				values.put(NameHelper.getTypeNameName(fieldName), dataType.getFullName());
-				break;
-			default:
-				break;
+			// If the object is null we store it as NULL since NULL may
+			// not be part of the union type, but we don't always
+			// require that everything is valid yet at this point.
+			UriUnion union = null;
+			if (object != null) {
+				union = (UriUnion)object;
+				values.put(NameHelper.getTypeName(fieldName), union.getType().toString());
+				values.put(NameHelper.getTypeNameName(fieldName), union.getTypeName());
+			} else {
+				values.put(NameHelper.getTypeName(fieldName), Type.NULL.toString());
+				values.putNull(NameHelper.getTypeNameName(fieldName));
 			}
-			storeDataToUri(rootUri, values, fieldName, dataType, object);
+			storeDataToUri(rootUri, values, fieldName, union == null ? Schema.create(Type.NULL) : union.getValueSchema(), object);
 		}
 
 		private void storeMapToUri(Uri rootUri, String fieldFullName,
-				Schema valueSchema, Map<String, Object> map) {
+				Schema valueSchema, UriMap<String, Object> map) {
 
 			deleteMap(rootUri, fieldFullName, valueSchema);
 
@@ -1151,23 +1302,25 @@ public class AvroRecordModel extends DataSetObservable {
 
 
 		private void storeArrayToUri(Uri rootUri, String fieldFullName,
-				Schema elementSchema, Array<Object> array) {
+				Schema elementSchema, UriArray<Object> array) {
 
 			deleteArray(rootUri, fieldFullName, elementSchema);
 
 			ContentValues values = new ContentValues();
-			for (Object value : array) {
-				values.clear();
-				// First insert a null row
-				Uri idUri = insertUri(rootUri, values);
-				logger.debug("Got id uri for array row: " + idUri);
-				Uri dataUri = storeDataToUri(rootUri, values, fieldFullName,
-						elementSchema, value);
-				if (dataUri != null) {
-					UriMatch match = EntityUriMatcher.getMatch(dataUri);
-					values.put(fieldFullName, match.entityIdentifier);
+			if (array != null) {
+				for (Object value : array) {
+					values.clear();
+					// First insert a null row
+					Uri idUri = insertUri(rootUri, values);
+					logger.debug("Got id uri for array row: " + idUri);
+					Uri dataUri = storeDataToUri(rootUri, values, fieldFullName,
+							elementSchema, value);
+					if (dataUri != null) {
+						UriMatch match = EntityUriMatcher.getMatch(dataUri);
+						values.put(fieldFullName, match.entityIdentifier);
+					}
+					updateUriOrThrow(idUri, values);
 				}
-				updateUriOrThrow(idUri, values);
 			}
 		}
 
@@ -1341,7 +1494,7 @@ public class AvroRecordModel extends DataSetObservable {
 		}
 	}
 
-	public Record getCurrentModel() {
+	public UriRecord getCurrentModel() {
 		return mCurrentStateModel;
 	}
 
@@ -1353,4 +1506,11 @@ public class AvroRecordModel extends DataSetObservable {
 		mActivity.runOnUiThread(runnable);
 	}
 
+	public void onChanged() {
+		mDirty = true;
+	}
+
+	public void onInvalidated() {
+		mDirty = true;
+	}
 }

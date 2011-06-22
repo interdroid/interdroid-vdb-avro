@@ -9,11 +9,9 @@ import org.slf4j.LoggerFactory;
 
 import interdroid.vdb.R;
 import interdroid.vdb.avro.control.AvroController;
-import interdroid.vdb.avro.control.handler.RecordTypeSelectHandler;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.content.ComponentName;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -39,8 +37,6 @@ public class AvroBaseEditor extends Activity {
 	public static final int REQUEST_RECORD_SELECTION = 1;
 
 	private AvroController mController;
-
-	private RecordTypeSelectHandler mRecordTypeSelectHandler;
 
 	private AsyncTask<Object, Void, Void> mInit;
 
@@ -114,8 +110,6 @@ public class AvroBaseEditor extends Activity {
 				}
 			}
 
-			AvroController mController = (AvroController) params[0];
-
 			mController.loadData();
 			return null;
 		}
@@ -152,7 +146,8 @@ public class AvroBaseEditor extends Activity {
 				Schema schema = Schema.parse(schemaJson);
 				logger.debug("Building controller for: " + schema.getName() + " : " + defaultUri);
 
-				baseEditor.mController = new AvroController(baseEditor, schema.getName(), defaultUri, schema);
+				mController = new AvroController(baseEditor, schema.getName(), defaultUri, schema);
+				logger.debug("Controller built: {}", mController);
 			}
 
 			final Uri editUri = baseEditor.mController.setup(intent, (Bundle) params[1]);
@@ -185,6 +180,7 @@ public class AvroBaseEditor extends Activity {
 
 		logger.debug("onResume");
 
+		// Are we come backing from a for result task?
 		logger.debug("Loading Data");
 
 		new LoadTask().execute(mController);
@@ -253,22 +249,9 @@ public class AvroBaseEditor extends Activity {
 		enums.put(hashCode, schema);
 	}
 
-	@Override
-	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-		logger.debug("Result: " + requestCode + " : " + resultCode);
-		if (requestCode == REQUEST_RECORD_SELECTION) {
-			if (resultCode == RESULT_OK) {
-				mController.setResolver(getContentResolver());
-				mRecordTypeSelectHandler.setResult(data);
-			}
-		}
-	}
-
-	public void launchResultIntent(RecordTypeSelectHandler recordTypeSelectHandler, Intent editIntent, int action) {
-		mRecordTypeSelectHandler = recordTypeSelectHandler;
+	public void launchIntent(Intent editIntent) {
 		editIntent.addCategory(Intent.CATEGORY_DEFAULT);
-		editIntent.setComponent(new ComponentName(this, this.getClass()));
-		logger.debug("TYPE: " + getContentResolver().getType(editIntent.getData()));
-		startActivityForResult(editIntent, action);
+		editIntent.setClassName(this.getPackageName(), AvroBaseEditor.class.getName());
+		startActivity(editIntent);
 	}
 }

@@ -1,18 +1,22 @@
 package interdroid.vdb.avro.control.handler;
 
-import org.apache.avro.generic.GenericData.Record;
+import interdroid.vdb.avro.model.AvroRecordModel;
+import interdroid.vdb.avro.model.AvroRecordModel.UriRecord;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RecordValueHandler implements ValueHandler {
 	private static final Logger logger = LoggerFactory.getLogger(RecordValueHandler.class)
 	;
-	private final Record mRecord;
+	private final UriRecord mRecord;
 	private final String mFieldName;
+	private AvroRecordModel mDataModel;
 
-	public RecordValueHandler(Record record, String fieldName) {
+	public RecordValueHandler(AvroRecordModel model, UriRecord record, String fieldName) {
 		mFieldName = fieldName;
 		mRecord = record;
+		mDataModel = model;
 		logger.debug("Constructed for: " + mRecord + "[" + fieldName + "]");
 	}
 
@@ -24,6 +28,7 @@ public class RecordValueHandler implements ValueHandler {
 	@Override
 	public void setValue(Object value) {
 		mRecord.put(mFieldName, value);
+		mDataModel.onChanged();
 	}
 
 	public String toString() {

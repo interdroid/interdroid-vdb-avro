@@ -1,5 +1,6 @@
 package interdroid.vdb.avro.view;
 
+import interdroid.util.view.DraggableListView;
 import interdroid.vdb.R;
 import interdroid.vdb.avro.control.handler.ArrayHandler;
 import interdroid.vdb.avro.control.handler.ArrayValueHandler;
@@ -12,19 +13,25 @@ import interdroid.vdb.avro.control.handler.RecordValueHandler;
 import interdroid.vdb.avro.control.handler.UnionHandler;
 import interdroid.vdb.avro.control.handler.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
+import interdroid.vdb.avro.model.AvroRecordModel.UriArray;
+import interdroid.vdb.avro.model.AvroRecordModel.UriRecord;
+import interdroid.vdb.avro.model.AvroRecordModel.UriUnion;
+import interdroid.vdb.content.EntityUriBuilder;
+import interdroid.vdb.content.EntityUriMatcher;
+import interdroid.vdb.content.EntityUriMatcher.UriMatch;
+import interdroid.vdb.content.avro.AvroContentProvider;
 
 import java.text.BreakIterator;
 
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
-import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericData.Array;
-import org.apache.avro.generic.GenericData.Record;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Context;
+import android.net.Uri;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -35,8 +42,6 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.DatePicker;
 import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.AbsListView.LayoutParams;
 import android.widget.RadioButton;
 import android.widget.ScrollView;
@@ -48,7 +53,6 @@ public class AvroViewFactory {
 	private static final Logger logger = LoggerFactory.getLogger(AvroViewFactory.class);
 
 	private static final int LEFT_INDENT = 3;
-	private static final int DEFAULT_CAPACITY = 10;
 
 	private static LayoutInflater getLayoutInflater(Activity activity) {
 		return (LayoutInflater) activity.getApplicationContext()
@@ -60,25 +64,15 @@ public class AvroViewFactory {
 		ViewGroup viewGroup = (ViewGroup) getLayoutInflater(activity).inflate(
 				R.layout.avro_base_editor, null);
 		final ScrollView scroll = new ScrollView(activity);
+		scroll.setId(Integer.MAX_VALUE);
 		scroll.setLayoutParams(new ViewGroup.LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
 		scroll.addView(viewGroup);
 		activity.runOnUiThread(new Runnable() {public void run() {activity.setContentView(scroll);}});
 		buildRecordView(true, activity, dataModel, dataModel.getCurrentModel(), viewGroup);
 	}
 
-	public static View buildRecordView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, Record record, ViewGroup viewGroup) {
-		logger.debug("Building record view.");
-		//		LinearLayout layout = new LinearLayout(activity);
-		//		layout.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
-		//		layout.setGravity(Gravity.FILL_HORIZONTAL);
-		//		layout.setOrientation(LinearLayout.VERTICAL);
-		//		layout.setPadding(LEFT_INDENT, 0, 0, 0);
-
-		//		TextView label = new TextView(activity);
-		//		label.setText(toTitle(record.getSchema().getName()));
-		//		label.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-		//		label.setGravity(Gravity.LEFT);
-		//		layout.addView(label);
+	public static View buildRecordView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, UriRecord record, ViewGroup viewGroup) {
+		logger.debug("Building record view: {}", isRoot);
 
 		// Construct a view for each field
 		for (Field field : record.getSchema().getFields()) {
@@ -86,19 +80,18 @@ public class AvroViewFactory {
 			buildFieldView(isRoot, activity, dataModel, record, viewGroup, field);
 		}
 
-		//		if (viewGroup != null)
-		//			viewGroup.addView(layout);
-
 		return viewGroup;
 	}
 
-	private static View buildView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, ViewGroup viewGroup, Schema schema, ValueHandler valueHandler) {
+	private static View buildView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, final ViewGroup viewGroup, Schema schema, Uri uri, ValueHandler valueHandler) {
 		View view;
 		switch (schema.getType()) {
 		case ARRAY:
-			view = buildArrayList(activity, dataModel, viewGroup, schema.getElementType(), getArray(valueHandler, schema));
+			logger.debug("Building array view of: {} {}", schema.getName(), schema.getElementType());
+			view = buildArrayList(activity, dataModel, viewGroup, schema.getElementType(), getArray(uri, valueHandler, schema));
 			break;
 		case BOOLEAN:
+			logger.debug("Building checkbox {}", schema.getName());
 			view = buildCheckbox(activity, viewGroup, new CheckboxHandler(dataModel, valueHandler));
 			break;
 		case BYTES:
@@ -106,6 +99,7 @@ public class AvroViewFactory {
 			view = null;
 			break;
 		case ENUM:
+			logger.debug("Building enum {}", schema.getName());
 			view = buildEnum(activity, dataModel, viewGroup, schema, valueHandler);
 			break;
 		case FIXED:
@@ -115,6 +109,8 @@ public class AvroViewFactory {
 		case DOUBLE:
 		case FLOAT:
 		{
+			logger.debug("Building float/double {}", schema.getName());
+
 			view = buildEditText(activity, viewGroup, schema,
 					InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED,
 					new EditTextHandler(dataModel, schema.getType(), valueHandler)
@@ -124,6 +120,8 @@ public class AvroViewFactory {
 		case INT:
 		case LONG:
 		{
+			logger.debug("Building int/long: {}", schema.getName());
+
 			if (schema.getProp("ui.widget") != null) {
 				logger.debug("Building custom ui widget for long/int");
 				if (schema.getProp("ui.widget").equals("date")) {
@@ -146,34 +144,40 @@ public class AvroViewFactory {
 			break;
 		case NULL:
 		{
+			logger.debug("Building null view: {}", schema.getName());
 			view = buildTextView(activity, viewGroup, R.string.null_text);
 			break;
 		}
 		case RECORD:
+			logger.debug("Building record view: {} {}", schema.getName(), isRoot);
+			// TODO: Where the hell do we get this uri from?
 			if (isRoot) {
-				view = buildRecordView(false, activity, dataModel, getRecord(valueHandler, schema), viewGroup);
+				view = buildRecordView(false, activity, dataModel, getRecord(activity, valueHandler, uri, schema), viewGroup);
 			} else {
-				Button button = new Button(activity);
-				Record record = (Record) valueHandler.getValue();
+				final Button button = new Button(activity);
+				UriRecord record = (UriRecord) valueHandler.getValue();
 				if (record == null) {
-					button.setText("Create: " + schema.getName());
+					button.setText(activity.getString(R.string.label_create) + " " + schema.getName());
 				} else {
-					button.setText("Edit: " + schema.getName());
+					button.setText(activity.getString(R.string.label_edit) + " " + schema.getName());
 				}
 				button.setOnClickListener(getRecordTypeSelectorHandler(activity, dataModel, schema, valueHandler, viewGroup, button));
-
+				addView(activity, viewGroup, button);
 				view = button;
 			}
 			break;
 		case STRING:
 		{
+			logger.debug("Building string view: {}", schema.getName());
 			view = buildEditText(activity, viewGroup, schema, InputType.TYPE_CLASS_TEXT,
 					new EditTextHandler(dataModel, schema.getType(), valueHandler));
 			break;
 		}
 		case UNION:
 		{
-			view = buildUnion(activity, dataModel, viewGroup, schema, new UnionHandler(dataModel, valueHandler));
+			logger.debug("Building union view: {}", schema.getName());
+			view = buildUnion(activity, dataModel, viewGroup, schema, uri, new UnionHandler(dataModel, valueHandler,
+					(UriUnion)valueHandler.getValue()));
 			break;
 		}
 		default:
@@ -193,7 +197,9 @@ public class AvroViewFactory {
 	}
 
 	private static void addView(Activity activity, final ViewGroup viewGroup, final View view) {
-		activity.runOnUiThread(new Runnable() {public void run(){viewGroup.addView(view);}});
+		if (viewGroup != null) {
+			activity.runOnUiThread(new Runnable() {public void run(){viewGroup.addView(view);}});
+		}
 	}
 
 	private static View buildDateView(AvroBaseEditor activity,
@@ -211,20 +217,23 @@ public class AvroViewFactory {
 		return new RecordTypeSelectHandler(activity, dataModel, schema, valueHandler, button);
 	}
 
-	private static Record getRecord(ValueHandler valueHandler, Schema schema) {
-		Record subRecord = (Record) valueHandler.getValue();
+	private static UriRecord getRecord(Activity activity, ValueHandler valueHandler, Uri uri, Schema schema) {
+		UriRecord subRecord = (UriRecord) valueHandler.getValue();
 		if (subRecord == null) {
-			subRecord = new GenericData.Record(schema);
+			UriMatch match = EntityUriMatcher.getMatch(uri);
+			uri = Uri.withAppendedPath(EntityUriBuilder.branchUri(match.authority, match.repositoryName, match.reference), schema.getName());
+			uri = activity.getContentResolver().insert(uri, new ContentValues());
+			subRecord = new UriRecord(uri, schema);
 			valueHandler.setValue(subRecord);
 		}
 		return subRecord;
 	}
 
-	private static Array<Object> getArray(ValueHandler valueHandler, Schema schema) {
+	private static UriArray<Object> getArray(Uri uri, ValueHandler valueHandler, Schema schema) {
 		@SuppressWarnings("unchecked")
-		Array<Object> array = (Array<Object>)valueHandler.getValue();
+		UriArray<Object> array = (UriArray<Object>)valueHandler.getValue();
 		if (array == null) {
-			array = new Array<Object>(DEFAULT_CAPACITY, schema);
+			array = new UriArray<Object>(Uri.withAppendedPath(uri, AvroContentProvider.ARRAY_TABLE_INFIX + schema.getName()), schema);
 			valueHandler.setValue(array);
 		}
 		return array;
@@ -238,7 +247,7 @@ public class AvroViewFactory {
 		return selectedText;
 	}
 
-	private static View buildFieldView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, Record record, ViewGroup viewGroup, Field field) {
+	private static View buildFieldView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, UriRecord record, ViewGroup viewGroup, Field field) {
 		//		LinearLayout layout = new LinearLayout(activity);
 		//		layout.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
 		//		layout.setOrientation(LinearLayout.VERTICAL);
@@ -253,7 +262,7 @@ public class AvroViewFactory {
 			addView(activity, viewGroup, label);
 		}
 
-		buildView(isRoot, activity, dataModel, viewGroup, field.schema(), new RecordValueHandler(record, field.name()));
+		buildView(isRoot, activity, dataModel, viewGroup, field.schema(), record.getUri(), new RecordValueHandler(dataModel, record, field.name()));
 
 		//		if (viewGroup != null)
 		//			viewGroup.addView(layout);
@@ -261,11 +270,13 @@ public class AvroViewFactory {
 		return viewGroup;
 	}
 
-	public static View buildArrayView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, Array<Object> array, Schema elementSchema, int offset, ViewGroup viewGroup) {
-		return buildView(isRoot, activity, dataModel, viewGroup, elementSchema, new ArrayValueHandler(array, offset));
+	public static View buildArrayView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, UriArray<Object> array, Schema elementSchema, Uri uri, int offset) {
+		View layout = LayoutInflater.from(activity).inflate(R.layout.avro_array_item, null);
+		buildView(isRoot, activity, dataModel, (ViewGroup)layout.findViewById(R.id.array_layout), elementSchema, uri, new ArrayValueHandler(dataModel, array, offset));
+		return layout;
 	}
 
-	private static View buildUnion(AvroBaseEditor activity, AvroRecordModel dataModel, ViewGroup viewGroup, Schema schema,
+	private static View buildUnion(AvroBaseEditor activity, AvroRecordModel dataModel, ViewGroup viewGroup, Schema schema, Uri uri,
 			UnionHandler handler) {
 		TableLayout table = new TableLayout(activity);
 		for (Schema innerType : schema.getTypes()) {
@@ -276,8 +287,8 @@ public class AvroViewFactory {
 
 			row.addView(radioButton);
 
-			handler.addType(radioButton, innerType);
-			buildView(false, activity, dataModel, row, innerType, handler.getHandler(radioButton));
+			handler.addType(radioButton, innerType,
+					buildView(false, activity, dataModel, row, innerType, uri, handler.getHandler(radioButton)));
 
 			table.addView(row);
 		}
@@ -285,23 +296,16 @@ public class AvroViewFactory {
 		return table;
 	}
 
-	private static View buildArrayList(AvroBaseEditor activity, AvroRecordModel dataModel, ViewGroup viewGroup, Schema schema, Array<Object> array) {
-		LinearLayout layout = new LinearLayout(activity);
+	private static View buildArrayList(AvroBaseEditor activity, AvroRecordModel dataModel, ViewGroup viewGroup, Schema schema, UriArray<Object> array) {
+		DraggableListView layout = new DraggableListView(activity);
 		layout.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
-		layout.setOrientation(LinearLayout.VERTICAL);
 		layout.setPadding(LEFT_INDENT, 0, 0, 0);
 
 		ArrayHandler adapter = new ArrayHandler(activity, dataModel, layout, array, schema);
-
-		ImageButton addButton = new ImageButton(activity);
-		addButton.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-		addButton.setOnClickListener(adapter);
-		addButton.setImageResource(android.R.drawable.ic_menu_add);
-		addButton.setTag("add");
-		layout.addView(addButton);
+		layout.setAdapter(adapter);
+		layout.setAddListener(adapter);
 
 		addView(activity, viewGroup, layout);
-
 
 		return layout;
 	}
