@@ -41,7 +41,7 @@ public class AvroBaseEditor extends Activity {
 	private AsyncTask<Object, Void, Void> mInit;
 
 	public AvroBaseEditor() {
-		logger.debug("Constructed AvroBaseEditor: " + this + ":" + mController);
+		logger.debug("Constructed AvroBaseEditor: " + this);
 	}
 
 	protected AvroBaseEditor(Schema schema) {
@@ -76,8 +76,7 @@ public class AvroBaseEditor extends Activity {
 				AvroBaseEditor.this.mInit.get();
 				logger.debug("Controller built.");
 			} catch (Exception e) {
-				// Ignored
-			}
+				logger.warn("Ignoring controller exception: {}", e);			}
 
 			d = ProgressDialog.show(AvroBaseEditor.this, "Loading..", "Loading...", true, false);
 		}

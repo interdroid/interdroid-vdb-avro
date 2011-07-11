@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="match_parent" android:id="@+id/relativeLayout1"
+	android:layout_width="fill_parent" android:id="@+id/relativeLayout1"
 	android:layout_height="wrap_content" android:gravity="right">
 	<ImageView android:paddingTop="7sp" android:src="@drawable/drag_handle"
 		android:layout_width="wrap_content" android:id="@+id/drag_handle"
 		android:layout_gravity="top|left" android:layout_height="wrap_content" />
 	<LinearLayout android:paddingLeft="64sp" android:paddingRight="40sp" android:orientation="vertical"
 		android:id="@+id/array_layout" android:layout_gravity="center_vertical|left"
-		android:layout_width="match_parent" android:layout_height="wrap_content" />
+		android:layout_width="fill_parent" android:layout_height="wrap_content" />
 	<ImageView android:paddingTop="7sp" android:src="@drawable/remove_button" android:paddingRight="5sp"
 		android:layout_gravity="top|right" android:id="@+id/remove_button"
 		android:layout_width="wrap_content" android:layout_height="wrap_content" />

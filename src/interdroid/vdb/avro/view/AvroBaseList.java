@@ -102,7 +102,7 @@ public class AvroBaseList extends ListActivity {
 		// Since this is synthetic we add it here.
 		listFields.add("_id");
 		for (Field field : fields) {
-			if (field.getProp("ui.list") == null || !field.getProp("ui.list").equals(Boolean.FALSE)) {
+			if (field.getProp("ui.list") == null || !Boolean.getBoolean(field.getProp("ui.list")) == Boolean.FALSE) {
 				switch (field.schema().getType()) {
 				// TODO: Should build projection which can handle more things.
 				case STRING:

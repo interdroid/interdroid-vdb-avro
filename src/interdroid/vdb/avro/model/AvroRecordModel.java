@@ -228,6 +228,7 @@ public class AvroRecordModel extends DataSetObserver {
 		public void setUri(Uri uri) {
 			mUri = uri;
 		}
+
 	};
 
 	/**
@@ -641,8 +642,8 @@ public class AvroRecordModel extends DataSetObserver {
 					case ENUM:
 						if (unionType.getFullName().equals(typeName)) {
 							fieldType = unionType;
-							break;
 						}
+						break;
 					default:
 						fieldType = unionType;
 						break;
@@ -913,7 +914,7 @@ public class AvroRecordModel extends DataSetObserver {
 			Cursor cursor = mResolver.query(rootUri, null, null, null, null);
 			UriRecord data = new UriRecord(rootUri, schema);
 			try {
-				logger.debug("Cursor is: {} {}", cursor, cursor.getCount());
+				logger.debug("Cursor is: {}", cursor);
 				if (cursor != null && cursor.getCount() == 1) {
 					cursor.moveToFirst();
 
@@ -1032,8 +1033,8 @@ public class AvroRecordModel extends DataSetObserver {
 						case ENUM:
 							if (unionType.getFullName().equals(typeName)) {
 								fieldType = unionType;
-								break;
 							}
+							break;
 						default:
 							fieldType = unionType;
 							break;
