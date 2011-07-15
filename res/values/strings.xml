@@ -39,6 +39,8 @@
 	<string name="label_type">Type:</string>
 	<string name="label_create">Create:</string>
 	<string name="label_edit">Edit:</string>
+	<string name="label_loading">Loading...</string>
+	<string name="label_wait">Thanks For Waiting...</string>
 
 	<string name="none">- none -</string>
 	<string name="create_copy">Create copy</string>

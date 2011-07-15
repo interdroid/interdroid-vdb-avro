@@ -24,6 +24,7 @@ import org.apache.avro.Schema.Field;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import interdroid.util.view.AsyncTaskWithProgressDialog;
 import interdroid.vdb.Actions;
 import interdroid.vdb.avro.R;
 import interdroid.vdb.content.EntityUriMatcher;
@@ -176,15 +177,10 @@ public class AvroBaseList extends ListActivity {
 		new InitTask().execute(getIntent());
 	}
 
-	private class InitTask extends AsyncTask<Object, Void, Void> {
-		private ProgressDialog d;
+	private class InitTask extends AsyncTaskWithProgressDialog<Object, Void, Void> {
 
-		protected void onPreExecute() {
-			d = ProgressDialog.show(AvroBaseList.this, "Loading..", "Loading...", true, false);
-		}
-
-		protected void onPostExecute(Void v) {
-			d.dismiss();
+		public InitTask() {
+			super(AvroBaseList.this, getString(R.string.label_loading), getString(R.string.label_wait));
 		}
 
 		@Override

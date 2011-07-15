@@ -25,16 +25,27 @@
 			<arguments>
 			</arguments>
 		</buildCommand>
+		<buildCommand>
+			<name>net.sf.eclipsecs.core.CheckstyleBuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
 	</buildSpec>
 	<natures>
 		<nature>com.android.ide.eclipse.adt.AndroidNature</nature>
 		<nature>org.eclipse.jdt.core.javanature</nature>
+		<nature>net.sf.eclipsecs.core.CheckstyleNature</nature>
 	</natures>
 	<linkedResources>
 		<link>
 			<name>interdroid-util_src</name>
 			<type>2</type>
 			<locationURI>_android_interdroid_util_3028128f/src</locationURI>
+		</link>
+		<link>
+			<name>org.eclipse.jgit_resources</name>
+			<type>2</type>
+			<locationURI>_android_org_eclipse_jgit_ef541d39/resources</locationURI>
 		</link>
 		<link>
 			<name>org.eclipse.jgit_src</name>

@@ -20,5 +20,6 @@
 	<classpathentry kind="src" path="org.eclipse.jgit_src"/>
 	<classpathentry kind="lib" path="/vdb/external/ibis-util-2.2.jar"/>
 	<classpathentry kind="lib" path="/vdb/external/jsch-0.1.44-1.jar"/>
+	<classpathentry kind="src" path="org.eclipse.jgit_resources"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

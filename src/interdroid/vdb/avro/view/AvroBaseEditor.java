@@ -7,6 +7,7 @@ import org.apache.avro.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import interdroid.util.view.AsyncTaskWithProgressDialog;
 import interdroid.vdb.R;
 import interdroid.vdb.avro.control.AvroController;
 
@@ -64,11 +65,45 @@ public class AvroBaseEditor extends Activity {
 
 		logger.debug("onCreate: " + this);
 
-		mInit = new InitTask().execute(this, savedInstanceState);
+		setupController(savedInstanceState);
 	}
 
-	private class LoadTask extends AsyncTask<Object, Void, Void> {
-		private ProgressDialog d;
+	private void setupController(Bundle savedState) {
+		final Intent intent = getIntent();
+
+		// If we don't have a controller, then create one...
+		if (mController == null) {
+			Uri defaultUri = intent.getData();
+			if (defaultUri == null) {
+				throw new IllegalArgumentException("A Uri is required.");
+			}
+			String schemaJson = intent.getStringExtra(SCHEMA);
+			if (schemaJson == null) {
+				throw new IllegalArgumentException("A Schema is required.");
+			}
+			Schema schema = Schema.parse(schemaJson);
+			logger.debug("Building controller for: " + schema.getName() + " : " + defaultUri);
+
+			mController = new AvroController(this, schema.getName(), defaultUri, schema);
+			logger.debug("Controller built: {}", mController);
+		}
+
+		final Uri editUri = mController.setup(intent, savedState);
+
+		if (editUri == null) {
+			logger.debug("No edit URI built.");
+			finish();
+		} else {
+			// Everything was setup properly so assume the result will work.
+			setResult(RESULT_OK, (new Intent()).setAction(editUri.toString()));
+		}
+	}
+
+	private class LoadTask extends AsyncTaskWithProgressDialog<Object, Void, Void> {
+
+		public LoadTask() {
+			super(AvroBaseEditor.this, getString(R.string.label_loading), getString(R.string.label_wait));
+		}
 
 		protected void onPreExecute() {
 			try {
@@ -77,8 +112,7 @@ public class AvroBaseEditor extends Activity {
 				logger.debug("Controller built.");
 			} catch (Exception e) {
 				logger.warn("Ignoring controller exception: {}", e);			}
-
-			d = ProgressDialog.show(AvroBaseEditor.this, "Loading..", "Loading...", true, false);
+			super.onPreExecute();
 		}
 
 		protected void onPostExecute(Void v) {
@@ -90,7 +124,7 @@ public class AvroBaseEditor extends Activity {
 				AvroBaseEditor.this.setTitle(getText(R.string.title_create) + " " + mController.getTypeName());
 			}
 
-			d.dismiss();
+			super.onPostExecute(v);
 		}
 
 		@Override
@@ -110,55 +144,6 @@ public class AvroBaseEditor extends Activity {
 			}
 
 			mController.loadData();
-			return null;
-		}
-
-	}
-
-	private class InitTask extends AsyncTask<Object, Void, Void> {
-		private ProgressDialog d;
-
-		protected void onPreExecute() {
-			d = ProgressDialog.show(AvroBaseEditor.this, "Loading..", "Building User Interface...", true, false);
-		}
-
-		protected void onPostExecute(Void v) {
-			d.dismiss();
-		}
-
-		@Override
-		protected Void doInBackground(Object... params) {
-
-			final Intent intent = getIntent();
-			final AvroBaseEditor baseEditor = ((AvroBaseEditor)params[0]);
-
-			// If we don't have a controller, then create one...
-			if (mController == null) {
-				Uri defaultUri = intent.getData();
-				if (defaultUri == null) {
-					throw new IllegalArgumentException("A Uri is required.");
-				}
-				String schemaJson = intent.getStringExtra(SCHEMA);
-				if (schemaJson == null) {
-					throw new IllegalArgumentException("A Schema is required.");
-				}
-				Schema schema = Schema.parse(schemaJson);
-				logger.debug("Building controller for: " + schema.getName() + " : " + defaultUri);
-
-				mController = new AvroController(baseEditor, schema.getName(), defaultUri, schema);
-				logger.debug("Controller built: {}", mController);
-			}
-
-			final Uri editUri = baseEditor.mController.setup(intent, (Bundle) params[1]);
-
-			if (editUri == null) {
-				logger.debug("No edit URI built.");
-				baseEditor.finish();
-			} else {
-				// Everything was setup properly so assume the result will work.
-				setResult(RESULT_OK, (new Intent()).setAction(editUri.toString()));
-			}
-
 			return null;
 		}
 
