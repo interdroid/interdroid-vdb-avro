@@ -1,7 +1,7 @@
 package interdroid.vdb.avro.control.handler;
 
 import interdroid.vdb.avro.model.AvroRecordModel;
-import interdroid.vdb.avro.model.AvroRecordModel.UriRecord;
+import interdroid.vdb.avro.model.UriRecord;
 import interdroid.vdb.avro.view.AvroBaseEditor;
 import interdroid.vdb.content.EntityUriBuilder;
 import interdroid.vdb.avro.AvroSchema;
@@ -19,40 +19,40 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 
 public class RecordTypeSelectHandler implements OnClickListener {
-	private static final Logger logger = LoggerFactory.getLogger(RecordTypeSelectHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(RecordTypeSelectHandler.class);
 
-	private final AvroBaseEditor mActivity;
-	private final Schema mSchema;
-	private final ValueHandler mValueHandler;
-	private final AvroRecordModel mDataModel;
-	private final Button mButton;
+    private final AvroBaseEditor mActivity;
+    private final Schema mSchema;
+    private final ValueHandler mValueHandler;
+    private final AvroRecordModel mDataModel;
+    private final Button mButton;
 
-	public RecordTypeSelectHandler(AvroBaseEditor activity,
-			AvroRecordModel dataModel, Schema schema, ValueHandler handler,
-			Button button) {
-		mActivity = activity;
-		mSchema = schema;
-		mValueHandler = handler;
-		mDataModel = dataModel;
-		mButton = button;
-	}
+    public RecordTypeSelectHandler(AvroBaseEditor activity,
+            AvroRecordModel dataModel, Schema schema, ValueHandler handler,
+            Button button) {
+        mActivity = activity;
+        mSchema = schema;
+        mValueHandler = handler;
+        mDataModel = dataModel;
+        mButton = button;
+    }
 
-	@Override
-	public void onClick(View v) {
-		Uri uri;
-		if (mValueHandler.getValue() == null) {
-			// Do an insert so we can stash away the URI for the record
-			uri = Uri.withAppendedPath(EntityUriBuilder.branchUri(mSchema.getNamespace(),
-						AvroSchema.NAMESPACE, "master"), mSchema.getName());
-			uri = mActivity.getContentResolver().insert(uri, new ContentValues());
-			mValueHandler.setValue(new AvroRecordModel.UriRecord(uri, mSchema));
-		} else {
-			uri = ((UriRecord) mValueHandler.getValue()).getUri();
-		}
-		logger.debug("Launching edit on URI: {} type: {}", uri, mActivity.getContentResolver().getType(uri));
-		Intent editIntent = new Intent(Intent.ACTION_EDIT, uri);
-		editIntent.putExtra(AvroBaseEditor.SCHEMA, mSchema.toString());
-		mActivity.launchIntent(editIntent);
-	}
+    @Override
+    public void onClick(View v) {
+        Uri uri;
+        if (mValueHandler.getValue() == null) {
+            // Do an insert so we can stash away the URI for the record
+            uri = Uri.withAppendedPath(EntityUriBuilder.branchUri(mSchema.getNamespace(),
+                        AvroSchema.NAMESPACE, "master"), mSchema.getName());
+            uri = mActivity.getContentResolver().insert(uri, new ContentValues());
+            mValueHandler.setValue(new UriRecord(uri, mSchema));
+        } else {
+            uri = ((UriRecord) mValueHandler.getValue()).getInstanceUri();
+        }
+        logger.debug("Launching edit on URI: {} type: {}", uri, mActivity.getContentResolver().getType(uri));
+        Intent editIntent = new Intent(Intent.ACTION_EDIT, uri);
+        editIntent.putExtra(AvroBaseEditor.SCHEMA, mSchema.toString());
+        mActivity.launchIntent(editIntent);
+    }
 
 }
