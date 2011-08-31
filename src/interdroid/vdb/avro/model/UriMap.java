@@ -37,7 +37,7 @@ public class UriMap<K, V> extends HashMap<K, V> implements UriBound<UriMap<K, V>
 
         @SuppressWarnings("unchecked")
         @Override
-        public UriMap<K, V> loadImpl(Bundle saved, String fieldFullName) {
+        public UriMap<K, V> loadImpl(Bundle saved, String fieldFullName) throws NotBoundException {
             String keyName = NameHelper.getMapKeyName(fieldFullName);
             String valueName = NameHelper.getMapValueName(fieldFullName);
 
@@ -51,7 +51,7 @@ public class UriMap<K, V> extends HashMap<K, V> implements UriBound<UriMap<K, V>
         }
 
         @Override
-        public void saveImpl(Bundle outState, String fieldFullName) {
+        public void saveImpl(Bundle outState, String fieldFullName) throws NotBoundException {
             String keyName = NameHelper.getMapKeyName(fieldFullName);
             String valueName = NameHelper.getMapValueName(fieldFullName);
             outState.putParcelable(NameHelper.getTypeNameUri(fieldFullName), getInstanceUri());
@@ -67,16 +67,22 @@ public class UriMap<K, V> extends HashMap<K, V> implements UriBound<UriMap<K, V>
         }
 
         @Override
-        public void deleteImpl(ContentResolver resolver)
+        public void deleteImpl(ContentResolver resolver) throws NotBoundException {
+            deleteImpl(resolver, true);
+        }
+
+        private void deleteImpl(ContentResolver resolver, boolean recursion)
                 throws NotBoundException {
             logger.debug("Deleting Map: " + getInstanceUri());
-            if (UriBoundAdapter.isBoundType(getSchema().getValueType().getType())) {
-                for (Object element : UriMap.this.values()) {
-                    ((UriBound<?>) element).delete(resolver);
-                }
-            } else if(getSchema().getValueType().getType() == Type.UNION) {
-                for (Object element : UriMap.this.values()) {
-                    ((UriUnion) element).delete(resolver);
+            if (recursion) {
+                if (UriBoundAdapter.isBoundType(getSchema().getValueType().getType())) {
+                    for (Object element : UriMap.this.values()) {
+                        ((UriBound<?>) element).delete(resolver);
+                    }
+                } else if(getSchema().getValueType().getType() == Type.UNION) {
+                    for (Object element : UriMap.this.values()) {
+                        ((UriUnion) element).delete(resolver);
+                    }
                 }
             }
             resolver.delete(getInstanceUri(), null, null);
@@ -86,7 +92,7 @@ public class UriMap<K, V> extends HashMap<K, V> implements UriBound<UriMap<K, V>
         public void saveImpl(ContentResolver resolver, String fieldName)
                 throws NotBoundException {
 
-            delete(resolver);
+            deleteImpl(resolver, false);
 
             ContentValues values = new ContentValues();
 
@@ -170,12 +176,12 @@ public class UriMap<K, V> extends HashMap<K, V> implements UriBound<UriMap<K, V>
     }
 
     @Override
-    public Uri getInstanceUri() {
+    public Uri getInstanceUri() throws NotBoundException {
         return mUriBinder.getInstanceUri();
     }
 
     @Override
-    public void save(Bundle outState, String fieldName) {
+    public void save(Bundle outState, String fieldName) throws NotBoundException {
         mUriBinder.save(outState, fieldName);
     }
 
@@ -186,7 +192,7 @@ public class UriMap<K, V> extends HashMap<K, V> implements UriBound<UriMap<K, V>
     }
 
     @Override
-    public UriMap<K, V> load(final Bundle b, final String prefix) {
+    public UriMap<K, V> load(final Bundle b, final String prefix) throws NotBoundException {
         return mUriBinder.load(b, prefix);
     }
 

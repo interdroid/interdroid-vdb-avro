@@ -104,7 +104,7 @@ public class UriRecord extends GenericData.Record implements UriBound<UriRecord>
         }
 
         @Override
-        public void saveImpl(Bundle outState, String prefix) {
+        public void saveImpl(Bundle outState, String prefix) throws NotBoundException {
             logger.debug("Saving record to bundle: {} : {}", prefix, getSchema().getFullName());
             String dataFullName = NameHelper.getPrefixName(prefix, getSchema()
                     .getFullName());
@@ -122,7 +122,7 @@ public class UriRecord extends GenericData.Record implements UriBound<UriRecord>
         }
 
         @Override
-        public UriRecord loadImpl(Bundle saved, String prefix) {
+        public UriRecord loadImpl(Bundle saved, String prefix) throws NotBoundException {
             logger.debug(
                     "Loading data from bundle: {} : {}",
                     prefix, getSchema().getFullName());
@@ -153,7 +153,7 @@ public class UriRecord extends GenericData.Record implements UriBound<UriRecord>
     }
 
     @Override
-    public Uri getInstanceUri() {
+    public Uri getInstanceUri() throws NotBoundException {
         return mUriBinder.getInstanceUri();
     }
 
@@ -176,12 +176,12 @@ public class UriRecord extends GenericData.Record implements UriBound<UriRecord>
     }
 
     @Override
-    public void save(Bundle outState, String prefix) {
+    public void save(Bundle outState, String prefix) throws NotBoundException {
         mUriBinder.save(outState, prefix);
     }
 
     @Override
-    public UriRecord load(Bundle b, String prefix) {
+    public UriRecord load(Bundle b, String prefix) throws NotBoundException {
         return mUriBinder.load(b, prefix);
     }
 
@@ -190,7 +190,7 @@ public class UriRecord extends GenericData.Record implements UriBound<UriRecord>
         mUriBinder.delete(resolver);
     }
 
-    public UriRecord load(Bundle savedInstanceState) {
+    public UriRecord load(Bundle savedInstanceState) throws NotBoundException {
         return mUriBinder.load(savedInstanceState, null);
     }
 
@@ -202,7 +202,7 @@ public class UriRecord extends GenericData.Record implements UriBound<UriRecord>
         return mUriBinder.load(resolver, null);
     }
 
-    public void save(Bundle outState) {
+    public void save(Bundle outState) throws NotBoundException {
         mUriBinder.save(outState, null);
     }
 

@@ -13,14 +13,13 @@ import interdroid.vdb.avro.control.handler.RecordValueHandler;
 import interdroid.vdb.avro.control.handler.UnionHandler;
 import interdroid.vdb.avro.control.handler.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
+import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriRecord;
 import interdroid.vdb.avro.model.UriArray;
-import interdroid.vdb.avro.model.UriMap;
 import interdroid.vdb.avro.model.UriUnion;
 import interdroid.vdb.content.EntityUriBuilder;
 import interdroid.vdb.content.EntityUriMatcher;
 import interdroid.vdb.content.EntityUriMatcher.UriMatch;
-import interdroid.vdb.content.avro.AvroContentProvider;
 
 import java.text.BreakIterator;
 
@@ -60,7 +59,7 @@ public class AvroViewFactory {
         .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
 
-    public static void buildRootView(final AvroBaseEditor activity, AvroRecordModel dataModel) {
+    public static void buildRootView(final AvroBaseEditor activity, AvroRecordModel dataModel) throws NotBoundException {
         logger.debug("Constructing root view: " + dataModel.schema());
         ViewGroup viewGroup = (ViewGroup) getLayoutInflater(activity).inflate(
                 R.layout.avro_base_editor, null);
@@ -72,7 +71,7 @@ public class AvroViewFactory {
         buildRecordView(true, activity, dataModel, dataModel.getCurrentModel(), viewGroup);
     }
 
-    public static View buildRecordView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, UriRecord record, ViewGroup viewGroup) {
+    public static View buildRecordView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, UriRecord record, ViewGroup viewGroup) throws NotBoundException {
         logger.debug("Building record view: {}", isRoot);
 
         // Construct a view for each field
@@ -84,7 +83,7 @@ public class AvroViewFactory {
         return viewGroup;
     }
 
-    private static View buildView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, final ViewGroup viewGroup, Schema schema, Uri uri, ValueHandler valueHandler) {
+    private static View buildView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, final ViewGroup viewGroup, Schema schema, Uri uri, ValueHandler valueHandler) throws NotBoundException {
         View view;
         switch (schema.getType()) {
         case ARRAY:
@@ -178,7 +177,7 @@ public class AvroViewFactory {
         {
             logger.debug("Building union view: {}", schema.getName());
             view = buildUnion(activity, dataModel, viewGroup, schema, uri, new UnionHandler(dataModel, valueHandler,
-                    (UriUnion)valueHandler.getValue()));
+                    getUnion(uri, valueHandler, schema)));
             break;
         }
         default:
@@ -240,6 +239,14 @@ public class AvroViewFactory {
         return array;
     }
 
+    private static UriUnion getUnion(Uri uri, ValueHandler valueHandler, Schema schema) {
+        UriUnion value = (UriUnion)valueHandler.getValue();
+        if (value == null) {
+            value = new UriUnion(schema);
+        }
+        return value;
+    }
+
     private static View buildEnum(AvroBaseEditor activity, AvroRecordModel dataModel,
             ViewGroup viewGroup, Schema schema, ValueHandler valueHandler) {
         Button selectedText = new Button(activity);
@@ -248,7 +255,7 @@ public class AvroViewFactory {
         return selectedText;
     }
 
-    private static View buildFieldView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, UriRecord record, ViewGroup viewGroup, Field field) {
+    private static View buildFieldView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, UriRecord record, ViewGroup viewGroup, Field field) throws NotBoundException {
         //		LinearLayout layout = new LinearLayout(activity);
         //		layout.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
         //		layout.setOrientation(LinearLayout.VERTICAL);
@@ -271,14 +278,14 @@ public class AvroViewFactory {
         return viewGroup;
     }
 
-    public static View buildArrayView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, UriArray<Object> array, Schema elementSchema, Uri uri, int offset) {
+    public static View buildArrayView(boolean isRoot, AvroBaseEditor activity, AvroRecordModel dataModel, UriArray<Object> array, Schema elementSchema, Uri uri, int offset) throws NotBoundException {
         View layout = LayoutInflater.from(activity).inflate(R.layout.avro_array_item, null);
         buildView(isRoot, activity, dataModel, (ViewGroup)layout.findViewById(R.id.array_layout), elementSchema, uri, new ArrayValueHandler(dataModel, array, offset));
         return layout;
     }
 
     private static View buildUnion(AvroBaseEditor activity, AvroRecordModel dataModel, ViewGroup viewGroup, Schema schema, Uri uri,
-            UnionHandler handler) {
+            UnionHandler handler) throws NotBoundException {
         TableLayout table = new TableLayout(activity);
         for (Schema innerType : schema.getTypes()) {
             TableRow row = new TableRow(activity);
@@ -289,7 +296,7 @@ public class AvroViewFactory {
             row.addView(radioButton);
 
             handler.addType(radioButton, innerType,
-                    buildView(false, activity, dataModel, row, innerType, uri, handler.getHandler(radioButton)));
+                    buildView(false, activity, dataModel, row, innerType, uri, handler.getHandler(radioButton, innerType)));
 
             table.addView(row);
         }

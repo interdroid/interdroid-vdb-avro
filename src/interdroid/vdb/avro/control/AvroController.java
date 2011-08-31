@@ -81,8 +81,9 @@ public class AvroController {
      *
      * @param outState
      *            the bundle to save to
+     * @throws NotBoundException
      */
-    public void saveState(Bundle outState) {
+    public void saveState(Bundle outState) throws NotBoundException {
         if (mState != STATE_CANCELED) {
             mDataModel.saveState(outState);
         }
@@ -129,8 +130,9 @@ public class AvroController {
      * @param savedState
      *            the saved state for the controller to load from
      * @return the uri of the data item.
+     * @throws NotBoundException
      */
-    public Uri setup(Intent intent, Bundle savedState) {
+    public Uri setup(Intent intent, Bundle savedState) throws NotBoundException {
         if (intent.getData() == null) {
             if (mDefaultUri == null) {
                 logger.error("No URI and no default.");

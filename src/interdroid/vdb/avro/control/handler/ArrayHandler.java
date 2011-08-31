@@ -4,6 +4,7 @@ package interdroid.vdb.avro.control.handler;
 import interdroid.util.view.AddListener;
 import interdroid.util.view.DraggableAdapter;
 import interdroid.vdb.avro.model.AvroRecordModel;
+import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriArray;
 import interdroid.vdb.avro.view.AvroBaseEditor;
 import interdroid.vdb.avro.view.AvroViewFactory;
@@ -38,7 +39,7 @@ public class ArrayHandler implements DraggableAdapter, AddListener  {
         observables.registerObserver(mDataModel);
     }
 
-    private View getSubView(int offset) {
+    private View getSubView(int offset) throws NotBoundException {
         return AvroViewFactory.buildArrayView(true, mActivity, mDataModel, mArray, mElementSchema, mArray.getInstanceUri(), offset);
     }
 
@@ -84,7 +85,12 @@ public class ArrayHandler implements DraggableAdapter, AddListener  {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        return getSubView(position);
+        try {
+            return getSubView(position);
+        } catch (NotBoundException e) {
+            logger.error("Shouldn't happen: {}", e);
+            return null;
+        }
     }
 
     @Override
