@@ -89,11 +89,17 @@ public class AvroBaseEditor extends Activity {
             logger.debug("Controller built: {}", mController);
         }
 
-        final Uri editUri = mController.setup(intent, savedState);
+        Uri editUri = null;
+        try {
+            editUri = mController.setup(intent, savedState);
+        } catch (NotBoundException e) {
+            logger.error("Unable to build controller due to bind problem.", e);
+        }
 
         if (editUri == null) {
             logger.debug("No edit URI built.");
             finish();
+            return;
         } else {
             // Everything was setup properly so assume the result will work.
             setResult(RESULT_OK, (new Intent()).setAction(editUri.toString()));
@@ -163,7 +169,11 @@ public class AvroBaseEditor extends Activity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         logger.debug("onSaveInstanceState");
-        mController.saveState(outState);
+        try {
+            mController.saveState(outState);
+        } catch (NotBoundException e) {
+            logger.error("Error saving state due to record binding problem.", e);
+        }
     }
 
     public void onStop() {

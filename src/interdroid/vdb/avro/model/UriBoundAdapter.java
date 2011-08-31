@@ -9,9 +9,9 @@ import android.os.Bundle;
 public class UriBoundAdapter<A> implements UriBound<A> {
 
     public static interface UriBoundAdapterImpl<A> {
-        public A loadImpl(Bundle b, String prefix);
+        public A loadImpl(Bundle b, String prefix) throws NotBoundException;
 
-        public void saveImpl(Bundle b, String prefix);
+        public void saveImpl(Bundle b, String prefix) throws NotBoundException;
 
         public void deleteImpl(ContentResolver resolver) throws NotBoundException;
 
@@ -34,10 +34,13 @@ public class UriBoundAdapter<A> implements UriBound<A> {
     }
 
     public UriBoundAdapter(Bundle saved, UriBoundAdapterImpl<A> adapter) {
-       this(null, saved, adapter);
+        this(null, saved, adapter);
     }
 
-    public final Uri getInstanceUri() {
+    public final Uri getInstanceUri() throws NotBoundException {
+        if (mInstanceUri == null) {
+            throw new NotBoundException();
+        }
         return mInstanceUri;
     }
 
@@ -63,12 +66,12 @@ public class UriBoundAdapter<A> implements UriBound<A> {
         return mAdapter.loadImpl(resolver, fieldName);
     }
 
-    public final void save(Bundle b, String prefix) {
+    public final void save(Bundle b, String prefix) throws NotBoundException {
         mAdapter.saveImpl(b, null);
     }
 
     @Override
-    public final A load(Bundle b, String prefix) {
+    public final A load(Bundle b, String prefix) throws NotBoundException {
         return mAdapter.loadImpl(b, prefix);
     }
 
@@ -88,5 +91,16 @@ public class UriBoundAdapter<A> implements UriBound<A> {
             return true;
         }
         return false;
+    }
+
+    public static boolean isNamedType(Type type) {
+        switch (type) {
+        case RECORD:
+        case ENUM:
+        case FIXED:
+            return true;
+        default:
+            return false;
+        }
     }
 }

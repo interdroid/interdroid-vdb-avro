@@ -12,7 +12,7 @@ public class BundleDataManager {
 
     @SuppressWarnings("rawtypes")
     static Object loadDataFromBundle(Bundle saved, String fieldFullName,
-            Schema fieldSchema) {
+            Schema fieldSchema) throws NotBoundException {
         logger.debug("Loading data from bundle: " + fieldFullName);
         Object value;
         switch (fieldSchema.getType()) {
@@ -66,7 +66,7 @@ public class BundleDataManager {
 
     @SuppressWarnings("rawtypes")
     static void storeDataToBundle(Bundle outState, String fieldFullName,
-            Schema fieldSchema, Object data) {
+            Schema fieldSchema, Object data) throws NotBoundException {
         if (data != null) {
             switch (fieldSchema.getType()) {
             case ARRAY:

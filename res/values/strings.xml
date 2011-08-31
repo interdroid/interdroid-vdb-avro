@@ -31,6 +31,13 @@
 	<string name="error_title">Error</string>
 	<string name="error_message">Error loading data</string>
 	<string name="error_selecting_record_type">Unknown error while selecting the record type.</string>
+	<string name="error_no_schema">Error creating database because no schema was provided</string>
+	<string name="error_parsing_schema">Error parsing the given schema</string>
+	<string name="error_unknown_loading_and_creating">An unknown error occurred while loading the schema and creating the database</string>
+	<string name="error_no_fields_in_record">Error: no fields in record:</string>
+	<string name="error_name_required">Error: a name is always required.</string>
+	<string name="error_namespace_required">Error: a namespace is always required.</string>
+	<string name="error_unknown_primitive_type">Error: unknown primitive type.</string>
 
 	<string name="label_name">Name:</string>
 	<string name="label_comment">Comment:</string>

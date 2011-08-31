@@ -86,7 +86,7 @@ public class UriDataManager {
             logger.debug("Loaded value: " + value);
             break;
         case UNION:
-            value = new UriUnion(fieldSchema).load(cursor, fieldName);
+            value = new UriUnion(fieldSchema).load(resolver, rootUri, cursor, fieldName);
             break;
         default:
             throw new RuntimeException("Unsupported type: " + fieldSchema);
@@ -112,7 +112,7 @@ public class UriDataManager {
                 dataUri = array.getInstanceUri();
             } else {
                 // Make sure any old values don't exist
-                logger.debug("Clearing old values.");
+                logger.warn("Clearing old values.");
                 new UriArray(Uri.withAppendedPath(rootUri, fieldName), fieldSchema).delete(resolver);
             }
             break;
@@ -184,9 +184,7 @@ public class UriDataManager {
         case UNION:
             if (data != null) {
                 UriUnion union = (UriUnion)data;
-                union.save(values, fieldName);
-            } else {
-                UriUnion union = new UriUnion(fieldSchema).delete(values, fieldName);
+                union.save(resolver, rootUri, values, fieldName);
             }
             break;
         default:

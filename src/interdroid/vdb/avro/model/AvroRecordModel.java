@@ -65,8 +65,9 @@ public class AvroRecordModel extends DataSetObserver {
      *
      * @param savedInstanceState
      *            the bundle to store to
+     * @throws NotBoundException
      */
-    public void loadOriginals(Bundle savedInstanceState) {
+    public void loadOriginals(Bundle savedInstanceState) throws NotBoundException {
         if (savedInstanceState != null) {
             logger.debug("Loading from bundle.");
             mCurrentStateModel = new UriRecord(mUri, mSchema).load(savedInstanceState);
@@ -118,8 +119,9 @@ public class AvroRecordModel extends DataSetObserver {
      *
      * @param outState
      *            the bundle to save to
+     * @throws NotBoundException
      */
-    public void saveState(Bundle outState) {
+    public void saveState(Bundle outState) throws NotBoundException {
         if (mDirty && mCurrentStateModel != null) {
             logger.debug("Saving current state to bundle.");
             mCurrentStateModel.save(outState);

@@ -1,6 +1,7 @@
 package interdroid.vdb.avro.control.handler;
 
 import interdroid.vdb.avro.model.AvroRecordModel;
+import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriRecord;
 import interdroid.vdb.avro.view.AvroBaseEditor;
 import interdroid.vdb.content.EntityUriBuilder;
@@ -47,7 +48,12 @@ public class RecordTypeSelectHandler implements OnClickListener {
             uri = mActivity.getContentResolver().insert(uri, new ContentValues());
             mValueHandler.setValue(new UriRecord(uri, mSchema));
         } else {
-            uri = ((UriRecord) mValueHandler.getValue()).getInstanceUri();
+            try {
+                uri = ((UriRecord) mValueHandler.getValue()).getInstanceUri();
+            } catch (NotBoundException e) {
+                logger.error("Unable to get record URI because record is not bound.");
+                uri = null;
+            }
         }
         logger.debug("Launching edit on URI: {} type: {}", uri, mActivity.getContentResolver().getType(uri));
         Intent editIntent = new Intent(Intent.ACTION_EDIT, uri);

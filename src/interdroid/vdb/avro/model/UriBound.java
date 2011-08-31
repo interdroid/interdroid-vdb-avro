@@ -6,7 +6,7 @@ import android.os.Bundle;
 
 public interface UriBound<A> {
 
-    public Uri getInstanceUri();
+    public Uri getInstanceUri() throws NotBoundException;
 
     public void setInstanceUri(Uri uri);
 
@@ -14,9 +14,9 @@ public interface UriBound<A> {
 
     public A load(ContentResolver resolver, String fieldName) throws NotBoundException;
 
-    public void save(Bundle outState, String prefix);
+    public void save(Bundle outState, String prefix) throws NotBoundException;
 
-    public A load(Bundle b, String prefix);
+    public A load(Bundle b, String prefix) throws NotBoundException;
 
     public void delete(ContentResolver  resolver) throws NotBoundException;
 

@@ -32,7 +32,7 @@ public class UriArray<A> extends GenericData.Array<A> implements UriBound<UriArr
         public void saveImpl(ContentResolver resolver, String fieldName) throws NotBoundException {
             logger.debug("Saving array: {} : {}", getInstanceUri(), fieldName);
 
-            delete(resolver);
+            deleteImpl(resolver, false);
 
             ContentValues values = new ContentValues();
             for (Object value : UriArray.this) {
@@ -40,7 +40,7 @@ public class UriArray<A> extends GenericData.Array<A> implements UriBound<UriArr
                 // First insert a null row
                 Uri idUri = UriDataManager.insertUri(resolver, getInstanceUri(), values);
                 logger.debug("Got id uri for array row: " + idUri);
-                Uri dataUri = UriDataManager.storeDataToUri(resolver, getInstanceUri(), values, fieldName,
+                Uri dataUri = UriDataManager.storeDataToUri(resolver, idUri, values, fieldName,
                         getSchema().getElementType(), value);
                 if (dataUri != null) {
                     UriMatch match = EntityUriMatcher.getMatch(dataUri);
@@ -70,18 +70,25 @@ public class UriArray<A> extends GenericData.Array<A> implements UriBound<UriArr
         }
 
         @Override
-        public void deleteImpl(ContentResolver resolver)
+        public void deleteImpl(ContentResolver resolver) throws NotBoundException {
+            deleteImpl(resolver, true);
+        }
+
+        public void deleteImpl(ContentResolver resolver, boolean recursion)
                 throws NotBoundException {
             logger.debug("Deleting Array: " + getInstanceUri());
-            if (UriBoundAdapter.isBoundType(getSchema().getElementType().getType())) {
-                for (Object element : UriArray.this) {
-                    if (element != null) {
-                        ((UriBound) element).delete(resolver);
+            if (recursion) {
+                logger.debug("Handling recursive delete of array.");
+                if (UriBoundAdapter.isBoundType(getSchema().getElementType().getType())) {
+                    for (Object element : UriArray.this) {
+                        if (element != null) {
+                            ((UriBound) element).delete(resolver);
+                        }
                     }
-                }
-            } else if(getSchema().getElementType().getType() == Type.UNION) {
-                for (Object element : UriArray.this) {
-                    ((UriUnion) element).delete(resolver);
+                } else if(getSchema().getElementType().getType() == Type.UNION) {
+                    for (Object element : UriArray.this) {
+                        ((UriUnion) element).delete(resolver);
+                    }
                 }
             }
             resolver.delete(getInstanceUri(), null, null);
@@ -89,7 +96,7 @@ public class UriArray<A> extends GenericData.Array<A> implements UriBound<UriArr
 
         @SuppressWarnings("unchecked")
         @Override
-        public void saveImpl(Bundle outState, String fieldFullName) {
+        public void saveImpl(Bundle outState, String fieldFullName) throws NotBoundException {
             logger.debug("Storing to bundle: " + outState + " field: " + fieldFullName);
             switch (getSchema().getElementType().getType()) {
             case ARRAY: {
@@ -221,7 +228,7 @@ public class UriArray<A> extends GenericData.Array<A> implements UriBound<UriArr
 
         @SuppressWarnings({ "unchecked", "rawtypes" })
         @Override
-        public UriArray<A> loadImpl(Bundle saved, String fieldName) {
+        public UriArray<A> loadImpl(Bundle saved, String fieldName) throws NotBoundException {
             switch (getSchema().getElementType().getType()) {
             case ARRAY: {
                 int count = saved.getInt(NameHelper.getCountName(fieldName));
@@ -363,7 +370,7 @@ public class UriArray<A> extends GenericData.Array<A> implements UriBound<UriArr
     }
 
     @Override
-    public Uri getInstanceUri() {
+    public Uri getInstanceUri() throws NotBoundException {
         return mUriBinder.getInstanceUri();
     }
 
@@ -385,12 +392,12 @@ public class UriArray<A> extends GenericData.Array<A> implements UriBound<UriArr
     }
 
     @Override
-    public void save(Bundle outState, String prefix) {
+    public void save(Bundle outState, String prefix) throws NotBoundException {
         mUriBinder.save(outState, prefix);
     }
 
     @Override
-    public UriArray<A> load(Bundle b, String prefix){
+    public UriArray<A> load(Bundle b, String prefix) throws NotBoundException{
         return mUriBinder.load(b, prefix);
     }
 
