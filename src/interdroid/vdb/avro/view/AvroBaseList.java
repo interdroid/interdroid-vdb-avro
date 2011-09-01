@@ -159,6 +159,7 @@ public class AvroBaseList extends ListActivity {
             } else {
                 schema = Schema.parse(schemaJson);
             }
+
             logger.debug("Setting up: {} {}", defaultUri, schema);
             setup(schema, defaultUri);
         }

@@ -17,8 +17,7 @@ import interdroid.vdb.avro.R;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriRecord;
 import interdroid.vdb.avro.model.UriUnion;
-import interdroid.vdb.content.EntityUriBuilder;
-import interdroid.vdb.content.VdbMainContentProvider;
+import interdroid.vdb.content.avro.AvroContentProviderProxy;
 import interdroid.vdb.content.avro.AvroProviderRegistry;
 
 import android.app.Activity;
