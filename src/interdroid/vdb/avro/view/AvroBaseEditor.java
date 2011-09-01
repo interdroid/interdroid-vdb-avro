@@ -11,6 +11,7 @@ import interdroid.util.view.AsyncTaskWithProgressDialog;
 import interdroid.vdb.R;
 import interdroid.vdb.avro.control.AvroController;
 import interdroid.vdb.avro.model.NotBoundException;
+import interdroid.vdb.content.avro.AvroProviderRegistry;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -35,6 +36,7 @@ public class AvroBaseEditor extends Activity {
     private static final int DELETE_ID = Menu.FIRST + 2;
 
     public static final String SCHEMA = "schema";
+    public static final String ENTITY = "entity";
 
     public static final int REQUEST_RECORD_SELECTION = 1;
 
@@ -79,10 +81,15 @@ public class AvroBaseEditor extends Activity {
                 throw new IllegalArgumentException("A Uri is required.");
             }
             String schemaJson = intent.getStringExtra(SCHEMA);
+            Schema schema = null;
             if (schemaJson == null) {
-                throw new IllegalArgumentException("A Schema is required.");
+                schema = AvroProviderRegistry.getSchema(this, defaultUri);
+                if (schema == null) {
+                    throw new IllegalArgumentException("Schema not found and not provided in the intent.");
+                }
+            } else {
+                schema = Schema.parse(schemaJson);
             }
-            Schema schema = Schema.parse(schemaJson);
             logger.debug("Building controller for: " + schema.getName() + " : " + defaultUri);
 
             mController = new AvroController(this, schema.getName(), defaultUri, schema);
@@ -102,7 +109,10 @@ public class AvroBaseEditor extends Activity {
             return;
         } else {
             // Everything was setup properly so assume the result will work.
-            setResult(RESULT_OK, (new Intent()).setAction(editUri.toString()));
+            logger.debug("Setting result ok: {}", editUri);
+            Intent resultIntent = new Intent();
+            resultIntent.setData(editUri);
+            setResult(RESULT_OK, resultIntent);
         }
     }
 

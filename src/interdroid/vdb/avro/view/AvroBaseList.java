@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
+import org.apache.avro.Schema.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,15 +30,14 @@ import interdroid.vdb.Actions;
 import interdroid.vdb.avro.R;
 import interdroid.vdb.content.EntityUriMatcher;
 import interdroid.vdb.content.EntityUriMatcher.UriMatch;
+import interdroid.vdb.content.avro.AvroProviderRegistry;
 
 import android.app.ListActivity;
-import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.ContentUris;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -117,6 +117,14 @@ public class AvroBaseList extends ListActivity {
                 logger.debug("Skipping field from list view.");
             }
         }
+        // If no fields are in the list then include all strings
+        if (listFields.size() == 1) {
+            for (Field field : fields) {
+                if (field.schema().getType().equals(Type.STRING)) {
+                    listFields.add(field.name());
+                }
+            }
+        }
         PROJECTION = listFields.toArray(new String[listFields.size()]);
     }
 
@@ -141,10 +149,16 @@ public class AvroBaseList extends ListActivity {
                 throw new IllegalArgumentException("A Uri is required.");
             }
             String schemaJson = intent.getStringExtra(AvroBaseEditor.SCHEMA);
+            Schema schema = null;
             if (schemaJson == null) {
-                throw new IllegalArgumentException("A Schema is required.");
+                logger.debug("Checking for schema for: {}", defaultUri);
+                schema = AvroProviderRegistry.getSchema(this, defaultUri);
+                if (schema == null) {
+                    throw new IllegalArgumentException("Schema not found and not provided in the intent.");
+                }
+            } else {
+                schema = Schema.parse(schemaJson);
             }
-            Schema schema = Schema.parse(schemaJson);
             logger.debug("Setting up: {} {}", defaultUri, schema);
             setup(schema, defaultUri);
         }
@@ -271,7 +285,10 @@ public class AvroBaseList extends ListActivity {
         switch (item.getItemId()) {
         case MENU_ITEM_INSERT:
             // Launch activity to insert a new item
-            startActivity(new Intent(Intent.ACTION_INSERT, getIntent().getData()));
+            Intent i = new Intent(Intent.ACTION_INSERT, getIntent().getData());
+            // We need a class name since we haven't registered AvroBaseEdit with all URIs.
+            i.setClassName(this, AvroBaseEditor.class.getName());
+            startActivity(i);
             return true;
         case MENU_ITEM_COMMIT:
             startActivity(new Intent(Actions.ACTION_COMMIT, mBranchUri));
@@ -335,7 +352,9 @@ public class AvroBaseList extends ListActivity {
         }
         case MENU_ITEM_EDIT: {
             Uri noteUri = ContentUris.withAppendedId(getIntent().getData(), info.id);
-            startActivity(new Intent(Intent.ACTION_EDIT, noteUri));
+            Intent i = new Intent(Intent.ACTION_EDIT, noteUri);
+            i.setClassName(this, AvroBaseEditor.class.getName());
+            startActivity(i);
         }
         }
         return false;
@@ -354,7 +373,10 @@ public class AvroBaseList extends ListActivity {
         } else {
             // Launch activity to view/edit the currently selected item
             logger.debug("Launching edit for: {}", getContentResolver().getType(uri));
-            startActivity(new Intent(Intent.ACTION_EDIT, uri));
+            // TODO: We should try to find a custom one here as well.
+            Intent editIntent = new Intent(Intent.ACTION_EDIT, uri);
+            editIntent.setClassName(this, AvroBaseEditor.class.getName());
+            startActivity(editIntent);
         }
     }
 }

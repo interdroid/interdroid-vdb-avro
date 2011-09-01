@@ -9,7 +9,7 @@ public class AvroSchema {
         // No Construction;
     }
 
-    public static final String NAMESPACE = "org.apache.avro";
+    public static final String NAMESPACE = "interdroid.vdb.content.avro.schemas";
     public static final Schema SCHEMA;
     public static final Schema RECORD;
     public static final String RECORD_DEFINITION = "Record";
@@ -20,7 +20,7 @@ public class AvroSchema {
     static {
         // Taken from proposed schema for schemas:
         String schema =
-            "{\"type\": \"record\", \"name\": \"Type\", \"namespace\": \"org.apache.avro\","
+            "{\"type\": \"record\", \"name\": \"Type\", \"namespace\": \"interdroid.vdb.content.avro.schemas\","
             +"\n "
             +"\n \"fields\": ["
             +"\n     {\"name\": \"type\", \"type\": ["

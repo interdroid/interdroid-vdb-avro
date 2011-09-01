@@ -152,6 +152,14 @@ public class UriUnion {
         if (mValue != null && UriBoundAdapter.isBoundType(getType())) {
             ((UriBound<?>) mValue).delete(resolver);
         }
-    };
+    }
+    
+    @Override
+    public String toString() {
+        if (mValue == null) {
+            return null;
+        }
+        return mValue.toString();
+    }
 
 }

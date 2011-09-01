@@ -5,6 +5,7 @@ import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.view.AvroBaseEditor;
 import interdroid.vdb.avro.view.AvroViewFactory;
 import interdroid.vdb.content.EntityUriMatcher;
+import interdroid.vdb.content.EntityUriMatcher.UriMatch;
 
 import org.apache.avro.Schema;
 import org.slf4j.Logger;
@@ -145,7 +146,19 @@ public class AvroController {
             mUri = intent.getData();
         }
 
-        mReadOnly = EntityUriMatcher.getMatch(mUri).isReadOnlyCheckout();
+        UriMatch match = EntityUriMatcher.getMatch(mUri);
+        mReadOnly = match.isReadOnlyCheckout();
+
+        // Append the default entity name if we didn't get one already.
+        if (match.entityName == null) {
+            if (intent.hasExtra(AvroBaseEditor.ENTITY)) {
+                logger.debug("Adding intent entity: {}", intent.getStringExtra(AvroBaseEditor.ENTITY));
+                mUri = Uri.parse(mUri.toString() + "/" + intent.getStringExtra(AvroBaseEditor.ENTITY));
+            } else {
+                logger.debug("Adding schema root entity: {}", mSchema.getName());
+                mUri = mUri.buildUpon().appendPath(mSchema.getName()).build();
+            }
+        }
 
         logger.debug("Setting up for uri: " + mUri);
 
