@@ -1,4 +1,4 @@
-    package interdroid.vdb.avro;
+package interdroid.vdb.avro;
 
 
 import org.apache.avro.Schema;
@@ -26,18 +26,20 @@ public class AvroSchema {
             +"\n     {\"name\": \"type\", \"type\": ["
             +"\n         {\"type\": \"record\", \"name\": \"Record\","
             +"\n          \"fields\": ["
-            +"\n              {\"name\": \"name\", \"type\": \"string\", \"ui.required\" : \"true\", \"ui.list\": \"true\"},"
+            +"\n              {\"name\": \"name\", \"type\": \"string\", \"ui.label\": \"Record Name\", \"ui.required\" : \"true\", \"ui.list\": \"true\"},"
             +"\n              {\"name\": \"doc\", \"type\": \"string\"},"
-            +"\n              {\"name\": \"namespace\", \"type\": \"string\", \"ui.list\": \"true\"},"
+            +"\n              {\"name\": \"namespace\", \"type\": \"string\", \"ui.list\": \"true\", \"ui.label\": \"Application Name\"},"
             +"\n              {\"name\": \"aliases\", \"type\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}}},"
             +"\n              {\"name\": \"fields\","
             +"\n               \"type\": {\"type\": \"array\", \"items\":"
             +"\n                        {\"type\": \"record\", \"name\": \"FieldDef\","
             +"\n                         \"fields\": ["
             +"\n                             {\"name\": \"name\", \"type\": \"string\"},"
+            +"\n                             {\"name\": \"label\", \"type\": \"string\"},"
             +"\n                             {\"name\": \"doc\", \"type\": \"string\"},"
+            +"\n                             {\"name\": \"list\", \"ui.label\": \"Show In List\", \"type\": \"boolean\"},"
             +"\n                             {\"name\": \"aliases\", \"type\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}}},"
-            +"\n                             {\"name\": \"type\", \"type\": \"Type\"}"
+            +"\n                             {\"name\": \"type\", \"type\": \"Type\"},"
 /*
             +"\n                             ,{\"name\": \"defaultValue\", \"type\":"
             +"\n                              {\"type\": \"record\", \"name\": \"JsonValue\","
@@ -66,11 +68,11 @@ public class AvroSchema {
             +"\n                               ]"
             +"\n                              }"
             +"\n                             },"
+            */
             +"\n                             {\"name\": \"order\","
             +"\n                              \"type\": {\"type\": \"enum\", \"name\": \"SortOrder\","
             +"\n                                       \"symbols\": [\"INCREASING\", \"DECREASING\","
             +"\n                                                   \"IGNORE\"]}}"
-*/
             +"\n                         ]"
             +"\n                        }"
             +"\n                       }"

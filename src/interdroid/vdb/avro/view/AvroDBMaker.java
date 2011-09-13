@@ -17,7 +17,8 @@ import interdroid.vdb.avro.R;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriRecord;
 import interdroid.vdb.avro.model.UriUnion;
-import interdroid.vdb.content.avro.AvroContentProviderProxy;
+import interdroid.vdb.content.EntityUriBuilder;
+import interdroid.vdb.content.VdbMainContentProvider;
 import interdroid.vdb.content.avro.AvroProviderRegistry;
 
 import android.app.Activity;
@@ -46,6 +47,8 @@ public class AvroDBMaker extends Activity {
         String namespace;
         String doc;
         List<String> aliases;
+        public String label;
+        public boolean in_list;
     }
 
     public AvroDBMaker() {
@@ -116,7 +119,7 @@ public class AvroDBMaker extends Activity {
             } catch (NotBoundException e) {
                 ToastOnUI.show(AvroDBMaker.this, R.string.error_parsing_schema, Toast.LENGTH_LONG);
             } catch (InvalidSchemaException e) {
-                // Already toasted about the problem.
+                logger.error("Schema Invalid!", e);
             }
         }
 
@@ -163,18 +166,36 @@ public class AvroDBMaker extends Activity {
 
     private NamedType getNamedTypeInfo(UriRecord record, boolean namespaceRequired) throws InvalidSchemaException {
         NamedType typeInfo = new NamedType();
-        typeInfo.name = (String)record.get("name");
-        if (TextUtils.isEmpty(typeInfo.name)) {
+        typeInfo.name = sanitizeName((String)record.get("name"));
+        typeInfo.doc = (String)record.get("doc");
+        typeInfo.namespace = sanitizeNamespace((String)record.get("namespace"), namespaceRequired);
+        typeInfo.label = (String)record.get("label");
+        typeInfo.in_list = (Boolean)record.get("list");
+        return typeInfo;
+    }
+
+    // TODO: This should be enforced in the UI.
+    private String sanitizeNamespace(String string, boolean required) throws InvalidSchemaException {
+        if (TextUtils.isEmpty(string)) {
+            if (required) {
+                ToastOnUI.show(this, R.string.error_name_required, Toast.LENGTH_LONG);
+                throw new InvalidSchemaException();
+            }
+        } else {
+            string = string.replace(' ', '.');
+            string = string.replaceAll("/[^A-Za-z0-9_\\.]/", "");
+        }
+        return string;
+    }
+
+    private String sanitizeName(String string) throws InvalidSchemaException {
+        if (TextUtils.isEmpty(string)) {
             ToastOnUI.show(this, R.string.error_name_required, Toast.LENGTH_LONG);
             throw new InvalidSchemaException();
         }
-        typeInfo.doc = (String)record.get("doc");
-        typeInfo.namespace = (String)record.get("namespace");
-        if (namespaceRequired && TextUtils.isEmpty(typeInfo.namespace)) {
-            ToastOnUI.show(this, R.string.error_namespace_required, Toast.LENGTH_LONG);
-            throw new InvalidSchemaException();
-        }
-        return typeInfo;
+        string = string.replace(' ', '_');
+        string = string.replaceAll("/[^A-Za-z0-9_]/", "");
+        return string;
     }
 
     private void addAliases(NamedType typeInfo, Schema schema) {
@@ -203,6 +224,12 @@ public class AvroDBMaker extends Activity {
         Schema fieldSchema = convertTypeToSchema((UriRecord)field.get("type"));
         Schema.Field f = new Schema.Field(typeInfo.name, fieldSchema, typeInfo.doc, null);// ,  Schema.Field.Order.valueOf(String.valueOf(order)));
         addAliases(typeInfo, f);
+        if (!TextUtils.isEmpty(typeInfo.label)) {
+            f.addProp("ui.label", typeInfo.label);
+        }
+        if (typeInfo.in_list) {
+            f.addProp("ui.list", "true");
+        }
         return f;
     }
 

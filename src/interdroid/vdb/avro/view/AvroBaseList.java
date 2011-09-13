@@ -84,7 +84,7 @@ public class AvroBaseList extends ListActivity {
         this(schema, null);
     }
 
-    private void setup(Schema schema, Uri defaultUri) {
+    protected void setup(Schema schema, Uri defaultUri) {
         if (schema.getType() != Schema.Type.RECORD) {
             throw new RuntimeException("Invalid base type. Must be a record.");
         }

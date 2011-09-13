@@ -263,7 +263,7 @@ public class AvroViewFactory {
         // TODO: Add field comment as pressed text on field
         if (field.getProp("ui.visible") == null) {
             TextView label = new TextView(activity);
-            label.setText(toTitle(field.name()));
+            label.setText(toTitle(field));
             label.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT,
                     LayoutParams.WRAP_CONTENT));
             label.setGravity(Gravity.LEFT);
@@ -362,22 +362,26 @@ public class AvroViewFactory {
         return text;
     }
 
-    private static String toTitle(String name) {
+    private static String toTitle(Field theField) {
         StringBuffer sb = new StringBuffer();
-        name = name.toLowerCase();
-        BreakIterator boundary = BreakIterator.getWordInstance();
-        boundary.setText(name);
-        boolean first = true;
-        int start = boundary.first();
-        for (int end = boundary.next(); end != BreakIterator.DONE; start = end, end = boundary
-        .next()) {
-            if (first) {
-                first = false;
-            } else {
-                sb.append(" ");
+        if (theField.getProp("ui.label") != null) {
+            sb.append(theField.getProp("ui.label"));
+        } else {
+            String field = theField.name().toLowerCase().replace('_', ' ');
+            BreakIterator boundary = BreakIterator.getWordInstance();
+            boundary.setText(field);
+            boolean first = true;
+            int start = boundary.first();
+            for (int end = boundary.next(); end != BreakIterator.DONE; start = end, end = boundary
+                    .next()) {
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(" ");
+                }
+                sb.append(field.substring(start, start + 1).toUpperCase());
+                sb.append(field.substring(start + 1, end));
             }
-            sb.append(name.substring(start, start + 1).toUpperCase());
-            sb.append(name.substring(start + 1, end));
         }
         sb.append(":");
         return sb.toString();

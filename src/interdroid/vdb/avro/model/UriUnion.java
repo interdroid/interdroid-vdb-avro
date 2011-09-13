@@ -153,13 +153,13 @@ public class UriUnion {
             ((UriBound<?>) mValue).delete(resolver);
         }
     }
-    
+
     @Override
     public String toString() {
         if (mValue == null) {
-            return null;
+            return "[]";
         }
-        return mValue.toString();
+        return "[" + mValue.toString() + "]";
     }
 
 }

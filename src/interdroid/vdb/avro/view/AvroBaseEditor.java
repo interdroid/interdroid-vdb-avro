@@ -14,10 +14,8 @@ import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.content.avro.AvroProviderRegistry;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -41,7 +39,6 @@ public class AvroBaseEditor extends Activity {
     public static final int REQUEST_RECORD_SELECTION = 1;
 
     private AvroController mController;
-    private Schema mSchema;
 
     public AvroBaseEditor() {
         logger.debug("Constructed AvroBaseEditor: " + this);
@@ -53,7 +50,10 @@ public class AvroBaseEditor extends Activity {
 
     public AvroBaseEditor(Schema schema, Uri defaultUri) {
         this();
-        mSchema = schema;
+        setup(schema, defaultUri);
+    }
+
+    protected void setup(Schema schema, Uri defaultUri) {
         if (defaultUri == null) {
             logger.debug("Using default URI.");
             defaultUri = Uri.parse("content://" + schema.getNamespace() + "/branches/master/"+ schema.getName());
