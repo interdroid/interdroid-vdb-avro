@@ -20,6 +20,8 @@ public class AvroSchema {
     static {
         // Taken from proposed schema for schemas:
         String schema =
+
+
             "{\"type\": \"record\", \"name\": \"Type\", \"namespace\": \"interdroid.vdb.content.avro.schemas\","
             +"\n "
             +"\n \"fields\": ["
@@ -116,8 +118,11 @@ public class AvroSchema {
             +"\n         },"
             +"\n         {\"type\": \"record\", \"name\": \"Primitive\","
             +"\n          \"fields\": ["
-            +"\n             {\"name\": \"PrimitiveType\", \"type\": {\"type\": \"enum\", \"name\": \"PrimitiveTypes\","
-            +"\n                  \"symbols\": [\"String\", \"Bytes\", \"Int\", \"Long\", \"Float\", \"Double\", \"Boolean\", \"Null\"]}}"
+            +"\n             {\"name\": \"PrimitiveType\", \"ui.label\": \"Primitive Type\","
+            +"\n              \"type\": {\"type\": \"enum\", \"ui.label\": \"Primitive Type\", "
+            +"\n                         \"name\": \"PrimitiveTypes\","
+            +"\n                         \"symbols\": [\"String\", \"Bytes\", \"Int\","
+            +"\n                         \"Long\", \"Float\", \"Double\", \"Boolean\", \"Null\"]}}"
             +"\n          ]"
             +"\n         }"
             +"\n     ]}"

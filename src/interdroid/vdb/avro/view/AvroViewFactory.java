@@ -150,16 +150,15 @@ public class AvroViewFactory {
         }
         case RECORD:
             logger.debug("Building record view: {} {}", schema.getName(), isRoot);
-            // TODO: Where the hell do we get this uri from?
             if (isRoot) {
                 view = buildRecordView(false, activity, dataModel, getRecord(activity, valueHandler, uri, schema), viewGroup);
             } else {
                 final Button button = new Button(activity);
                 UriRecord record = (UriRecord) valueHandler.getValue();
                 if (record == null) {
-                    button.setText(activity.getString(R.string.label_create) + " " + schema.getName());
+                    button.setText(activity.getString(R.string.label_create) + " " + toTitle(schema));
                 } else {
-                    button.setText(activity.getString(R.string.label_edit) + " " + schema.getName());
+                    button.setText(activity.getString(R.string.label_edit) + " " + toTitle(schema));
                 }
                 button.setOnClickListener(getRecordTypeSelectorHandler(activity, dataModel, schema, valueHandler, viewGroup, button));
                 addView(activity, viewGroup, button);
@@ -362,12 +361,21 @@ public class AvroViewFactory {
         return text;
     }
 
-    private static String toTitle(Field theField) {
+    public static String toTitle(Schema schema) {
+        return toTitle(schema.getProp("ui.label"), schema.getName(), false);
+    }
+
+    public static String toTitle(Field theField) {
+        return toTitle(theField.getProp("ui.label"), theField.name(), true);
+    }
+
+    private static String toTitle(String label, String name, boolean includeColon) {
+
         StringBuffer sb = new StringBuffer();
-        if (theField.getProp("ui.label") != null) {
-            sb.append(theField.getProp("ui.label"));
+        if (label != null) {
+            sb.append(label);
         } else {
-            String field = theField.name().toLowerCase().replace('_', ' ');
+            String field = name.toLowerCase().replace('_', ' ');
             BreakIterator boundary = BreakIterator.getWordInstance();
             boundary.setText(field);
             boolean first = true;
@@ -383,7 +391,9 @@ public class AvroViewFactory {
                 sb.append(field.substring(start + 1, end));
             }
         }
-        sb.append(":");
+        if (includeColon) {
+            sb.append(":");
+        }
         return sb.toString();
     }
 

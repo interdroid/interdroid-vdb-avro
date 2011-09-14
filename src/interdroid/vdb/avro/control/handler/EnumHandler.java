@@ -2,6 +2,7 @@ package interdroid.vdb.avro.control.handler;
 
 import interdroid.vdb.R;
 import interdroid.vdb.avro.model.AvroRecordModel;
+import interdroid.vdb.avro.view.AvroViewFactory;
 
 import java.util.List;
 
@@ -53,7 +54,7 @@ public class EnumHandler implements DialogInterface.OnClickListener, OnClickList
     @Override
     public void onClick(View v) {
         AlertDialog.Builder builder = new AlertDialog.Builder(mActivity);
-        builder.setTitle("Pick a " + mSchema.getName());
+        builder.setTitle(mActivity.getString(R.string.label_pick) + " " + AvroViewFactory.toTitle(mSchema));
         List<String> items = mSchema.getEnumSymbols();
         CharSequence[] itemArray = items.toArray(new CharSequence[items.size()]);
         Integer selection = (Integer)mValueHandler.getValue();
