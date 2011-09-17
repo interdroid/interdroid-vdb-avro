@@ -102,6 +102,8 @@ public class UnionHandler implements OnCheckedChangeListener {
 			mUnion.setValue(innerHandler.getValue(), mSchema.get(buttonView));
 			mDataModel.onChanged();
 			mViews.get(buttonView).setEnabled(isChecked);
+		} else {
+			mViews.get(buttonView).setEnabled(isChecked);
 		}
 	}
 
