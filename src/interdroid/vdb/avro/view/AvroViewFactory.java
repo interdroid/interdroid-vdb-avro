@@ -284,7 +284,7 @@ public class AvroViewFactory {
 		@SuppressWarnings("unchecked")
 		UriArray<Object> array = (UriArray<Object>)valueHandler.getValue();
 		if (array == null) {
-			array = new UriArray<Object>(valueHandler.getValueUri(), schema);
+			array = new UriArray<Object>(Uri.withAppendedPath(valueHandler.getValueUri(), valueHandler.getFieldName()), schema);
 			valueHandler.setValue(array);
 		}
 		return array;
