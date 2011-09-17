@@ -155,27 +155,8 @@ public class UriDataManager {
         case RECORD:
             if (data != null) {
                 UriRecord record = (UriRecord)data;
-                UriMatch match = EntityUriMatcher.getMatch(rootUri);
-
-                // Is there an existing record at this location.
-                Uri recordUri;
-                Uri baseUri;
-                switch (match.type) {
-                case LOCAL_BRANCH:
-                    baseUri = Uri.withAppendedPath(EntityUriBuilder.branchUri(match.authority, match.repositoryName, match.reference),
-                            GenericContentProvider.escapeName(match.repositoryName, record.getSchema().getNamespace(), record.getSchema().getName()));
-                    if (match.entityIdentifier != null) {
-                        recordUri = Uri.withAppendedPath(baseUri, match.entityIdentifier);
-                    } else {
-                        recordUri = insertUri(resolver, baseUri, new ContentValues());
-                    }
-                    record.setInstanceUri(recordUri);
-                    dataUri = recordUri;
-                    break;
-                default:
-                    throw new RuntimeException("Can only store to local branches.");
-                }
                 record.save(resolver);
+                dataUri = record.getInstanceUri();
             }
             break;
         case STRING:
@@ -196,6 +177,7 @@ public class UriDataManager {
 
     public static Uri insertUri(ContentResolver resolver, Uri baseUri,
             ContentValues contentValues) {
+        logger.debug("Inserting into {}", baseUri);
         return resolver.insert(baseUri, contentValues);
     }
 
