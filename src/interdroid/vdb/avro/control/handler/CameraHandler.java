@@ -62,7 +62,7 @@ public class CameraHandler implements OnClickListener {
 			Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE, uri);
 			cameraIntent.setClassName(mActivity, UseCamera.class.getName());
 			cameraIntent.putExtra("field", mValueHandler.getFieldName());
-			mActivity.launchCameraIntent(cameraIntent);
+			mActivity.launchDefaultIntent(cameraIntent);
 		} catch (NotBoundException e) {
 			logger.error("Not bound!");
 			ToastOnUI.show(mActivity, R.string.error_opening_camera, Toast.LENGTH_LONG);
@@ -74,15 +74,29 @@ public class CameraHandler implements OnClickListener {
 			logger.debug("Setting bitmap.");
 			try {
 				byte[] data = (byte[]) mValueHandler.getValue();
-				final Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-				mActivity.runOnUiThread(new Runnable() {
+				if (data != null && data.length > 0) {
+					final Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+					mActivity.runOnUiThread(new Runnable() {
 
-					@Override
-					public void run() {
-						image.setImageBitmap(bitmap);
-					}
+						@Override
+						public void run() {
+							image.setVisibility(View.VISIBLE);
+							image.setImageBitmap(bitmap);
+						}
 
-				});
+					});
+				} else {
+					mActivity.runOnUiThread(new Runnable() {
+
+						@Override
+						public void run() {
+							image.setImageBitmap(null);
+							image.setVisibility(View.INVISIBLE);
+						}
+
+					});
+
+				}
 			} catch (Exception e) {
 				logger.error("Unable to set image.", e);
 			}

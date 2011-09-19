@@ -1,8 +1,7 @@
 package interdroid.vdb.avro.model;
 
-import interdroid.vdb.content.EntityUriBuilder;
 import interdroid.vdb.content.EntityUriMatcher;
-import interdroid.vdb.content.GenericContentProvider;
+
 import interdroid.vdb.content.EntityUriMatcher.UriMatch;
 
 import org.apache.avro.Schema;

@@ -40,6 +40,7 @@
 	<string name="error_unknown_primitive_type">Error: unknown primitive type.</string>
 	<string name="error_unknown_complex_type">Error: unknown complex type.</string>
 	<string name="error_opening_camera">Error: Unable to open the camera.</string>
+	<string name="error_picking_location">Error: Unable to pick a location.</string>
 
 	<string name="label_name">Name:</string>
 	<string name="label_comment">Comment:</string>
@@ -53,6 +54,7 @@
 	<string name="label_pick">Pick a</string>
 	<string name="label_take_photo">Take A Photo</string>
 	<string name="label_take_video">Take A Video</string>
+	<string name="label_pick_location">Choose A Location</string>
 
 	<string name="none">- none -</string>
 	<string name="create_copy">Create copy</string>

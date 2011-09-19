@@ -128,7 +128,7 @@ public class AvroSchema {
 			+ "\n              \"type\": {\"type\": \"enum\", \"ui.label\": \"Complex Type\","
 			+ "\n                         \"name\": \"ComplexType\","
 			+ "\n                         \"symbols\": [\"Date\", \"Time\", \"Photo\","
-			+ "\n                         \"Video\", \"Location\"]}}"
+			+ "\n                         \"Location\"]}}"
 			+ "\n          ]"
 			+ "\n         }"
 			+ "\n     ]}"

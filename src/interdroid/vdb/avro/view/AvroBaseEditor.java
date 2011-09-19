@@ -250,14 +250,14 @@ public class AvroBaseEditor extends Activity {
 		enums.put(hashCode, schema);
 	}
 
-	public void launchIntent(Intent editIntent) {
+	public void launchEditIntent(Intent editIntent) {
 		editIntent.addCategory(Intent.CATEGORY_DEFAULT);
 		editIntent.setClassName(this.getPackageName(), AvroBaseEditor.class.getName());
 		startActivity(editIntent);
 	}
 
-	public void launchCameraIntent(Intent cameraIntent) {
-		cameraIntent.addCategory(Intent.CATEGORY_DEFAULT);
-		startActivity(cameraIntent);
+	public void launchDefaultIntent(Intent intent) {
+		intent.addCategory(Intent.CATEGORY_DEFAULT);
+		startActivity(intent);
 	}
 }

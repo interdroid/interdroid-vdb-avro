@@ -105,6 +105,7 @@ public class AvroDBMaker extends Activity {
 	@Override
 	protected void onActivityResult (int requestCode, int resultCode, Intent data)
 	{
+		logger.error("Got activity result: {} {} " + data, requestCode, resultCode);
 		if (resultCode == RESULT_OK) {
 			logger.error("Edit activity said okay, attempting to process again.");
 			processSchema();
@@ -330,26 +331,39 @@ public class AvroDBMaker extends Activity {
 			schema = Schema.create(Type.BYTES);
 			schema.addProp("ui.widget", "photo");
 			break;
-		case 3: // Video
-			schema = Schema.create(Type.BYTES);
-			schema.addProp("ui.widget", "video");
-			break;
-		case 4: // Location
+		case 3: // Location
 			List<Field> fields = new ArrayList<Field>();
 
-			Field f = new Field("lat", Schema.create(Type.LONG), "latitude", null);
+			Field f = new Field("Latitude", Schema.create(Type.INT), "latitude", null);
 			f.addProp("ui.label", "Latitude");
 			fields.add(f);
 
-			f = new Field("lon", Schema.create(Type.LONG), "longitude", null);
+			f = new Field("Longitude", Schema.create(Type.INT), "longitude", null);
 			f.addProp("ui.label", "Longitude");
 			fields.add(f);
 
-			f = new Field("alt", Schema.create(Type.LONG), "altitude", null);
+			f = new Field("RadiusLatitude", Schema.create(Type.INT), "radius latitude", null);
+			f.addProp("ui.label", "Radius Latitude");
+			fields.add(f);
+
+			f = new Field("RadiusLongitude", Schema.create(Type.INT), "radius longitude", null);
+			f.addProp("ui.label", "Radius Longitude");
+			fields.add(f);
+
+			f = new Field("RadiusInMeters", Schema.create(Type.LONG), "radius in meters", null);
+			f.addProp("ui.label", "Radius In Meters");
+			fields.add(f);
+
+			f = new Field("MapImage", Schema.create(Type.BYTES), "map image", null);
+			f.addProp("ui.label", "Map Image");
+			fields.add(f);
+
+			f = new Field("Altitude", Schema.create(Type.LONG), "altitude", null);
 			f.addProp("ui.label", "Altitude");
 			fields.add(f);
 
-			f = new Field("accuracy", Schema.create(Type.LONG), "accuracy", null);
+			f = new Field("Accuracy", Schema.create(Type.LONG), "accuracy", null);
+			f.addProp("ui.label", "Accuracy");
 			fields.add(f);
 
 			schema = Schema.createRecord("Location", "A Location", null, false);

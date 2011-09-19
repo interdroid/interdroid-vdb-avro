@@ -9,6 +9,7 @@ import interdroid.vdb.avro.control.handler.CheckboxHandler;
 import interdroid.vdb.avro.control.handler.DateHandler;
 import interdroid.vdb.avro.control.handler.EditTextHandler;
 import interdroid.vdb.avro.control.handler.EnumHandler;
+import interdroid.vdb.avro.control.handler.LocationHandler;
 import interdroid.vdb.avro.control.handler.RecordTypeSelectHandler;
 import interdroid.vdb.avro.control.handler.RecordValueHandler;
 import interdroid.vdb.avro.control.handler.TimeHandler;
@@ -82,7 +83,7 @@ public class AvroViewFactory {
 		// Construct a view for each field
 		for (Field field : record.getSchema().getFields()) {
 			logger.debug("Building view for: " + field.name() + " in: " + record.getSchema() + " schema:" + field.schema());
-			buildFieldView(isRoot, activity, dataModel, record, viewGroup, field);
+			buildFieldView(false, activity, dataModel, record, viewGroup, field);
 		}
 
 		return viewGroup;
@@ -171,16 +172,20 @@ public class AvroViewFactory {
 			if (isRoot) {
 				view = buildRecordView(false, activity, dataModel, getRecord(activity, valueHandler, uri, schema), viewGroup);
 			} else {
-				final Button button = new Button(activity);
-				UriRecord record = (UriRecord) valueHandler.getValue();
-				if (record == null) {
-					button.setText(activity.getString(R.string.label_create) + " " + toTitle(schema));
+				if (schema.getProp("ui.widget") != null && schema.getProp("ui.widget").equals("location")) {
+					view = buildLocationView(activity, viewGroup, new LocationHandler(dataModel, activity, schema, valueHandler));
 				} else {
-					button.setText(activity.getString(R.string.label_edit) + " " + toTitle(schema));
+					final Button button = new Button(activity);
+					UriRecord record = (UriRecord) valueHandler.getValue();
+					if (record == null) {
+						button.setText(activity.getString(R.string.label_create) + " " + toTitle(schema));
+					} else {
+						button.setText(activity.getString(R.string.label_edit) + " " + toTitle(schema));
+					}
+					button.setOnClickListener(getRecordTypeSelectorHandler(activity, dataModel, schema, valueHandler, viewGroup, button));
+					addView(activity, viewGroup, button);
+					view = button;
 				}
-				button.setOnClickListener(getRecordTypeSelectorHandler(activity, dataModel, schema, valueHandler, viewGroup, button));
-				addView(activity, viewGroup, button);
-				view = button;
 			}
 			break;
 		case STRING:
@@ -211,6 +216,27 @@ public class AvroViewFactory {
 		}
 
 		return view;
+	}
+
+	private static ViewGroup buildLocationView(AvroBaseEditor activity,
+			ViewGroup viewGroup, LocationHandler locationHandler) {
+		LinearLayout layout = new LinearLayout(activity);
+		layout.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
+		layout.setOrientation(LinearLayout.VERTICAL);
+
+		ImageView image = new ImageView(activity);
+		layout.addView(image);
+
+		Button cameraButton = new Button(activity);
+
+		cameraButton.setText(activity.getString(R.string.label_pick_location));
+		layout.addView(cameraButton);
+
+		addView(activity, viewGroup, layout);
+		locationHandler.setButton(cameraButton);
+		locationHandler.setImageView(image);
+
+		return layout;
 	}
 
 	private static View buildCameraView(AvroBaseEditor activity,

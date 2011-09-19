@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:id="@+id/MainLayout"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_height="fill_parent" android:layout_width="fill_parent">
+
+	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+		android:id="@+id/MainLinearLayout" android:layout_width="fill_parent"
+		android:layout_height="fill_parent" android:orientation="vertical">
+		<com.google.android.maps.MapView
+			android:id="@+id/MapView" android:layout_width="fill_parent"
+			android:layout_height="fill_parent"
+			android:apiKey="09tPGkTUONeonzhGFexDLKeEtYWusb3G5t3QppA"
+			android:clickable="true" />
+	</LinearLayout>
+
+	<LinearLayout android:id="@+id/Panel"
+		android:orientation="vertical"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_centerHorizontal="true"
+		android:layout_alignParentTop="true"
+		android:layout_marginTop="5px"
+		android:background="#99000000">
+
+		<LinearLayout android:id="@+id/ButtonLayout"
+			android:layout_width="wrap_content" android:layout_height="wrap_content">
+
+			<Button android:id="@+id/ResetButton"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="Reset"/>
+			<Button android:layout_width="wrap_content"
+				android:layout_height="wrap_content" android:id="@+id/DoneButton"
+				android:layout_weight="1.0" android:text="Done" />
+			<TextView android:id="@+id/StatusTextView"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="test" />
+		</LinearLayout>
+
+	</LinearLayout>
+
+</RelativeLayout>

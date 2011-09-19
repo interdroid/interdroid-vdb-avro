@@ -58,7 +58,7 @@ public class RecordTypeSelectHandler implements OnClickListener {
         logger.debug("Launching edit on URI: {} type: {}", uri, mActivity.getContentResolver().getType(uri));
         Intent editIntent = new Intent(Intent.ACTION_EDIT, uri);
         editIntent.putExtra(AvroBaseEditor.SCHEMA, mSchema.toString());
-        mActivity.launchIntent(editIntent);
+        mActivity.launchEditIntent(editIntent);
     }
 
 }
