@@ -1,5 +1,6 @@
 package interdroid.vdb.avro.view;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,7 +71,13 @@ public class AvroDBMaker extends Activity {
 		protected Uri doInBackground(Void... params) {
 			Schema schema = getSchema();
 			// Now we need to create the database
-			return createDb(schema);
+			Uri uri = null;
+			try {
+				uri =createDb(schema);
+			} catch (IOException e) {
+				logger.error("Error registering schema!", e);
+			}
+			return uri;
 		}
 	}
 
@@ -84,11 +91,10 @@ public class AvroDBMaker extends Activity {
 		try {
 			Uri dbUri = load.get();
 			if (dbUri != null) {
-				logger.debug("Launching new DB!");
+				logger.debug("DB Created!");
 				Intent i = new Intent(Intent.ACTION_VIEW, dbUri);
-				startActivity(i);
 				logger.debug("Finishing this activity.");
-				this.setResult(RESULT_OK);
+				this.setResult(RESULT_OK, i);
 				finish();
 			} else {
 				throw new InvalidSchemaException();
@@ -459,7 +465,7 @@ public class AvroDBMaker extends Activity {
 		return schema;
 	}
 
-	private Uri createDb(Schema schema) {
+	private Uri createDb(Schema schema) throws IOException {
 		if (schema != null) {
 			// Register the schema with the provider registry.
 			logger.debug("Initializing database: {}", schema);
