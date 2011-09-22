@@ -15,11 +15,8 @@
 	<classpathentry kind="lib" path="/vdb/external/ibis-util-2.2.jar"/>
 	<classpathentry kind="lib" path="/vdb/external/jsch-0.1.44-1.jar"/>
 	<classpathentry kind="lib" path="/slf4android/external/slf4j-1.6.2/slf4j-api-1.6.2.jar" sourcepath="/slf4android/external/slf4j-1.6.2"/>
-	<classpathentry kind="src" path="org.eclipse.jgit_src"/>
-	<classpathentry kind="src" path="org.eclipse.jgit_resources"/>
 	<classpathentry kind="src" path="slf4android_src"/>
 	<classpathentry kind="src" path="vdb_src"/>
-	<classpathentry excluding="ibis/smartsockets/viz/" kind="src" path="smartsockets_src"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/org.eclipse.jgit"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/smartsockets"/>
 	<classpathentry kind="src" path="interdroid-util_src"/>
