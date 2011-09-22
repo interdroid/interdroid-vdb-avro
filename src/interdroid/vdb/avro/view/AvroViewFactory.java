@@ -36,6 +36,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
 import android.text.InputType;
+import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -49,6 +50,7 @@ import android.widget.AbsListView.LayoutParams;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
+import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -269,24 +271,69 @@ public class AvroViewFactory {
 		}
 	}
 
-	private static View buildDateView(AvroBaseEditor activity,
+	private static View buildDateView(final AvroBaseEditor activity,
 			ViewGroup viewGroup, ValueHandler valueHandler) {
-		DatePicker view;
-		view = new DatePicker(activity);
-		DateHandler handler = new DateHandler(view, valueHandler);
-		view.setOnClickListener(handler);
-		addView(activity, viewGroup, view);
-		return view;
+		// Unfortunately DatePicker needs a Handler so it has to be initialized
+		// on the UI thread.
+		final class DateViewHolder {
+			DatePicker view = null;
+		};
+		final DateViewHolder viewHolder = new DateViewHolder();
+		activity.runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				synchronized (viewHolder) {
+					viewHolder.view = new DatePicker(activity);
+					viewHolder.notifyAll();
+				}
+			}
+		});
+		// Wait for it to finish on the UI thread.
+		synchronized (viewHolder) {
+			while (viewHolder.view == null) {
+				try {
+					viewHolder.wait();
+				} catch (InterruptedException e) {
+					// Ignored
+				}
+			}
+		}
+		DateHandler handler = new DateHandler(viewHolder.view, valueHandler);
+		addView(activity, viewGroup, viewHolder.view);
+		return viewHolder.view;
+
 	}
 
-	private static View buildTimeView(AvroBaseEditor activity,
+	private static View buildTimeView(final AvroBaseEditor activity,
 			ViewGroup viewGroup, ValueHandler valueHandler) {
-		TimePicker view;
-		view = new TimePicker(activity);
-		TimeHandler handler = new TimeHandler(view, valueHandler);
-		view.setOnClickListener(handler);
-		addView(activity, viewGroup, view);
-		return view;
+		// Unfortunately TimePicker needs a Handler so it has to be initialized
+		// on the UI thread.
+		final class TimeViewHolder {
+			TimePicker view = null;
+		};
+		final TimeViewHolder viewHolder = new TimeViewHolder();
+		activity.runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				synchronized (viewHolder) {
+					viewHolder.view = new TimePicker(activity);
+					viewHolder.notifyAll();
+				}
+			}
+		});
+		// Wait for it to finish on the UI thread.
+		synchronized (viewHolder) {
+			while (viewHolder.view == null) {
+				try {
+					viewHolder.wait();
+				} catch (InterruptedException e) {
+					// Ignored
+				}
+			}
+		}
+		TimeHandler handler = new TimeHandler(viewHolder.view, valueHandler);
+		addView(activity, viewGroup, viewHolder.view);
+		return viewHolder.view;
 	}
 
 	private static OnClickListener getRecordTypeSelectorHandler(AvroBaseEditor activity, AvroRecordModel dataModel,
@@ -363,22 +410,31 @@ public class AvroViewFactory {
 
 	private static View buildUnion(AvroBaseEditor activity, AvroRecordModel dataModel, ViewGroup viewGroup, Schema schema, String field, Uri uri,
 			UnionHandler handler) throws NotBoundException {
-		TableLayout table = new TableLayout(activity);
-		for (Schema innerType : schema.getTypes()) {
-			TableRow row = new TableRow(activity);
+		LinearLayout layout = new TableLayout(activity);
+		layout.setOrientation(LinearLayout.VERTICAL);
+		LinearLayout.LayoutParams wrapHeavy = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, 10);
+		LinearLayout.LayoutParams wrapLight = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, 0);
 
+		LayoutParams fillWrap = new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT);
+		layout.setLayoutParams(fillWrap);
+		for (Schema innerType : schema.getTypes()) {
+			LinearLayout row = new LinearLayout(activity);
+			row.setOrientation(LinearLayout.HORIZONTAL);
+			row.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
 			RadioButton radioButton = new RadioButton(activity);
 			radioButton.setFocusableInTouchMode(false);
-
+			radioButton.setLayoutParams(wrapLight);
 			row.addView(radioButton);
 
-			handler.addType(radioButton, innerType,
-					buildView(false, activity, dataModel, row, innerType, field, uri, handler.getHandler(radioButton, innerType)));
+			View view = buildView(false, activity, dataModel, null, innerType, field, uri, handler.getHandler(radioButton, innerType));
+			view.setLayoutParams(wrapHeavy);
+			row.addView(view);
+			handler.addType(radioButton, innerType, view);
 
-			table.addView(row);
+			layout.addView(row);
 		}
-		addView(activity, viewGroup, table);
-		return table;
+		addView(activity, viewGroup, layout);
+		return layout;
 	}
 
 	private static View buildArrayList(AvroBaseEditor activity, AvroRecordModel dataModel, ViewGroup viewGroup, Schema schema, String field, UriArray<Object> array) {
