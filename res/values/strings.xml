@@ -63,4 +63,5 @@
 	<string name="branch_name_label">Branch name:</string>
 	<string name="null_text"> - null - </string>
 	<string name="not_implemented">Not Yet Implemented! Sorry.</string>
+	<string name="title_this">This</string>
 </resources>
