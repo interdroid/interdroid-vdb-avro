@@ -13,13 +13,13 @@ import org.slf4j.LoggerFactory;
 
 import interdroid.util.ToastOnUI;
 import interdroid.util.view.AsyncTaskWithProgressDialog;
+import interdroid.vdb.Authority;
 import interdroid.vdb.avro.AvroSchema;
 import interdroid.vdb.avro.R;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriRecord;
 import interdroid.vdb.avro.model.UriUnion;
 import interdroid.vdb.content.EntityUriBuilder;
-import interdroid.vdb.content.VdbMainContentProvider;
 import interdroid.vdb.content.avro.AvroProviderRegistry;
 
 import android.app.Activity;
@@ -472,7 +472,7 @@ public class AvroDBMaker extends Activity {
 			AvroProviderRegistry.registerSchema(this, schema);
 
 			// Give back a URI for this database
-			Uri uri = EntityUriBuilder.branchUri(VdbMainContentProvider.AUTHORITY, schema.getNamespace(), "master");
+			Uri uri = EntityUriBuilder.branchUri(Authority.VDB, schema.getNamespace(), "master");
 			logger.debug("Uri for {} is {}", schema.getNamespace(), uri);
 			return uri;
 		} else {
