@@ -7,8 +7,16 @@ import interdroid.vdb.avro.AvroSchema;
 import android.content.ContentValues;
 import android.content.res.Resources;
 
+/**
+ * This is the provider for Avro Schemas stored as records.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
 public class AvroSchemaProvider extends AvroContentProviderProxy {
 
+	/**
+	 * Constructs an avro schema record provider.
+	 */
 	public AvroSchemaProvider() {
 		super(AvroSchema.SCHEMA);
 	}
@@ -18,7 +26,7 @@ public class AvroSchemaProvider extends AvroContentProviderProxy {
 		// TODO: These should come from the defaults in the schema and be generated
 		ContentChangeHandler.register(AvroSchema.NAMESPACE,
 				AvroSchema.RECORD_DEFINITION, new ContentChangeHandler() {
-			public void preInsertHook(ContentValues values) {
+			public void preInsertHook(final ContentValues values) {
 				Resources r = Resources.getSystem();
 				values.put("name", r.getString(android.R.string.untitled));
 			}

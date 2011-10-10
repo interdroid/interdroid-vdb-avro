@@ -249,15 +249,4 @@ public class AvroBaseEditor extends Activity {
 	public void registerEnum(int hashCode, Schema schema) {
 		enums.put(hashCode, schema);
 	}
-
-	public void launchEditIntent(Intent editIntent) {
-		editIntent.addCategory(Intent.CATEGORY_DEFAULT);
-		editIntent.setClassName(this.getPackageName(), AvroBaseEditor.class.getName());
-		startActivity(editIntent);
-	}
-
-	public void launchDefaultIntent(Intent intent) {
-		intent.addCategory(Intent.CATEGORY_DEFAULT);
-		startActivity(intent);
-	}
 }

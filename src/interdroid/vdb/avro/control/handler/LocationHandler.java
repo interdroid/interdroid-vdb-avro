@@ -5,13 +5,14 @@ import interdroid.vdb.R;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriRecord;
-import interdroid.vdb.avro.view.AvroBaseEditor;
+import interdroid.vdb.avro.view.AvroIntentUtil;
 import interdroid.vdb.avro.view.LocationPicker;
 
 import org.apache.avro.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -27,20 +28,21 @@ public class LocationHandler implements OnClickListener {
 			.getLogger(LocationHandler.class);
 
 	private final AvroRecordModel mDataModel;
-	private final AvroBaseEditor mActivity;
+	private final Activity mActivity;
 	private final ValueHandler mValueHandler;
 	private final Schema mSchema;
 	private Button mButton;
 
-	public LocationHandler(AvroRecordModel dataModel, AvroBaseEditor activity,
-			Schema schema, ValueHandler valueHandler) {
+	public LocationHandler(AvroRecordModel dataModel, Activity activity,
+			Schema schema, ValueHandler valueHandler,
+			Button cameraButton, ImageView image) {
 		mDataModel = dataModel;
 		mActivity = activity;
 		mValueHandler = valueHandler;
 		mSchema = schema;
 
-
-
+		setButton(cameraButton);
+		setImageView(image);
 	}
 
 	public void setButton(Button pickButton) {
@@ -66,21 +68,23 @@ public class LocationHandler implements OnClickListener {
 			logger.debug("Launching location picker intent for URI: {} type: {}", uri, mActivity.getContentResolver().getType(uri));
 			Intent locationIntent = new Intent(LocationPicker.ACTION_PICK_LOCATION, uri);
 			locationIntent.setClassName(mActivity, LocationPicker.class.getName());
-			mActivity.launchDefaultIntent(locationIntent);
+			AvroIntentUtil.launchDefaultIntent(mActivity, locationIntent);
 		} catch (NotBoundException e) {
 			logger.error("Not bound!");
-			ToastOnUI.show(mActivity, R.string.error_picking_location, Toast.LENGTH_LONG);
+			ToastOnUI.show(mActivity, R.string.error_picking_location,
+					Toast.LENGTH_LONG);
 		}
 	}
 
-	public void setImageView(final ImageView image) {
+	public final void setImageView(final ImageView image) {
 		if (mValueHandler.getValue() != null) {
 			logger.debug("Setting bitmap.");
 			try {
-				UriRecord record = (UriRecord)mValueHandler.getValue();
+				UriRecord record = (UriRecord) mValueHandler.getValue();
 				byte[] data = (byte[]) record.get(LocationPicker.MAP_IMAGE);
 				if (data != null && data.length > 0) {
-					final Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+					final Bitmap bitmap =
+							BitmapFactory.decodeByteArray(data, 0, data.length);
 					mActivity.runOnUiThread(new Runnable() {
 
 						@Override

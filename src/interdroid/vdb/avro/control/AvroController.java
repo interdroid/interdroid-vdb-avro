@@ -3,7 +3,7 @@ package interdroid.vdb.avro.control;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.view.AvroBaseEditor;
-import interdroid.vdb.avro.view.AvroViewFactory;
+import interdroid.vdb.avro.view.factory.AvroViewFactory;
 import interdroid.vdb.content.EntityUriMatcher;
 import interdroid.vdb.content.EntityUriMatcher.UriMatch;
 
@@ -214,7 +214,7 @@ public class AvroController {
     }
 
     /**
-     * Return the state the controller is in
+     * Return the state the controller is in.
      *
      * @return either EDIT_STATE or INSERT_STATE
      */
@@ -222,6 +222,10 @@ public class AvroController {
         return mState;
     }
 
+    /**
+     * Sets the content resolver on the underlying data model.
+     * @param contentResolver the resolver for the model to use
+     */
     public void setResolver(ContentResolver contentResolver) {
         mDataModel.setResolver(contentResolver);
     }

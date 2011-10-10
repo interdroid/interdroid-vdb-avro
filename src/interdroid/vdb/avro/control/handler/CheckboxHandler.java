@@ -10,9 +10,10 @@ public class CheckboxHandler implements OnCheckedChangeListener {
 	private final AvroRecordModel mDataModel;
 	private final ValueHandler mValueHandler;
 
-	public CheckboxHandler(AvroRecordModel dataModel, ValueHandler valueHandler) {
+	public CheckboxHandler(AvroRecordModel dataModel, ValueHandler valueHandler, CheckBox text) {
 		mDataModel = dataModel;
 		mValueHandler = valueHandler;
+		setWatched(text);
 	}
 
 	@Override
@@ -22,7 +23,7 @@ public class CheckboxHandler implements OnCheckedChangeListener {
 		mDataModel.onChanged();
 	}
 
-	public void setWatched(CheckBox text) {
+	private void setWatched(CheckBox text) {
 		Object value = mValueHandler.getValue();
 		if (Boolean.TRUE.equals(value)) {
 			text.setChecked(true);

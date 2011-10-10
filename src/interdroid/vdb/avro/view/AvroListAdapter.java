@@ -36,12 +36,17 @@ public class AvroListAdapter extends CursorAdapter {
 	/**
 	 * The largest size image to show in the image view.
 	 */
-	private static final int	MAX_LIST_IMAGE_SIZE	= 150;
+	private static final int	MAX_LIST_IMAGE_SIZE			= 150;
 
 	/**
-	 * The default font size in a list.
+	 * The default font size for elements in a list.
 	 */
-	private static final int	DEFAULT_FONT_SIZE	= 12;
+	private static final int	DEFAULT_ELEMENT_FONT_SIZE	= 12;
+
+	/**
+	 * The default font size for labels in a list.
+	 */
+	private static final float	DEFAULT_LABEL_FONT_SIZE		= 9;
 
 	/** Our logging interface. */
 	private static final Logger LOG =
@@ -278,11 +283,26 @@ public class AvroListAdapter extends CursorAdapter {
 	 */
 	private void buildView(final Context context, final LinearLayout layout,
 			final Cursor cursor, final Field field) {
+		LinearLayout row = new LinearLayout(context);
+		row.setOrientation(LinearLayout.HORIZONTAL);
+		LinearLayout.LayoutParams zeroWeight =
+				new LinearLayout.LayoutParams(
+						LinearLayout.LayoutParams.WRAP_CONTENT,
+						LinearLayout.LayoutParams.WRAP_CONTENT, 0);
+		LinearLayout.LayoutParams oneWeight =
+				new LinearLayout.LayoutParams(
+						LinearLayout.LayoutParams.WRAP_CONTENT,
+						LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+		TextView label = new TextView(context);
+		label.setText(field.name() + ": ");
+		label.setTextSize(TypedValue.COMPLEX_UNIT_PT, DEFAULT_LABEL_FONT_SIZE);
+		row.addView(label, zeroWeight);
+		layout.addView(row);
 		switch (field.schema().getType()) {
 		case BOOLEAN:
 			CheckBox booleanView =  new CheckBox(context);
 			booleanView.setTag(field.name());
-			layout.addView(booleanView);
+			row.addView(booleanView, oneWeight);
 			break;
 		case DOUBLE:
 		case FLOAT:
@@ -291,14 +311,14 @@ public class AvroListAdapter extends CursorAdapter {
 		case STRING:
 		case ENUM:
 			TextView view = new TextView(context);
-			view.setTextSize(TypedValue.COMPLEX_UNIT_PT, DEFAULT_FONT_SIZE);
+			view.setTextSize(TypedValue.COMPLEX_UNIT_PT, DEFAULT_ELEMENT_FONT_SIZE);
 			view.setTag(field.name());
-			layout.addView(view);
+			row.addView(view, oneWeight);
 			break;
 		case BYTES:
 			ImageView image = new ImageView(context);
 			image.setTag(field.name());
-			layout.addView(image);
+			row.addView(image, oneWeight);
 			break;
 		case RECORD:
 

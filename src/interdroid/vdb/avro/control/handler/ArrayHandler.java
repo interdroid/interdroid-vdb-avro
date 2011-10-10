@@ -6,13 +6,13 @@ import interdroid.util.view.DraggableAdapter;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriArray;
-import interdroid.vdb.avro.view.AvroBaseEditor;
-import interdroid.vdb.avro.view.AvroViewFactory;
+import interdroid.vdb.avro.view.factory.AvroViewFactory;
 
 import org.apache.avro.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import android.app.Activity;
 import android.database.DataSetObservable;
 import android.database.DataSetObserver;
 import android.view.View;
@@ -24,14 +24,16 @@ public class ArrayHandler implements DraggableAdapter, AddListener  {
 
 	private DataSetObservable observables = new DataSetObservable();
 
-	private final AvroBaseEditor mActivity;
+	private final Activity mActivity;
 	private final UriArray<Object> mArray;
 	private final Schema mElementSchema;
 	private final AvroRecordModel mDataModel;
 	private final ViewGroup mViewGroup;
 	private final String mField;
 
-	public ArrayHandler(AvroBaseEditor activity, AvroRecordModel dataModel, ViewGroup viewGroup, UriArray<Object> array, Schema elementSchema, String field) {
+	public ArrayHandler(Activity activity, AvroRecordModel dataModel,
+			ViewGroup viewGroup, UriArray<Object> array,
+			Schema elementSchema, String field) {
 		mActivity = activity;
 		mArray = array;
 		mElementSchema = elementSchema;
@@ -42,7 +44,7 @@ public class ArrayHandler implements DraggableAdapter, AddListener  {
 	}
 
 	private View getSubView(int offset) throws NotBoundException {
-		return AvroViewFactory.buildArrayView(true, mActivity, mDataModel, mArray, mElementSchema, mField, mArray.getInstanceUri(), offset);
+		return AvroViewFactory.buildArrayView(mActivity, mDataModel, mArray, mElementSchema, mField, mArray.getInstanceUri(), offset);
 	}
 
 	@Override

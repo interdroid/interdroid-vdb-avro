@@ -4,6 +4,7 @@ import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriRecord;
 import interdroid.vdb.avro.view.AvroBaseEditor;
+import interdroid.vdb.avro.view.AvroIntentUtil;
 import interdroid.vdb.content.EntityUriBuilder;
 import interdroid.vdb.avro.AvroSchema;
 
@@ -12,6 +13,7 @@ import org.apache.avro.generic.GenericData.Record;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.net.Uri;
@@ -22,13 +24,13 @@ import android.widget.Button;
 public class RecordTypeSelectHandler implements OnClickListener {
     private static final Logger logger = LoggerFactory.getLogger(RecordTypeSelectHandler.class);
 
-    private final AvroBaseEditor mActivity;
+    private final Activity mActivity;
     private final Schema mSchema;
     private final ValueHandler mValueHandler;
     private final AvroRecordModel mDataModel;
     private final Button mButton;
 
-    public RecordTypeSelectHandler(AvroBaseEditor activity,
+    public RecordTypeSelectHandler(Activity activity,
             AvroRecordModel dataModel, Schema schema, ValueHandler handler,
             Button button) {
         mActivity = activity;
@@ -38,7 +40,7 @@ public class RecordTypeSelectHandler implements OnClickListener {
         mButton = button;
     }
 
-    @Override
+	@Override
     public void onClick(View v) {
         Uri uri;
         if (mValueHandler.getValue() == null) {
@@ -58,7 +60,7 @@ public class RecordTypeSelectHandler implements OnClickListener {
         logger.debug("Launching edit on URI: {} type: {}", uri, mActivity.getContentResolver().getType(uri));
         Intent editIntent = new Intent(Intent.ACTION_EDIT, uri);
         editIntent.putExtra(AvroBaseEditor.SCHEMA, mSchema.toString());
-        mActivity.launchEditIntent(editIntent);
+        AvroIntentUtil.launchEditIntent(mActivity, editIntent);
     }
 
 }
