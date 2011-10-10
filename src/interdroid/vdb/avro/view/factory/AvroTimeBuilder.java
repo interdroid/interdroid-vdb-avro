@@ -1,6 +1,5 @@
 package interdroid.vdb.avro.view.factory;
 
-import interdroid.util.view.ViewUtil;
 import interdroid.vdb.avro.control.handler.TimeHandler;
 import interdroid.vdb.avro.control.handler.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
@@ -74,7 +73,7 @@ class AvroTimeBuilder extends AvroViewBuilder {
 					// Add it to the view group
 					viewGroup.addView(viewHolder.view);
 
-					// Build the timeHandler to take data out of view and put it in record
+					// Build the timeHandler to manage the data
 					new TimeHandler(viewHolder.view, valueHandler);
 
 					viewHolder.notifyAll();

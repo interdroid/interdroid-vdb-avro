@@ -3,16 +3,45 @@ package interdroid.vdb.avro;
 
 import org.apache.avro.Schema;
 
-public class AvroSchema {
+/**
+ * The schema for an avro schema.
+ *
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
+public final class AvroSchema {
 
+	/**
+	 * Prevent construction.
+	 */
 	private AvroSchema() {
 		// No Construction;
 	}
 
-	public static final String NAMESPACE = "interdroid.vdb.content.avro.schemas";
+	/**
+	 * The namespace for avro schemas.
+	 */
+	public static final String NAMESPACE =
+			"interdroid.vdb.content.avro.schemas";
+
+	/**
+	 * The schema for avro schemas.
+	 */
 	public static final Schema SCHEMA;
+
+	/**
+	 * The schema for avro records.
+	 */
 	public static final Schema RECORD;
+
+	/**
+	 * The name of the record definition within the schema for schemas.
+	 */
 	public static final String RECORD_DEFINITION = "Record";
+
+	// CHECKSTYLE:OFF
+	// Yes, lines are long but this is by design so we can deal with bugs
+	// by line number thrown by the Schema parser.
 
 	// TODO: It would be nice to support cross namespace records and such.
 	// TODO: Extract constants
@@ -134,6 +163,7 @@ public class AvroSchema {
 			+ "\n     ]}"
 			+ "\n ]"
 			+ "\n}";
+		// CHECKSTYLE:ON
 
 		SCHEMA = Schema.parse(schema);
 		RECORD = SCHEMA.getField("type").schema().getTypes().get(0);

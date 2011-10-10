@@ -311,7 +311,8 @@ public class AvroListAdapter extends CursorAdapter {
 		case STRING:
 		case ENUM:
 			TextView view = new TextView(context);
-			view.setTextSize(TypedValue.COMPLEX_UNIT_PT, DEFAULT_ELEMENT_FONT_SIZE);
+			view.setTextSize(TypedValue.COMPLEX_UNIT_PT,
+					DEFAULT_ELEMENT_FONT_SIZE);
 			view.setTag(field.name());
 			row.addView(view, oneWeight);
 			break;

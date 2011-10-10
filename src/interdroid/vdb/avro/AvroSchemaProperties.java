@@ -6,7 +6,14 @@ package interdroid.vdb.avro;
  * @author nick &lt;palmer@cs.vu.nl&gt;
  *
  */
-public interface AvroSchemaProperties {
+public final class AvroSchemaProperties {
+
+	/**
+	 * Prevent construction.
+	 */
+	private AvroSchemaProperties() {
+		// No constuction
+	}
 
 	/**
 	 * A custom widget type for the schema or field.
