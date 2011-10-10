@@ -1,6 +1,5 @@
 package interdroid.vdb.avro.view.factory;
 
-import interdroid.util.view.ViewUtil;
 import interdroid.vdb.avro.control.handler.DateHandler;
 import interdroid.vdb.avro.control.handler.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
@@ -64,7 +63,7 @@ class AvroDateBuilder extends AvroViewBuilder {
 		// Unfortunately DatePicker needs a Handler so it has to be initialized
 		// on the UI thread.
 		final DateViewHolder viewHolder = new DateViewHolder();
-		
+
 		activity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
