@@ -21,6 +21,7 @@ import interdroid.vdb.avro.model.UriRecord;
 import interdroid.vdb.avro.model.UriUnion;
 import interdroid.vdb.content.EntityUriBuilder;
 import interdroid.vdb.content.avro.AvroProviderRegistry;
+import interdroid.vdb.content.avro.AvroSchemaRegistrationHandler;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -469,7 +470,7 @@ public class AvroDBMaker extends Activity {
 		if (schema != null) {
 			// Register the schema with the provider registry.
 			logger.debug("Initializing database: {}", schema);
-			AvroProviderRegistry.registerSchema(this, schema);
+			AvroSchemaRegistrationHandler.registerSchema(this, schema);
 
 			// Give back a URI for this database
 			Uri uri = EntityUriBuilder.branchUri(Authority.VDB, schema.getNamespace(), "master");
