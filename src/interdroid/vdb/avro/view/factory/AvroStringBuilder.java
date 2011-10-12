@@ -6,6 +6,7 @@ import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 
 import org.apache.avro.Schema;
+import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
 
 import android.app.Activity;
@@ -33,7 +34,7 @@ class AvroStringBuilder extends AvroViewBuilder {
 	public final View buildEditView(final Activity activity,
 			final AvroRecordModel dataModel,
 			final ViewGroup viewGroup, final Schema schema,
-			final String field, final Uri uri,
+			final Field field, final Uri uri,
 			final ValueHandler valueHandler) throws NotBoundException {
 		return buildEditText(activity, viewGroup, schema,
 				InputType.TYPE_CLASS_TEXT,

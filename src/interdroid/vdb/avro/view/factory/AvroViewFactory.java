@@ -119,18 +119,18 @@ public final class AvroViewFactory {
 	 */
 	private static View buildView(final Activity activity,
 			final AvroRecordModel dataModel, final ViewGroup viewGroup,
-			final Schema schema, final String field,
+			final Schema schema, final Field field,
 			final Uri uri, final ValueHandler valueHandler)
 					throws NotBoundException {
 
 		View view = AvroViewBuilder.getEditView(activity, dataModel,
 				viewGroup, schema, field, uri, valueHandler);
 
-		if (schema.getProp(AvroSchemaProperties.UI_VISIBLE) != null) {
+		if (field.schema().getProp(AvroSchemaProperties.UI_VISIBLE) != null) {
 			LOG.debug("Hiding view.");
 			view.setVisibility(View.GONE);
 		}
-		if (schema.getProp(AvroSchemaProperties.UI_ENABLED) != null) {
+		if (field.schema().getProp(AvroSchemaProperties.UI_ENABLED) != null) {
 			LOG.debug("Disabling view.");
 			view.setEnabled(false);
 		}
@@ -163,7 +163,7 @@ public final class AvroViewFactory {
 			ViewUtil.addView(activity, viewGroup, label);
 		}
 
-		buildView(activity, dataModel, viewGroup, field.schema(), field.name(),
+		buildView(activity, dataModel, viewGroup, field.schema(), field,
 				record.getInstanceUri(),
 				new RecordValueHandler(dataModel, record, field.name()));
 
@@ -176,7 +176,7 @@ public final class AvroViewFactory {
 	 * @param dataModel the model for the data
 	 * @param array the array with the data
 	 * @param elementSchema the schema for the element
-	 * @param field the field with the array
+	 * @param field the field of the array
 	 * @param uri the uri for the array
 	 * @param offset the offset into the array
 	 * @return the built view
@@ -184,7 +184,7 @@ public final class AvroViewFactory {
 	 */
 	public static View buildArrayView(final Activity activity,
 			final AvroRecordModel dataModel, final UriArray<Object> array,
-			final Schema elementSchema, final String field,
+			final Schema elementSchema, final Field field,
 			final Uri uri, final int offset)
 					throws NotBoundException {
 
@@ -193,7 +193,7 @@ public final class AvroViewFactory {
 		buildView(activity, dataModel,
 				(ViewGroup) layout.findViewById(R.id.array_layout),
 				elementSchema, field, uri,
-				new ArrayValueHandler(dataModel, field, array, offset));
+				new ArrayValueHandler(dataModel, field.name(), array, offset));
 		return layout;
 	}
 

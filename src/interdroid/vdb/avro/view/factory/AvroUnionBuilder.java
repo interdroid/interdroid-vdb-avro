@@ -8,6 +8,7 @@ import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriUnion;
 
 import org.apache.avro.Schema;
+import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
 
 import android.app.Activity;
@@ -47,7 +48,7 @@ class AvroUnionBuilder extends AvroViewBuilder {
 	@Override
 	public final View buildEditView(final Activity activity,
 			final AvroRecordModel dataModel, final ViewGroup viewGroup,
-			final Schema schema, final String field, final Uri uri,
+			final Schema schema, final Field field, final Uri uri,
 			final ValueHandler valueHandler) throws NotBoundException {
 		return buildUnion(activity, dataModel, viewGroup, schema, field, uri,
 				new UnionHandler(dataModel, valueHandler,
@@ -68,7 +69,7 @@ class AvroUnionBuilder extends AvroViewBuilder {
 	 */
 	private static View buildUnion(final Activity activity,
 			final AvroRecordModel dataModel, final ViewGroup viewGroup,
-			final Schema schema, final String field, final Uri uri,
+			final Schema schema, final Field field, final Uri uri,
 			final UnionHandler handler)
 					throws NotBoundException {
 		LinearLayout layout = new TableLayout(activity);

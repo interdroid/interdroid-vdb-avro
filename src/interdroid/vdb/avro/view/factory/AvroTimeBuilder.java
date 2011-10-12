@@ -6,6 +6,7 @@ import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 
 import org.apache.avro.Schema;
+import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +58,7 @@ class AvroTimeBuilder extends AvroViewBuilder {
 	public final View buildEditView(final Activity activity,
 			final AvroRecordModel dataModel,
 			final ViewGroup viewGroup, final Schema schema,
-			final String field, final Uri uri,
+			final Field field, final Uri uri,
 			final ValueHandler valueHandler) throws NotBoundException {
 
 		// Unfortunately TimePicker needs a Handler so it has to be initialized

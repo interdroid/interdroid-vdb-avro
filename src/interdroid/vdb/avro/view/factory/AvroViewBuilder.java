@@ -11,6 +11,7 @@ import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 
 import org.apache.avro.Schema;
+import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,7 @@ abstract class AvroViewBuilder {
 		new AvroRecordBuilder(),
 		new AvroStringBuilder(),
 		new AvroTimeBuilder(),
+		new AvroTimestampBuilder(),
 		new AvroUnionBuilder(),
 	};
 
@@ -88,34 +90,38 @@ abstract class AvroViewBuilder {
 	 */
 	public static View getEditView(final Activity activity,
 			final AvroRecordModel dataModel, final ViewGroup viewGroup,
-			final Schema schema, final String field, final Uri uri,
+			final Schema schema, final Field field, final Uri uri,
 			final ValueHandler valueHandler)
 					throws NotBoundException {
 
-		if (schema.getProp(AvroSchemaProperties.UI_RESOURCE) != null) {
+		if (field.getProp(AvroSchemaProperties.UI_RESOURCE) != null) {
 
 			logger.debug("Inflating custom resource: {}",
-					schema.getProp(AvroSchemaProperties.UI_RESOURCE));
+					field.getProp(AvroSchemaProperties.UI_RESOURCE));
 			try {
 
 				View view = ViewUtil.getLayoutInflater(activity).inflate(
 						Integer.valueOf(
-								schema.getProp(
+								field.getProp(
 										AvroSchemaProperties.UI_RESOURCE)),
 										null);
 				return view;
 
 			} catch (Exception e) {
 				logger.error("Unable to inflate resource: {}",
-						schema.getProp(AvroSchemaProperties.UI_RESOURCE));
+						field.getProp(AvroSchemaProperties.UI_RESOURCE));
 				throw new RuntimeException("Unable to inflate UI resource: "
-						+ schema.getProp(AvroSchemaProperties.UI_RESOURCE), e);
+						+ field.getProp(AvroSchemaProperties.UI_RESOURCE), e);
 			}
 
 		} else {
 
 			// Find the builder for this type
-			AvroViewBuilder builder = sBuilders.get(new AvroViewType(schema));
+			logger.debug("Getting builder for: {}", field);
+			AvroViewBuilder builder = sBuilders.get(new AvroViewType(field));
+
+			logger.debug("Building with: {} {}", builder, schema.getName());
+
 			if (builder == null) {
 				logger.error("No builder for schema: {}", schema);
 				throw new RuntimeException(
@@ -211,6 +217,21 @@ abstract class AvroViewBuilder {
 		return text;
 	}
 
+	/**
+	 * Builds a text view with the given text string.
+	 * @param activity the activity to build in
+	 * @param viewGroup the view group to add to
+	 * @param text the text to set
+	 * @return the built view
+	 */
+	protected static View buildTextView(final Activity activity,
+			final ViewGroup viewGroup, final String text) {
+		TextView textView = new TextView(activity);
+		textView.setText(text);
+		ViewUtil.addView(activity, viewGroup, textView);
+		return textView;
+	}
+
 	// =-=-=-=- Subclass interface -=-=-=-=
 
 	/**
@@ -227,7 +248,7 @@ abstract class AvroViewBuilder {
 	 */
 	protected abstract View buildEditView(final Activity activity,
 			final AvroRecordModel dataModel, final ViewGroup viewGroup,
-			final Schema schema, final String field, final Uri uri,
+			final Schema schema, final Field field, final Uri uri,
 			final ValueHandler valueHandler) throws NotBoundException;
 
 }

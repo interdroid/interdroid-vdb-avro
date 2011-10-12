@@ -9,6 +9,7 @@ import interdroid.vdb.avro.model.UriArray;
 import interdroid.vdb.avro.view.factory.AvroViewFactory;
 
 import org.apache.avro.Schema;
+import org.apache.avro.Schema.Field;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,11 +30,11 @@ public class ArrayHandler implements DraggableAdapter, AddListener  {
 	private final Schema mElementSchema;
 	private final AvroRecordModel mDataModel;
 	private final ViewGroup mViewGroup;
-	private final String mField;
+	private final Field mField;
 
 	public ArrayHandler(Activity activity, AvroRecordModel dataModel,
 			ViewGroup viewGroup, UriArray<Object> array,
-			Schema elementSchema, String field) {
+			Schema elementSchema, Field field) {
 		mActivity = activity;
 		mArray = array;
 		mElementSchema = elementSchema;
