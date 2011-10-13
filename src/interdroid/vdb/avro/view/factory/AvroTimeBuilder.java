@@ -4,6 +4,7 @@ import interdroid.vdb.avro.control.handler.TimeHandler;
 import interdroid.vdb.avro.control.handler.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
+import interdroid.vdb.avro.view.DataFormatUtil;
 
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
@@ -12,9 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import android.app.Activity;
+import android.database.Cursor;
 import android.net.Uri;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.TimePicker;
 
 /**
@@ -22,7 +25,7 @@ import android.widget.TimePicker;
  * @author nick &lt;palmer@cs.vu.nl&gt;
  *
  */
-class AvroTimeBuilder extends AvroViewBuilder {
+class AvroTimeBuilder extends AvroTypedTextViewBuilder {
 	/**
 	 * Access to logging.
 	 */
@@ -95,4 +98,14 @@ class AvroTimeBuilder extends AvroViewBuilder {
 
 		return viewHolder.view;
 	}
+
+	@Override
+	final void bindListView(final View view, final Cursor cursor,
+			final Field field) {
+		TextView text = (TextView) view.findViewWithTag(field.name());
+		int index = cursor.getColumnIndex(field.name());
+		text.setText(
+				DataFormatUtil.formatTimeForDisplay(cursor.getLong(index)));
+	}
+
 }

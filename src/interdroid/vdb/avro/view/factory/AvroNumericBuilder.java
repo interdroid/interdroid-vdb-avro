@@ -1,5 +1,6 @@
 package interdroid.vdb.avro.view.factory;
 
+
 import interdroid.vdb.avro.control.handler.EditTextHandler;
 import interdroid.vdb.avro.control.handler.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
@@ -10,10 +11,12 @@ import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
 
 import android.app.Activity;
+import android.database.Cursor;
 import android.net.Uri;
 import android.text.InputType;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 /**
  * A builder for numeric data types.
@@ -21,7 +24,7 @@ import android.view.ViewGroup;
  * @author nick &lt;palmer@cs.vu.nl&gt;
  *
  */
-class AvroNumericBuilder extends AvroViewBuilder {
+class AvroNumericBuilder extends AvroTypedTextViewBuilder {
 
 	/**
 	 * Construct a builder for numeric types.
@@ -69,5 +72,27 @@ class AvroNumericBuilder extends AvroViewBuilder {
 		return buildEditText(activity, viewGroup, schema, flags,
 				new EditTextHandler(dataModel, schema.getType(), valueHandler)
 				);
+	}
+
+	@Override
+	final void bindListView(final View view, final Cursor cursor,
+			final Field field) {
+		TextView text = (TextView) view.findViewWithTag(field);
+		int index = cursor.getColumnIndex(field.name());
+		switch (field.schema().getType()) {
+		case INT:
+			text.setText(String.valueOf(cursor.getInt(index)));
+			break;
+		case LONG:
+			text.setText(String.valueOf(cursor.getLong(index)));
+			break;
+		case DOUBLE:
+			text.setText(String.valueOf(cursor.getDouble(index)));
+			break;
+		case FLOAT:
+			text.setText(String.valueOf(cursor.getFloat(index)));
+		default:
+			throw new RuntimeException("Unsupported type: " + field);
+		}
 	}
 }

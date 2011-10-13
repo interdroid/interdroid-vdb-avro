@@ -1,10 +1,10 @@
 package interdroid.vdb.avro.control.handler;
 
+import interdroid.vdb.avro.view.DataFormatUtil;
+
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.TimeZone;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,11 +13,6 @@ import android.widget.TimePicker;
 import android.widget.TimePicker.OnTimeChangedListener;
 
 public class TimeHandler implements OnTimeChangedListener {
-	private static final SimpleDateFormat TIME_FORMAT;
-	static {
-		TIME_FORMAT = new SimpleDateFormat("HHmmss");
-		TIME_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
-	}
 
 	private static final Logger logger = LoggerFactory
 			.getLogger(TimeHandler.class);
@@ -31,7 +26,7 @@ public class TimeHandler implements OnTimeChangedListener {
 		// Set the initial value
 		Calendar value = Calendar.getInstance();
 		try {
-			Date d = TIME_FORMAT.parse(String.valueOf(mValueHandler.getValue()));
+			Date d = DataFormatUtil.getTimeAsDate((Long) mValueHandler.getValue());
 			value.set(1970, Calendar.JANUARY, 1, d.getHours(), d.getMinutes(), 0);
 //			value.setTimeZone(TimeZone.getDefault());
 		} catch (ParseException e) {
@@ -49,8 +44,9 @@ public class TimeHandler implements OnTimeChangedListener {
 		// Update the model
 		Calendar value = Calendar.getInstance();
 		value.set(1970, Calendar.JANUARY, 1, hourOfDay, minute, 0);
-		logger.debug("Setting time to: {}", TIME_FORMAT.format(value.getTime()));
-		mValueHandler.setValue(Long.valueOf(TIME_FORMAT.format(value.getTime())));
+		long format = DataFormatUtil.formatTimeForStorage(value);
+		logger.debug("Setting time to: {}", format);
+		mValueHandler.setValue(format);
 	}
 
 }

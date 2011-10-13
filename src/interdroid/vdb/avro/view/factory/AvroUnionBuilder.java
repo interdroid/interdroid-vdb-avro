@@ -1,6 +1,10 @@
 package interdroid.vdb.avro.view.factory;
 
+import java.util.List;
+
+import interdroid.util.view.LayoutUtil.LayoutWeight;
 import interdroid.util.view.ViewUtil;
+import interdroid.util.view.LayoutUtil.LayoutParameters;
 import interdroid.vdb.avro.control.handler.UnionHandler;
 import interdroid.vdb.avro.control.handler.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
@@ -12,13 +16,14 @@ import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
 
 import android.app.Activity;
+import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
-import android.widget.TableLayout;
 import android.widget.AbsListView.LayoutParams;
 
 /**
@@ -26,17 +31,7 @@ import android.widget.AbsListView.LayoutParams;
  * @author nick
  *
  */
-class AvroUnionBuilder extends AvroViewBuilder {
-
-	/**
-	 * A heavy weight component.
-	 */
-	private static final int WEIGHT_HEAVY = 10;
-
-	/**
-	 * A zero weight component.
-	 */
-	private static final int WEIGHT_NONE = 0;
+class AvroUnionBuilder extends AvroTypedViewBuilder {
 
 	/**
 	 * Construct a builder for Type.UNION.
@@ -52,7 +47,7 @@ class AvroUnionBuilder extends AvroViewBuilder {
 			final ValueHandler valueHandler) throws NotBoundException {
 		return buildUnion(activity, dataModel, viewGroup, schema, field, uri,
 				new UnionHandler(dataModel, valueHandler,
-				getUnion(uri, valueHandler, schema)));
+						getUnion(uri, valueHandler, schema)));
 	}
 
 	/**
@@ -72,16 +67,8 @@ class AvroUnionBuilder extends AvroViewBuilder {
 			final Schema schema, final Field field, final Uri uri,
 			final UnionHandler handler)
 					throws NotBoundException {
-		LinearLayout layout = new TableLayout(activity);
+		LinearLayout layout = new LinearLayout(activity);
 		layout.setOrientation(LinearLayout.VERTICAL);
-		LinearLayout.LayoutParams wrapHeavy =
-				new LinearLayout.LayoutParams(
-						LayoutParams.WRAP_CONTENT,
-						LayoutParams.WRAP_CONTENT, WEIGHT_HEAVY);
-		LinearLayout.LayoutParams wrapLight =
-				new LinearLayout.LayoutParams(
-						LayoutParams.WRAP_CONTENT,
-						LayoutParams.WRAP_CONTENT, WEIGHT_NONE);
 
 		LayoutParams fillWrap = new LayoutParams(
 				LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT);
@@ -92,13 +79,17 @@ class AvroUnionBuilder extends AvroViewBuilder {
 			row.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
 			RadioButton radioButton = new RadioButton(activity);
 			radioButton.setFocusableInTouchMode(false);
-			radioButton.setLayoutParams(wrapLight);
+			LayoutParameters.setLinearLayoutParams(
+					LayoutParameters.W_WRAP_H_WRAP, LayoutWeight.Zero,
+					radioButton);
 			row.addView(radioButton);
 
 			View view = AvroViewBuilder.getEditView(activity, dataModel, null,
-					innerType, field, uri,
+					innerType, null, uri,
 					handler.getHandler(radioButton, innerType));
-			view.setLayoutParams(wrapHeavy);
+			LayoutParameters.setLinearLayoutParams(
+					LayoutParameters.W_WRAP_H_WRAP, LayoutWeight.Zero,
+					view);
 			row.addView(view);
 			handler.addType(radioButton, innerType, view);
 
@@ -123,5 +114,24 @@ class AvroUnionBuilder extends AvroViewBuilder {
 			value = new UriUnion(schema);
 		}
 		return value;
+	}
+
+	@Override
+	final View buildListView(final Context context, final Field field) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	final void bindListView(final View view, final Cursor cursor,
+			final Field field) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	final List<String> getProjectionFields(final Field field) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

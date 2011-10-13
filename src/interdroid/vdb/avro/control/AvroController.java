@@ -230,4 +230,8 @@ public class AvroController {
         mDataModel.setResolver(contentResolver);
     }
 
+	public Schema getSchema() {
+		return mSchema;
+	}
+
 }

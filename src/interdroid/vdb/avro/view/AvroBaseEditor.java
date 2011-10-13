@@ -11,6 +11,7 @@ import interdroid.util.view.AsyncTaskWithProgressDialog;
 import interdroid.vdb.R;
 import interdroid.vdb.avro.control.AvroController;
 import interdroid.vdb.avro.model.NotBoundException;
+import interdroid.vdb.avro.view.factory.AvroViewFactory;
 import interdroid.vdb.content.avro.AvroProviderRegistry;
 
 import android.app.Activity;
@@ -126,9 +127,11 @@ public class AvroBaseEditor extends Activity {
 
 			// Modify our overall title depending on the mode we are running in.
 			if (mController.getState() == AvroController.STATE_EDIT) {
-				AvroBaseEditor.this.setTitle(getText(R.string.title_edit) + " " + mController.getTypeName());
+				AvroBaseEditor.this.setTitle(getText(R.string.title_edit) + " " +
+						AvroViewFactory.toTitle(mController.getSchema()));
 			} else if (mController.getState() == AvroController.STATE_INSERT) {
-				AvroBaseEditor.this.setTitle(getText(R.string.title_create) + " " + mController.getTypeName());
+				AvroBaseEditor.this.setTitle(getText(R.string.title_create) + " " +
+						AvroViewFactory.toTitle(mController.getSchema()));
 			}
 
 			super.onPostExecute(v);

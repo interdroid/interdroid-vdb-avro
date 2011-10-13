@@ -10,10 +10,12 @@ import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
 
 import android.app.Activity;
+import android.database.Cursor;
 import android.net.Uri;
 import android.text.InputType;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 /**
  * A builder for Type.STRING.
@@ -21,7 +23,7 @@ import android.view.ViewGroup;
  * @author nick &lt;palmer@cs.vu.nl&gt;
  *
  */
-class AvroStringBuilder extends AvroViewBuilder {
+class AvroStringBuilder extends AvroTypedTextViewBuilder {
 
 	/**
 	 * Construct a buidler for Type.STRING.
@@ -39,6 +41,14 @@ class AvroStringBuilder extends AvroViewBuilder {
 		return buildEditText(activity, viewGroup, schema,
 				InputType.TYPE_CLASS_TEXT,
 				new EditTextHandler(dataModel, schema.getType(), valueHandler));
+	}
+
+	@Override
+	final void bindListView(final View view, final Cursor cursor,
+			final Field field) {
+		TextView text = (TextView) view.findViewWithTag(field.name());
+		int index = cursor.getColumnIndex(field.name());
+		text.setText(cursor.getString(index));
 	}
 
 }

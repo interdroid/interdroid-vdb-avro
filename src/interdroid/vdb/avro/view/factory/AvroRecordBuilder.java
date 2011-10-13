@@ -1,5 +1,7 @@
 package interdroid.vdb.avro.view.factory;
 
+import java.util.List;
+
 import interdroid.util.view.ViewUtil;
 import interdroid.vdb.R;
 import interdroid.vdb.avro.control.handler.RecordTypeSelectHandler;
@@ -13,6 +15,8 @@ import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
 
 import android.app.Activity;
+import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,7 +28,7 @@ import android.widget.Button;
  * @author nick
  *
  */
-class AvroRecordBuilder extends AvroViewBuilder {
+class AvroRecordBuilder extends AvroTypedViewBuilder {
 
 	/**
 	 * Constructs a builder for Type.RECORD && widget == null.
@@ -32,33 +36,6 @@ class AvroRecordBuilder extends AvroViewBuilder {
 	protected AvroRecordBuilder() {
 		super(Type.RECORD);
 	}
-
-//	/**
-//	 * Returns or constructs UriRecord and sets in valueHandler.
-//	 * @param activity the activity we are working in
-//	 * @param valueHandler the value handler with the data
-//	 * @param uri the uri for the record
-//	 * @param schema the schema for the record
-//	 * @return a UriRecord.
-//	 */
-//	private static UriRecord getRecord(final Activity activity,
-//			final ValueHandler valueHandler, final Uri uri,
-//			final Schema schema) {
-//
-//		UriRecord subRecord = (UriRecord) valueHandler.getValue();
-//		if (subRecord == null) {
-//			UriMatch match = EntityUriMatcher.getMatch(uri);
-//			Uri pathUri = Uri.withAppendedPath(
-//					EntityUriBuilder.branchUri(match.authority,
-//							match.repositoryName, match.reference),
-//							schema.getName());
-//			pathUri = activity.getContentResolver().insert(pathUri,
-//					new ContentValues());
-//			subRecord = new UriRecord(uri, schema);
-//			valueHandler.setValue(subRecord);
-//		}
-//		return subRecord;
-//	}
 
 	@Override
 	public final View buildEditView(final Activity activity,
@@ -100,5 +77,24 @@ class AvroRecordBuilder extends AvroViewBuilder {
 			final ViewGroup container, final Button button) {
 		return new RecordTypeSelectHandler(activity, dataModel, schema,
 				valueHandler, button);
+	}
+
+	@Override
+	final View buildListView(final Context context, final Field field) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	final void bindListView(final View view, final Cursor cursor,
+			final Field field) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	final List<String> getProjectionFields(final Field field) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

@@ -1,17 +1,18 @@
 package interdroid.vdb.avro.view;
 
+import interdroid.util.ToastOnUI;
+import interdroid.util.view.LayoutUtil.LayoutParameters;
+import interdroid.vdb.avro.R;
+import interdroid.vdb.avro.view.CameraSurface.PictureTakenCallback;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import interdroid.util.ToastOnUI;
-import interdroid.vdb.avro.R;
-import interdroid.vdb.avro.view.CameraSurface.PictureTakenCallback;
 import android.app.Activity;
 import android.content.ContentValues;
 import android.net.Uri;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -50,7 +51,8 @@ public class UseCamera extends Activity {
 		logger.debug("Taking picture for: {} {}", mUri, mField);
 
 		LinearLayout layout = new LinearLayout(this);
-		layout.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
+		LayoutParameters.setViewGroupLayoutParams(
+				LayoutParameters.W_FILL_H_FILL, layout);
 		layout.addView(mPreview);
 		this.setContentView(layout);
 

@@ -29,7 +29,7 @@ public class UriRecord extends GenericData.Record implements UriBound<UriRecord>
         @Override
         public void saveImpl(ContentResolver resolver, String fieldFullName) throws NotBoundException {
             ContentValues values = new ContentValues();
-
+            logger.debug("Storing record: {}", fieldFullName);
             for (Field field : getSchema().getFields()) {
                 String fieldName = field.name();
                 // Store the data to either the values or the right table

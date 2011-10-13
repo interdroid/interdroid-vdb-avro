@@ -1,10 +1,14 @@
 package interdroid.vdb.avro.view.factory;
 
 import java.text.BreakIterator;
+import java.util.List;
 
+import interdroid.util.view.LayoutUtil.LayoutParameters;
+import interdroid.util.view.LayoutUtil.LayoutWeight;
 import interdroid.util.view.ViewUtil;
 import interdroid.vdb.R;
 import interdroid.vdb.avro.AvroSchemaProperties;
+import interdroid.vdb.avro.control.handler.ArrayHandler;
 import interdroid.vdb.avro.control.handler.ArrayValueHandler;
 import interdroid.vdb.avro.control.handler.RecordValueHandler;
 import interdroid.vdb.avro.control.handler.ValueHandler;
@@ -12,19 +16,27 @@ import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriRecord;
 import interdroid.vdb.avro.model.UriArray;
+import interdroid.vdb.content.EntityUriBuilder;
+import interdroid.vdb.content.EntityUriMatcher;
+import interdroid.vdb.content.EntityUriMatcher.UriMatch;
 
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
+import org.apache.avro.Schema.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import android.app.Activity;
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AbsListView.LayoutParams;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -42,6 +54,16 @@ public final class AvroViewFactory {
 	 */
 	private static final Logger LOG =
 			LoggerFactory.getLogger(AvroViewFactory.class);
+
+	/**
+	 * The largest size image to show in the image view.
+	 */
+	static final int	MAX_LIST_IMAGE_SIZE			= 150;
+
+	/**
+	 * The default font size for labels in a list.
+	 */
+	private static final float	DEFAULT_LABEL_FONT_SIZE		= 9;
 
 	/**
 	 * Static factory. No construction.
@@ -65,9 +87,8 @@ public final class AvroViewFactory {
 						R.layout.avro_base_editor, null);
 		final ScrollView scroll = new ScrollView(activity);
 		scroll.setId(Integer.MAX_VALUE);
-		scroll.setLayoutParams(
-				new ViewGroup.LayoutParams(LayoutParams.FILL_PARENT,
-						LayoutParams.FILL_PARENT));
+		LayoutParameters.setViewGroupLayoutParams(
+				LayoutParameters.W_FILL_H_FILL, scroll);
 		scroll.addView(viewGroup);
 		activity.runOnUiThread(new Runnable() {
 
@@ -126,13 +147,17 @@ public final class AvroViewFactory {
 		View view = AvroViewBuilder.getEditView(activity, dataModel,
 				viewGroup, schema, field, uri, valueHandler);
 
-		if (field.schema().getProp(AvroSchemaProperties.UI_VISIBLE) != null) {
-			LOG.debug("Hiding view.");
-			view.setVisibility(View.GONE);
-		}
-		if (field.schema().getProp(AvroSchemaProperties.UI_ENABLED) != null) {
-			LOG.debug("Disabling view.");
-			view.setEnabled(false);
+		if (field != null) {
+			if (field.schema().getProp(
+					AvroSchemaProperties.UI_VISIBLE) != null) {
+				LOG.debug("Hiding view.");
+				view.setVisibility(View.GONE);
+			}
+			if (field.schema().getProp(
+					AvroSchemaProperties.UI_ENABLED) != null) {
+				LOG.debug("Disabling view.");
+				view.setEnabled(false);
+			}
 		}
 
 		return view;
@@ -157,8 +182,8 @@ public final class AvroViewFactory {
 		if (field.getProp(AvroSchemaProperties.UI_VISIBLE) == null) {
 			TextView label = new TextView(activity);
 			label.setText(toTitle(field));
-			label.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT,
-					LayoutParams.WRAP_CONTENT));
+			LayoutParameters.setViewGroupLayoutParams(
+					LayoutParameters.W_WRAP_H_WRAP, label);
 			label.setGravity(Gravity.LEFT);
 			ViewUtil.addView(activity, viewGroup, label);
 		}
@@ -171,29 +196,71 @@ public final class AvroViewFactory {
 	}
 
 	/**
+	 * Returns or constructs UriRecord and sets in valueHandler.
+	 * @param activity the activity we are working in
+	 * @param arrayHandler the value handler with the data
+	 * @param uri the uri for the record
+	 * @param offset the offset into the array
+	 * @oaram uri the uri for the array
+	 * @param schema the schema for the record
+	 * @return a UriRecord.
+	 */
+	private static UriRecord getRecord(final Activity activity,
+			final ArrayHandler arrayHandler, final int offset, final Uri uri,
+			final Schema schema) {
+
+		UriRecord subRecord = (UriRecord) arrayHandler.getItem(offset);
+		if (subRecord == null) {
+			UriMatch match = EntityUriMatcher.getMatch(uri);
+			Uri pathUri = Uri.withAppendedPath(
+					EntityUriBuilder.branchUri(match.authority,
+							match.repositoryName, match.reference),
+							schema.getName());
+			LOG.debug("Storing to path: {}", pathUri);
+			pathUri = activity.getContentResolver().insert(pathUri,
+					new ContentValues());
+			subRecord = new UriRecord(pathUri, schema);
+			arrayHandler.setItem(offset, subRecord);
+		}
+		return subRecord;
+	}
+
+	/**
 	 * Constructs a view inside an array.
 	 * @param activity the activity with the views
 	 * @param dataModel the model for the data
 	 * @param array the array with the data
-	 * @param elementSchema the schema for the element
-	 * @param field the field of the array
-	 * @param uri the uri for the array
+=	 * @param field the field of the array
 	 * @param offset the offset into the array
+	 * @param arrayHandler the handler for the array data
 	 * @return the built view
 	 * @throws NotBoundException if the array is not bound
 	 */
 	public static View buildArrayView(final Activity activity,
-			final AvroRecordModel dataModel, final UriArray<Object> array,
-			final Schema elementSchema, final Field field,
-			final Uri uri, final int offset)
+			final AvroRecordModel dataModel, final ArrayHandler arrayHandler,
+			final UriArray<Object> array, final Field field,
+final int offset)
 					throws NotBoundException {
 
 		View layout = LayoutInflater.from(activity)
 				.inflate(R.layout.avro_array_item, null);
-		buildView(activity, dataModel,
-				(ViewGroup) layout.findViewById(R.id.array_layout),
-				elementSchema, field, uri,
-				new ArrayValueHandler(dataModel, field.name(), array, offset));
+		ViewGroup viewGroup = (ViewGroup)
+				layout.findViewById(R.id.array_layout);
+
+		// Records are special since we want to allow them instead of doing
+		// a button here which is what the default builder does.
+		if (array.getSchema().getElementType().getType().equals(Type.RECORD)) {
+			UriRecord subRecord = getRecord(activity, arrayHandler,
+					offset, array.getInstanceUri(),
+					array.getSchema().getElementType());
+			buildRecordView(activity, dataModel, subRecord, viewGroup);
+		} else {
+			buildView(activity, dataModel, viewGroup,
+					array.getSchema().getElementType(), null,
+					array.getInstanceUri(),
+					new ArrayValueHandler(dataModel, field.name(), array,
+							offset));
+		}
 		return layout;
 	}
 
@@ -266,6 +333,78 @@ public final class AvroViewFactory {
 	public static CharSequence toTitle(
 			final Activity activity, final int label, final Schema schema) {
 		return activity.getString(label) + " " + toTitle(schema);
+	}
+
+	/**
+	 * Builds a view for use in a list, including the label.
+	 * @param context the context to build in
+	 * @param field the field to build a view for
+	 * @return the built list view
+	 */
+	public static View buildListView(final Context context, final Field field) {
+
+		LinearLayout row = new LinearLayout(context);
+		row.setOrientation(LinearLayout.HORIZONTAL);
+
+		TextView label = new TextView(context);
+		label.setText(toTitle(field));
+		label.setTextSize(TypedValue.COMPLEX_UNIT_PT, DEFAULT_LABEL_FONT_SIZE);
+		LayoutParameters.setLinearLayoutParams(
+				LayoutParameters.W_WRAP_H_WRAP, LayoutWeight.Quarter, label);
+		row.addView(label);
+
+		if (field.schema().getProp(AvroSchemaProperties.UI_VISIBLE) != null) {
+			LOG.debug("Hiding view.");
+			row.setVisibility(View.GONE);
+		}
+		if (field.schema().getProp(AvroSchemaProperties.UI_ENABLED) != null) {
+			LOG.debug("Disabling view.");
+			row.setEnabled(false);
+		}
+
+		View view = AvroViewBuilder.getListView(context, field);
+		LayoutParameters.setLinearLayoutParams(
+				LayoutParameters.W_WRAP_H_WRAP, LayoutWeight.ThreeQuarters,
+				view);
+		row.addView(view);
+
+		return row;
+	}
+
+	/**
+	 * Binds a list view to the data in the cursor for the given field.
+	 * @param view the view to bind
+	 * @param cursor the cursor with data
+	 * @param field the field to bind
+	 */
+	public static void bindListView(final View view, final Cursor cursor,
+			final Field field) {
+		AvroViewBuilder.bindListView(view, cursor, field);
+	}
+
+	/**
+	 * @param field the field to get projection fields for
+	 * @return the list of projection column names
+	 */
+	public static List<String> getProjectionFields(final Field field) {
+		return AvroViewBuilder.getProjectionFields(field);
+	}
+
+	/**
+	 * Appends a field as a title.
+	 * @param ret the string buffer to append to
+	 * @param cursor the cursor to get data from
+	 * @param field the field to append
+	 */
+	public static void appendTitleField(final StringBuffer ret,
+			final Cursor cursor, final Field field) {
+		String title = toTitle(field);
+		if (title != null) {
+			if (ret.length() > 0) {
+				ret.append(' ');
+			}
+			ret.append(title);
+		}
 	}
 
 }

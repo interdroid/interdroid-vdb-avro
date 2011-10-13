@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import interdroid.util.view.AsyncTaskWithProgressDialog;
 import interdroid.vdb.Actions;
 import interdroid.vdb.avro.R;
+import interdroid.vdb.avro.view.factory.AvroViewFactory;
 import interdroid.vdb.content.EntityUriMatcher;
 import interdroid.vdb.content.EntityUriMatcher.UriMatch;
 import interdroid.vdb.content.avro.AvroProviderRegistry;
@@ -153,6 +154,8 @@ public class AvroBaseList extends ListActivity {
 			// We are canceled if they back out without picking.
 			setResult(RESULT_CANCELED);
 		}
+
+		setTitle(AvroViewFactory.toTitle(mSchema));
 
 		new InitTask().execute(getIntent());
 	}

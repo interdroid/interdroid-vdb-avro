@@ -40,4 +40,9 @@ public final class AvroSchemaProperties {
 	 */
 	public static final String	UI_ENABLED	= "ui.enabled";
 
+	/**
+	 * A custom resource to use in a list view.
+	 */
+	public static final String	UI_LIST_RESOURCE	= "ui.resource.list";
+
 }

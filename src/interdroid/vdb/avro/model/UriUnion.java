@@ -25,7 +25,7 @@ public class UriUnion {
 
 	public UriUnion(Schema fieldSchema) {
 		logger.debug("UriUnion constructed with schema: {} {}", fieldSchema.getType(), fieldSchema);
-		if (fieldSchema.getType() != Type.UNION) {
+		if (!fieldSchema.getType().equals(Type.UNION)) {
 			logger.error("Wrong type for union.");
 			throw new RuntimeException();
 		}
