@@ -77,7 +77,7 @@ class AvroNumericBuilder extends AvroTypedTextViewBuilder {
 	@Override
 	final void bindListView(final View view, final Cursor cursor,
 			final Field field) {
-		TextView text = (TextView) view.findViewWithTag(field);
+		TextView text = (TextView) view.findViewWithTag(field.name());
 		int index = cursor.getColumnIndex(field.name());
 		switch (field.schema().getType()) {
 		case INT:
@@ -94,5 +94,6 @@ class AvroNumericBuilder extends AvroTypedTextViewBuilder {
 		default:
 			throw new RuntimeException("Unsupported type: " + field);
 		}
+
 	}
 }

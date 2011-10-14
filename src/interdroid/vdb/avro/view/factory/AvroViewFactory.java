@@ -38,6 +38,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
 
 /**
@@ -342,32 +344,33 @@ final int offset)
 	 * @return the built list view
 	 */
 	public static View buildListView(final Context context, final Field field) {
-
-		LinearLayout row = new LinearLayout(context);
-		row.setOrientation(LinearLayout.HORIZONTAL);
-
-		TextView label = new TextView(context);
-		label.setText(toTitle(field));
-		label.setTextSize(TypedValue.COMPLEX_UNIT_PT, DEFAULT_LABEL_FONT_SIZE);
-		LayoutParameters.setLinearLayoutParams(
-				LayoutParameters.W_WRAP_H_WRAP, LayoutWeight.Quarter, label);
-		row.addView(label);
-
-		if (field.schema().getProp(AvroSchemaProperties.UI_VISIBLE) != null) {
-			LOG.debug("Hiding view.");
-			row.setVisibility(View.GONE);
-		}
-		if (field.schema().getProp(AvroSchemaProperties.UI_ENABLED) != null) {
-			LOG.debug("Disabling view.");
-			row.setEnabled(false);
-		}
-
+		TableRow row = null;
 		View view = AvroViewBuilder.getListView(context, field);
-		LayoutParameters.setLinearLayoutParams(
-				LayoutParameters.W_WRAP_H_WRAP, LayoutWeight.ThreeQuarters,
-				view);
-		row.addView(view);
+		if (view != null) {
+			row = new TableRow(context);
+			row.setOrientation(LinearLayout.HORIZONTAL);
 
+			TextView label = new TextView(context);
+			label.setText(toTitle(field));
+			label.setTextSize(TypedValue.COMPLEX_UNIT_PT, DEFAULT_LABEL_FONT_SIZE);
+			LayoutParameters.setTableRowParams(
+					LayoutParameters.W_WRAP_H_WRAP, LayoutWeight.Quarter, label);
+			row.addView(label);
+
+			if (field.schema().getProp(AvroSchemaProperties.UI_VISIBLE) != null) {
+				LOG.debug("Hiding view.");
+				row.setVisibility(View.GONE);
+			}
+			if (field.schema().getProp(AvroSchemaProperties.UI_ENABLED) != null) {
+				LOG.debug("Disabling view.");
+				row.setEnabled(false);
+			}
+
+			LayoutParameters.setTableRowParams(
+					LayoutParameters.W_WRAP_H_WRAP, LayoutWeight.ThreeQuarters,
+					view);
+			row.addView(view);
+		}
 		return row;
 	}
 

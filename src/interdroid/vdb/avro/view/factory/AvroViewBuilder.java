@@ -85,15 +85,14 @@ abstract class AvroViewBuilder {
 		logger.debug("Getting builder for: {}", field);
 		AvroTypedViewBuilder builder = sBuilders.get(new AvroViewType(field));
 
-		logger.debug("Building with: {} {}", builder, field.name());
 
-		if (builder == null) {
+		if (builder != null) {
+			logger.debug("Binding with: {} {}", builder, field.name());
+			builder.bindListView(view, cursor, field);
+		} else {
 			logger.error("No builder for field: {}", field);
-			throw new RuntimeException(
-					"Don't know how to build a view for: " + field);
 		}
 
-		builder.bindListView(view, cursor, field);
 	}
 
 	/**
@@ -136,8 +135,7 @@ abstract class AvroViewBuilder {
 
 			if (builder == null) {
 				logger.error("No builder for field: {}", field);
-				throw new RuntimeException(
-						"Don't know how to build a view for: " + field);
+				return null;
 			}
 
 			return builder.buildListView(context, field);
@@ -188,23 +186,18 @@ abstract class AvroViewBuilder {
 			// Find the builder for this type
 			AvroTypedViewBuilder builder = null;
 
-			if (field != null) {
-				logger.debug("Getting builder for: {}", field);
-				builder =
-						sBuilders.get(new AvroViewType(field));
-			} else {
-				logger.debug("Getting builder for: {}", schema);
-				builder = sBuilders.get(new AvroViewType(schema));
-			}
-
-
-			logger.debug("Building with: {} {}", builder, schema.getName());
+			AvroViewType type = new AvroViewType(schema);
+			logger.debug("Getting builder for: {}", type);
+			builder = sBuilders.get(type);
 
 			if (builder == null) {
 				logger.error("No builder for schema: {}", schema);
 				throw new RuntimeException(
 						"Don't know how to build a view for: " + schema);
 			}
+
+			logger.debug("Building with: {} {}", builder, schema.getName());
+
 
 			return builder.buildEditView(activity, dataModel, viewGroup,
 					schema, field, uri, valueHandler);
@@ -219,7 +212,12 @@ abstract class AvroViewBuilder {
 		// Find the builder for this type
 		logger.debug("Getting builder for projection: {}", field);
 		AvroTypedViewBuilder builder = sBuilders.get(new AvroViewType(field));
-		return builder.getProjectionFields(field);
+		if (builder != null) {
+			return builder.getProjectionFields(field);
+		} else {
+			logger.debug("No builder for that type.");
+			return null;
+		}
 	}
 
 }

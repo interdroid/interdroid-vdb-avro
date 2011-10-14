@@ -25,6 +25,7 @@ import android.widget.CheckBox;
 import android.widget.CursorAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TableLayout;
 import android.widget.TextView;
 
 /**
@@ -161,7 +162,7 @@ public class AvroListAdapter extends CursorAdapter {
 	 * @return true if the type is a union type that can be listed
 	 */
 	private static boolean isValidUnionType(final Schema schema) {
-		if (schema.getType().equals(Type.UNION)) {
+		if (!schema.getType().equals(Type.UNION)) {
 			return false;
 		}
 		for (Schema branch : schema.getTypes()) {
@@ -248,7 +249,7 @@ public class AvroListAdapter extends CursorAdapter {
 	@Override
 	public final View newView(final Context context, final Cursor cursor,
 			final ViewGroup parent) {
-		LinearLayout layout = new LinearLayout(context);
+		TableLayout layout = new TableLayout(context);
 		layout.setOrientation(LinearLayout.VERTICAL);
 
 		for (Field field : mSchema.getFields()) {
@@ -272,7 +273,9 @@ public class AvroListAdapter extends CursorAdapter {
 	private void buildView(final Context context, final LinearLayout layout,
 			final Field field) {
 		View view = AvroViewFactory.buildListView(context, field);
-		layout.addView(view);
+		if (view != null) {
+			layout.addView(view);
+		}
 	}
 
 	@Override

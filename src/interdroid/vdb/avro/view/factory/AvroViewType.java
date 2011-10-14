@@ -71,7 +71,11 @@ class AvroViewType {
 		mWidget = null;
 	}
 
-	public AvroViewType(Schema schema) {
+	/**
+	 * Construct from only a schema.
+	 * @param schema the schema to repreent the type of
+	 */
+	public AvroViewType(final Schema schema) {
 		mType = schema.getType();
 		mWidget = schema.getProp(AvroSchemaProperties.UI_WIDGET);
 	}
@@ -109,5 +113,10 @@ class AvroViewType {
 		} else {
 			return mType.hashCode() + (HASH_PRIME * mWidget.hashCode());
 		}
+	}
+
+	@Override
+	public final String toString() {
+		return "Type: " + mType + " : " + mWidget;
 	}
 }
