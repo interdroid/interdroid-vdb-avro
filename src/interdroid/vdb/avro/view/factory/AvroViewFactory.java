@@ -9,9 +9,9 @@ import interdroid.util.view.ViewUtil;
 import interdroid.vdb.R;
 import interdroid.vdb.avro.AvroSchemaProperties;
 import interdroid.vdb.avro.control.handler.ArrayHandler;
-import interdroid.vdb.avro.control.handler.ArrayValueHandler;
-import interdroid.vdb.avro.control.handler.RecordValueHandler;
-import interdroid.vdb.avro.control.handler.ValueHandler;
+import interdroid.vdb.avro.control.handler.value.ArrayValueHandler;
+import interdroid.vdb.avro.control.handler.value.RecordValueHandler;
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriRecord;
@@ -38,7 +38,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 
@@ -352,16 +351,20 @@ final int offset)
 
 			TextView label = new TextView(context);
 			label.setText(toTitle(field));
-			label.setTextSize(TypedValue.COMPLEX_UNIT_PT, DEFAULT_LABEL_FONT_SIZE);
+			label.setTextSize(TypedValue.COMPLEX_UNIT_PT,
+					DEFAULT_LABEL_FONT_SIZE);
 			LayoutParameters.setTableRowParams(
-					LayoutParameters.W_WRAP_H_WRAP, LayoutWeight.Quarter, label);
+					LayoutParameters.W_WRAP_H_WRAP, LayoutWeight.Quarter,
+					label);
 			row.addView(label);
 
-			if (field.schema().getProp(AvroSchemaProperties.UI_VISIBLE) != null) {
+			if (field.schema().getProp(AvroSchemaProperties.UI_VISIBLE)
+					!= null) {
 				LOG.debug("Hiding view.");
 				row.setVisibility(View.GONE);
 			}
-			if (field.schema().getProp(AvroSchemaProperties.UI_ENABLED) != null) {
+			if (field.schema().getProp(AvroSchemaProperties.UI_ENABLED)
+					!= null) {
 				LOG.debug("Disabling view.");
 				row.setEnabled(false);
 			}

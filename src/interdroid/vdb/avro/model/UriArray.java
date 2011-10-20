@@ -16,394 +16,515 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 
+/**
+ * A GenericData.Array which is UriBound.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ * @param <A> the inner type for the array
+ */
+public class UriArray<A> extends GenericData.Array<A>
+implements UriBound<UriArray<A>> {
+	/** Access to logger. */
+	private static final Logger LOG = LoggerFactory
+			.getLogger(UriArray.class);
 
-public class UriArray<A> extends GenericData.Array<A> implements UriBound<UriArray<A>> {
-    private static final Logger logger = LoggerFactory
-            .getLogger(UriArray.class);
+	/** The adapter used to bind this to a Uri. */
+	private UriBoundAdapter<UriArray<A>> mUriBinder;
 
-    private UriBoundAdapter<UriArray<A>> mUriBinder;
+	/** The default size to construct arrays with. */
+	private static final int DEFAULT_ARRAY_SIZE = 10;
 
-    private static final int DEFAULT_ARRAY_SIZE = 10;
+	/** The implementation of our UriBoundAdapter. */
+	private UriBoundAdapterImpl<UriArray<A>> mBinderImpl =
+			new UriBoundAdapterImpl<UriArray<A>>() {
 
-    private UriBoundAdapterImpl<UriArray<A>> mBinderImpl =
-            new UriBoundAdapterImpl<UriArray<A>>() {
+		@Override
+		public final void saveImpl(final ContentResolver resolver,
+				final String fieldName) throws NotBoundException {
+			LOG.debug("Saving array: {} : {}", getInstanceUri(), fieldName);
 
-        @Override
-        public void saveImpl(ContentResolver resolver, String fieldName) throws NotBoundException {
-            logger.debug("Saving array: {} : {}", getInstanceUri(), fieldName);
+			deleteImpl(resolver, false);
 
-            deleteImpl(resolver, false);
+			ContentValues values = new ContentValues();
+			for (Object value : UriArray.this) {
+				values.clear();
+				// First insert a null row
+				Uri idUri = UriDataManager.insertUri(resolver,
+						getInstanceUri(), values);
+				LOG.debug("Got id uri for array row: " + idUri);
+				Uri dataUri = UriDataManager.storeDataToUri(resolver,
+						idUri, values, fieldName,
+						getSchema().getElementType(), value);
+				if (dataUri != null) {
+					UriMatch match = EntityUriMatcher.getMatch(dataUri);
+					values.put(fieldName, match.entityIdentifier);
+				}
+				UriDataManager.updateUriOrThrow(resolver, idUri, values);
+			}
+		}
 
-            ContentValues values = new ContentValues();
-            for (Object value : UriArray.this) {
-                values.clear();
-                // First insert a null row
-                Uri idUri = UriDataManager.insertUri(resolver, getInstanceUri(), values);
-                logger.debug("Got id uri for array row: " + idUri);
-                Uri dataUri = UriDataManager.storeDataToUri(resolver, idUri, values, fieldName,
-                        getSchema().getElementType(), value);
-                if (dataUri != null) {
-                    UriMatch match = EntityUriMatcher.getMatch(dataUri);
-                    values.put(fieldName, match.entityIdentifier);
-                }
-                UriDataManager.updateUriOrThrow(resolver, idUri, values);
-            }
-        }
+		@SuppressWarnings("unchecked")
+		@Override
+		public final UriArray<A> loadImpl(final ContentResolver resolver,
+				final String fieldName) throws NotBoundException {
+			LOG.debug("Loading array from uri: {} : {}", getInstanceUri(),
+					getSchema());
+			Cursor cursor = resolver.query(getInstanceUri(),
+					null, null, null, null);
+			try {
+				if (cursor != null) {
+					while (cursor.moveToNext()) {
+						add((A) UriDataManager.loadDataFromUri(resolver,
+								getInstanceUri(), cursor, fieldName,
+								getSchema().getElementType()));
+					}
+				} else {
+					throw new RuntimeException("Unable to load: "
+							+ getInstanceUri());
+				}
+			} finally {
+				UriDataManager.safeClose(cursor);
+			}
+			return UriArray.this;
+		}
 
-        @SuppressWarnings("unchecked")
-        @Override
-        public UriArray<A> loadImpl(ContentResolver resolver, String fieldName) throws NotBoundException {
-            logger.debug("Loading array from uri: " + getInstanceUri() + " : " + getSchema());
-            Cursor cursor = resolver.query(getInstanceUri(), null, null, null, null);
-            try {
-                if (cursor != null) {
-                    while (cursor.moveToNext()) {
-                        add((A)UriDataManager.loadDataFromUri(resolver, getInstanceUri(), cursor, fieldName, getSchema().getElementType()));
-                    }
-                } else {
-                    throw new RuntimeException("Unable to load: " + getInstanceUri());
-                }
-            } finally {
-                UriDataManager.safeClose(cursor);
-            }
-            return UriArray.this;
-        }
+		@Override
+		public final void deleteImpl(final ContentResolver resolver)
+				throws NotBoundException {
+			deleteImpl(resolver, true);
+		}
 
-        @Override
-        public void deleteImpl(ContentResolver resolver) throws NotBoundException {
-            deleteImpl(resolver, true);
-        }
+		@SuppressWarnings("rawtypes")
+		public final void deleteImpl(final ContentResolver resolver,
+				final boolean recursion)
+						throws NotBoundException {
+			LOG.debug("Deleting Array: {}", getInstanceUri());
+			if (recursion) {
+				LOG.debug("Handling recursive delete of array.");
+				if (UriBoundAdapter.isBoundType(
+						getSchema().getElementType().getType())) {
+					for (Object element : UriArray.this) {
+						if (element != null) {
+							((UriBound) element).delete(resolver);
+						}
+					}
+				} else if (getSchema().getElementType().getType()
+						== Type.UNION) {
+					for (Object element : UriArray.this) {
+						((UriUnion) element).delete(resolver);
+					}
+				}
+			}
+			resolver.delete(getInstanceUri(), null, null);
+		}
 
-        public void deleteImpl(ContentResolver resolver, boolean recursion)
-                throws NotBoundException {
-            logger.debug("Deleting Array: " + getInstanceUri());
-            if (recursion) {
-                logger.debug("Handling recursive delete of array.");
-                if (UriBoundAdapter.isBoundType(getSchema().getElementType().getType())) {
-                    for (Object element : UriArray.this) {
-                        if (element != null) {
-                            ((UriBound) element).delete(resolver);
-                        }
-                    }
-                } else if(getSchema().getElementType().getType() == Type.UNION) {
-                    for (Object element : UriArray.this) {
-                        ((UriUnion) element).delete(resolver);
-                    }
-                }
-            }
-            resolver.delete(getInstanceUri(), null, null);
-        }
+		@Override
+		public void saveImpl(final Bundle outState, final String fieldFullName)
+				throws NotBoundException {
+			LOG.debug("Storing to bundle: {} field: ", outState, fieldFullName);
+			switch (getSchema().getElementType().getType()) {
+			case ARRAY:
+				saveArray(outState, fieldFullName);
+				break;
+			case BOOLEAN:
+				boolean[] bools = saveBoolean();
+				outState.putBooleanArray(fieldFullName, bools);
+				break;
+			case BYTES:
+				saveBytes(outState, fieldFullName);
+				break;
+			case DOUBLE:
+				saveDouble(outState, fieldFullName);
+				break;
+			case ENUM:
+				saveString(outState, fieldFullName);
+				break;
+			case FIXED:
+				saveBytes(outState, fieldFullName);
+				break;
+			case FLOAT:
+				saveFloat(outState, fieldFullName);
+				break;
+			case INT:
+				saveInt(outState, fieldFullName);
+				break;
+			case LONG:
+				saveLong(outState, fieldFullName);
+				break;
+			case MAP:
+				saveMap(outState, fieldFullName);
+				break;
+			case NULL:
+				saveSize(outState, fieldFullName);
+				break;
+			case RECORD:
+				saveRecord(outState, fieldFullName);
+				break;
+			case STRING:
+				saveString(outState, fieldFullName);
+				break;
+			case UNION:
+				saveSize(outState, fieldFullName);
+				int i = 0;
+				for (Object element : UriArray.this) {
+					((UriUnion) element).save(outState,
+							NameHelper.getIndexedFieldName(fieldFullName, i++));
+				}
+				break;
+			default:
+				throw new RuntimeException("Unsupported array type: "
+						+ getSchema());
+			}
+		}
 
-        @SuppressWarnings("unchecked")
-        @Override
-        public void saveImpl(Bundle outState, String fieldFullName) throws NotBoundException {
-            logger.debug("Storing to bundle: " + outState + " field: " + fieldFullName);
-            switch (getSchema().getElementType().getType()) {
-            case ARRAY: {
-                outState.putInt(NameHelper.getCountName(fieldFullName), (int) size());
-                Schema subSchema = getSchema().getElementType();
-                int i = 0;
-                for (Object element : UriArray.this) {
-                    ((UriArray<?>) element).save(outState, NameHelper.getIndexedFieldName(fieldFullName, i++));
-                }
-                break;
-            }
-            case BOOLEAN: {
-                boolean[] bools = new boolean[(int) size()];
-                int i = 0;
-                for (Object element : UriArray.this) {
-                    bools[i++] = (Boolean) element;
-                }
-                outState.putBooleanArray(fieldFullName, bools);
-                break;
-            }
-            case BYTES: {
-                outState.putInt(NameHelper.getCountName(fieldFullName), (int) size());
-                int i = 0;
-                for (Object element : UriArray.this) {
-                    outState.putByteArray(NameHelper.getIndexedFieldName(fieldFullName, i++),
-                            (byte[]) element);
-                }
-                break;
-            }
-            case DOUBLE: {
-                double[] doubles = new double[(int) size()];
-                int i = 0;
-                for (Object element : UriArray.this) {
-                    doubles[i++] = (Double) element;
-                }
-                outState.putDoubleArray(fieldFullName, doubles);
-                break;
-            }
-            case ENUM: {
-                String[] enums = new String[(int) size()];
-                int i = 0;
-                for (Object element : UriArray.this) {
-                    enums[i++] = (String) element;
-                }
-                outState.putStringArray(fieldFullName, enums);
-                break;
-            }
-            case FIXED: {
-                outState.putInt(NameHelper.getCountName(fieldFullName), (int) size());
-                int i = 0;
-                for (Object element : UriArray.this) {
-                    outState.putByteArray(NameHelper.getIndexedFieldName(fieldFullName, i++),
-                            (byte[]) element);
-                }
-                break;
-            }
-            case FLOAT: {
-                float[] floats = new float[(int) size()];
-                int i = 0;
-                for (Object element : UriArray.this) {
-                    floats[i++] = (Float) element;
-                }
-                outState.putFloatArray(fieldFullName, floats);
-                break;
-            }
-            case INT: {
-                int[] ints = new int[(int) size()];
-                int i = 0;
-                for (Object element : UriArray.this) {
-                    ints[i++] = (Integer) element;
-                }
-                outState.putIntArray(fieldFullName, ints);
-                break;
-            }
-            case LONG: {
-                long[] longs = new long[(int) size()];
-                int i = 0;
-                for (Object element : UriArray.this) {
-                    longs[i++] = (Long) element;
-                }
-                outState.putLongArray(fieldFullName, longs);
-                break;
-            }
-            case MAP: {
-                outState.putInt(NameHelper.getCountName(fieldFullName), (int) size());
-                Schema subSchema = getSchema().getElementType();
-                int i = 0;
-                for (Object element : UriArray.this) {
-                    ((UriMap<?,?>) element).save(outState,
-                            NameHelper.getIndexedFieldName(fieldFullName, i++));
-                }
-                break;
-            }
-            case NULL: {
-                outState.putInt(NameHelper.getCountName(fieldFullName), (int) size());
-                break;
-            }
-            case RECORD: {
-                outState.putInt(NameHelper.getCountName(fieldFullName), (int) size());
-                int i = 0;
-                for (Object element : UriArray.this) {
-                   ((UriRecord) element).save(outState, fieldFullName);
-                }
-                break;
-            }
-            case STRING: {
-                String[] strings = new String[(int) size()];
-                int i = 0;
-                for (Object element : UriArray.this) {
-                    strings[i++] = (String) element;
-                }
-                outState.putStringArray(fieldFullName, strings);
-                break;
-            }
-            case UNION: {
-                outState.putInt(NameHelper.getCountName(fieldFullName), (int) size());
-                int i = 0;
-                for (Object element : UriArray.this) {
-                    ((UriUnion) element).save(outState,
-                            NameHelper.getIndexedFieldName(fieldFullName, i++));
-                }
-                break;
-            }
-            default:
-                throw new RuntimeException("Unsupported array type: "
-                        + getSchema());
-            }
-        }
+		private void saveRecord(final Bundle outState,
+				final String fieldFullName) throws NotBoundException {
+			saveSize(outState, fieldFullName);
+			for (Object element : UriArray.this) {
+				((UriRecord) element).save(outState, fieldFullName);
+			}
+		}
 
-        @SuppressWarnings({ "unchecked", "rawtypes" })
-        @Override
-        public UriArray<A> loadImpl(Bundle saved, String fieldName) throws NotBoundException {
-            switch (getSchema().getElementType().getType()) {
-            case ARRAY: {
-                int count = saved.getInt(NameHelper.getCountName(fieldName));
-                for (int i = 0; i < count; i++) {
-                    add((A) new UriArray<A>(getInstanceUri(),
-                            getSchema().getElementType()).load(saved, NameHelper.getIndexedFieldName(fieldName, i)));
-                }
-                break;
-            }
-            case BOOLEAN: {
-                boolean[] savedData = saved.getBooleanArray(fieldName);
-                if (savedData != null) {
-                    for (boolean value : savedData) {
-                        add((A) Boolean.valueOf(value));
-                    }
-                }
-                break;
-            }
-            case BYTES: {
-                int count = saved.getInt(NameHelper.getCountName(fieldName));
-                for (int i = 0; i < count; i++) {
-                    byte[] data = saved.getByteArray(NameHelper.getIndexedFieldName(
-                            fieldName, i));
-                    add((A) data);
-                }
-                break;
-            }
-            case DOUBLE: {
-                double[] savedData = saved.getDoubleArray(fieldName);
-                if (savedData != null) {
-                    for (double value : savedData) {
-                        add((A) Double.valueOf(value));
-                    }
-                }
-                break;
-            }
-            case ENUM: {
-                String[] savedData = saved.getStringArray(fieldName);
-                if (savedData != null) {
-                    for (String value : savedData) {
-                        add((A) value);
-                    }
-                }
-                break;
-            }
-            case FIXED: {
-                int count = saved.getInt(NameHelper.getCountName(fieldName));
-                for (int i = 0; i < count; i++) {
-                    byte[] data = saved.getByteArray(NameHelper.getIndexedFieldName(
-                            fieldName, i));
-                    add((A) data);
-                }
-                break;
-            }
-            case FLOAT: {
-                float[] savedData = saved.getFloatArray(fieldName);
-                if (savedData != null) {
-                    for (float value : savedData) {
-                        add((A) Float.valueOf(value));
-                    }
-                }
-                break;
-            }
-            case INT: {
-                int[] savedData = saved.getIntArray(fieldName);
-                if (savedData != null) {
-                    for (int value : savedData) {
-                        add((A) Integer.valueOf(value));
-                    }
-                }
-                break;
-            }
-            case LONG: {
-                long[] savedData = saved.getLongArray(fieldName);
-                if (savedData != null) {
-                    for (long value : savedData) {
-                        add((A) Long.valueOf(value));
-                    }
-                }
-                break;
-            }
-            case MAP: {
-                int count = saved.getInt(NameHelper.getCountName(fieldName));
-                for (int i = 0; i < count; i++) {
-                    add((A) new UriMap(getInstanceUri(), getSchema().getElementType()).load(saved, NameHelper.getIndexedFieldName(fieldName, i)));
-                }
-                break;
-            }
-            case NULL: {
-                int count = saved.getInt(NameHelper.getCountName(fieldName));
-                for (int i = 0; i < count; i++) {
-                    add(null);
-                }
-                break;
-            }
-            case RECORD: {
-                int count = saved.getInt(NameHelper.getCountName(fieldName));
-                for (int i = 0; i < count; i++) {
-                    add((A) new UriRecord(getInstanceUri(), getSchema().getElementType()).load(saved, NameHelper.getIndexedFieldName(fieldName, i)));
-                }
-                break;
-            }
-            case STRING: {
-                String[] savedData = saved.getStringArray(fieldName);
-                if (savedData != null) {
-                    for (String value : savedData) {
-                        add((A) value);
-                    }
-                }
-                break;
-            }
-            case UNION: {
-                int count = saved.getInt(NameHelper.getCountName(fieldName));
-                for (int i = 0; i < count; i++) {
-                    add((A) new UriUnion(getSchema().getElementType()).load(saved,
-                            NameHelper.getIndexedFieldName(fieldName, i)));
-                }
-                break;
-            }
-            default:
-                throw new RuntimeException("Unsupported array type: "
-                        + getSchema());
-            }
+		private void
+				saveSize(final Bundle outState, final String fieldFullName) {
+			outState.putInt(NameHelper.getCountName(fieldFullName),
+					(int) size());
+		}
 
-            return UriArray.this;
-        }
+		private void saveMap(final Bundle outState, final String fieldFullName)
+				throws NotBoundException {
+			saveSize(outState, fieldFullName);
+			int i = 0;
+			for (Object element : UriArray.this) {
+				((UriMap<?>) element).save(outState,
+						NameHelper.getIndexedFieldName(fieldFullName, i++));
+			}
+		}
 
-    };
+		private void
+				saveLong(final Bundle outState, final String fieldFullName) {
+			long[] longs = new long[(int) size()];
+			int i = 0;
+			for (Object element : UriArray.this) {
+				longs[i++] = (Long) element;
+			}
+			outState.putLongArray(fieldFullName, longs);
+		}
 
-    public UriArray(final Schema schema, Bundle saved) {
-        super(DEFAULT_ARRAY_SIZE, schema);
-        mUriBinder = new UriBoundAdapter<UriArray<A>>(saved, mBinderImpl);
-    }
+		private void saveInt(final Bundle outState,
+				final String fieldFullName) {
+			int[] ints = new int[(int) size()];
+			int i = 0;
+			for (Object element : UriArray.this) {
+				ints[i++] = (Integer) element;
+			}
+			outState.putIntArray(fieldFullName, ints);
+		}
 
-    public UriArray(Uri uri, final Schema schema) {
-        super(DEFAULT_ARRAY_SIZE, schema);
-        logger.debug("UriArray built and bound to: {}", uri);
-        mUriBinder = new UriBoundAdapter<UriArray<A>>(uri, mBinderImpl);
-    }
+		private void
+				saveFloat(final Bundle outState, final String fieldFullName) {
+			float[] floats = new float[(int) size()];
+			int i = 0;
+			for (Object element : UriArray.this) {
+				floats[i++] = (Float) element;
+			}
+			outState.putFloatArray(fieldFullName, floats);
+		}
 
-    @Override
-    public Uri getInstanceUri() throws NotBoundException {
-        return mUriBinder.getInstanceUri();
-    }
+		private void
+				saveString(final Bundle outState, final String fieldFullName) {
+			String[] strings = new String[(int) size()];
+			int i = 0;
+			for (Object element : UriArray.this) {
+				strings[i++] = (String) element;
+			}
+			outState.putStringArray(fieldFullName, strings);
+		}
 
-    @Override
-    public void setInstanceUri(Uri uri) {
-        mUriBinder.setInstanceUri(uri);
-    }
+		private void saveDouble(final Bundle outState,
+				final String fieldFullName) {
+			double[] doubles = new double[(int) size()];
+			int i = 0;
+			for (Object element : UriArray.this) {
+				doubles[i++] = (Double) element;
+			}
+			outState.putDoubleArray(fieldFullName, doubles);
+		}
 
-    @Override
-    public void save(ContentResolver resolver, String fieldName)
-            throws NotBoundException {
-        mUriBinder.save(resolver, fieldName);
-    }
+		private void
+				saveBytes(final Bundle outState, final String fieldFullName) {
+			saveSize(outState, fieldFullName);
+			int i = 0;
+			for (Object element : UriArray.this) {
+				outState.putByteArray(NameHelper.getIndexedFieldName(
+						fieldFullName, i++),
+						(byte[]) element);
+			}
+		}
 
-    @Override
-    public UriArray<A> load(ContentResolver resolver, String fieldName)
-            throws NotBoundException {
-        return mUriBinder.load(resolver, fieldName);
-    }
+		private boolean[] saveBoolean() {
+			boolean[] bools = new boolean[(int) size()];
+			int i = 0;
+			for (Object element : UriArray.this) {
+				bools[i++] = (Boolean) element;
+			}
+			return bools;
+		}
 
-    @Override
-    public void save(Bundle outState, String prefix) throws NotBoundException {
-        mUriBinder.save(outState, prefix);
-    }
+		private void
+				saveArray(final Bundle outState, final String fieldFullName)
+						throws NotBoundException {
+			saveSize(outState, fieldFullName);
+			int i = 0;
+			for (Object element : UriArray.this) {
+				((UriArray<?>) element).save(outState,
+						NameHelper.getIndexedFieldName(fieldFullName, i++));
+			}
+		}
 
-    @Override
-    public UriArray<A> load(Bundle b, String prefix) throws NotBoundException{
-        return mUriBinder.load(b, prefix);
-    }
+		@Override
+		public UriArray<A> loadImpl(final Bundle saved, final String fieldName)
+				throws NotBoundException {
+			switch (getSchema().getElementType().getType()) {
+			case ARRAY:
+				loadArray(saved, fieldName);
+				break;
+			case BOOLEAN:
+				loadBoolean(saved, fieldName);
+				break;
+			case BYTES:
+				loadBytes(saved, fieldName);
+				break;
+			case DOUBLE:
+				loadDouble(saved, fieldName);
+				break;
+			case ENUM:
+				loadString(saved, fieldName);
+				break;
+			case FIXED:
+				loadBytes(saved, fieldName);
+				break;
+			case FLOAT:
+				loadFloat(saved, fieldName);
+				break;
+			case INT:
+				loadInt(saved, fieldName);
+				break;
+			case LONG:
+				loadLong(saved, fieldName);
+				break;
+			case MAP:
+				loadMap(saved, fieldName);
+				break;
+			case NULL:
+				loadNull(saved, fieldName);
+				break;
+			case RECORD:
+				loadRecord(saved, fieldName);
+				break;
+			case STRING:
+				loadString(saved, fieldName);
+				break;
+			case UNION:
+				loadUnion(saved, fieldName);
+				break;
+			default:
+				throw new RuntimeException("Unsupported array type: "
+						+ getSchema());
+			}
 
-    @Override
-    public void delete(ContentResolver resolver) throws NotBoundException {
-        mUriBinder.delete(resolver);
-    }
+			return UriArray.this;
+		}
+
+		@SuppressWarnings("unchecked")
+		private void loadUnion(final Bundle saved, final String fieldName)
+				throws NotBoundException {
+			int count = saved.getInt(NameHelper.getCountName(fieldName));
+			for (int i = 0; i < count; i++) {
+				add((A) new UriUnion(getSchema().getElementType()).load(
+						saved, NameHelper.getIndexedFieldName(
+								fieldName, i)));
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		private void loadRecord(final Bundle saved, final String fieldName)
+				throws NotBoundException {
+			int count = saved.getInt(NameHelper.getCountName(fieldName));
+			for (int i = 0; i < count; i++) {
+				add((A) new UriRecord(getInstanceUri(),
+						getSchema().getElementType()).load(
+								saved, NameHelper.getIndexedFieldName(
+										fieldName, i)));
+			}
+		}
+
+		private void loadNull(final Bundle saved, final String fieldName) {
+			int count = saved.getInt(NameHelper.getCountName(fieldName));
+			for (int i = 0; i < count; i++) {
+				add(null);
+			}
+		}
+
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		private void loadMap(final Bundle saved, final String fieldName)
+				throws NotBoundException {
+			int count = saved.getInt(NameHelper.getCountName(fieldName));
+			for (int i = 0; i < count; i++) {
+				add((A) new UriMap(getInstanceUri(),
+						getSchema().getElementType()).load(
+								saved, NameHelper.getIndexedFieldName(
+										fieldName, i)));
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		private void loadLong(final Bundle saved, final String fieldName) {
+			long[] savedData = saved.getLongArray(fieldName);
+			if (savedData != null) {
+				for (long value : savedData) {
+					add((A) Long.valueOf(value));
+				}
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		private void loadInt(final Bundle saved, final String fieldName) {
+			int[] savedData = saved.getIntArray(fieldName);
+			if (savedData != null) {
+				for (int value : savedData) {
+					add((A) Integer.valueOf(value));
+				}
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		private void loadFloat(final Bundle saved, final String fieldName) {
+			float[] savedData = saved.getFloatArray(fieldName);
+			if (savedData != null) {
+				for (float value : savedData) {
+					add((A) Float.valueOf(value));
+				}
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		private void loadString(final Bundle saved, final String fieldName) {
+			String[] savedData = saved.getStringArray(fieldName);
+			if (savedData != null) {
+				for (String value : savedData) {
+					add((A) value);
+				}
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		private void loadDouble(final Bundle saved, final String fieldName) {
+			double[] savedData = saved.getDoubleArray(fieldName);
+			if (savedData != null) {
+				for (double value : savedData) {
+					add((A) Double.valueOf(value));
+				}
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		private void loadBytes(final Bundle saved, final String fieldName) {
+			int count = saved.getInt(NameHelper.getCountName(fieldName));
+			for (int i = 0; i < count; i++) {
+				byte[] data = saved.getByteArray(
+						NameHelper.getIndexedFieldName(
+								fieldName, i));
+				add((A) data);
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		private void loadBoolean(final Bundle saved, final String fieldName) {
+			boolean[] savedData = saved.getBooleanArray(fieldName);
+			if (savedData != null) {
+				for (boolean value : savedData) {
+					add((A) Boolean.valueOf(value));
+				}
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		private void loadArray(final Bundle saved, final String fieldName)
+				throws NotBoundException {
+			int count = saved.getInt(NameHelper.getCountName(fieldName));
+			for (int i = 0; i < count; i++) {
+				add((A) new UriArray<A>(getInstanceUri(),
+						getSchema().getElementType()).load(
+								saved,
+								NameHelper.getIndexedFieldName(
+										fieldName, i)));
+			}
+		}
+
+	};
+
+	/**
+	 * Construct with the given schema from the bundle.
+	 * @param schema the schema for the array
+	 * @param saved the bundle with data
+	 */
+	public UriArray(final Schema schema, final Bundle saved) {
+		super(DEFAULT_ARRAY_SIZE, schema);
+		mUriBinder = new UriBoundAdapter<UriArray<A>>(saved, mBinderImpl);
+	}
+
+	/**
+	 * Construct with the given schema from the given uri.
+	 * @param uri the uri with the data
+	 * @param schema the schema for the array
+	 */
+	public UriArray(final Uri uri, final Schema schema) {
+		super(DEFAULT_ARRAY_SIZE, schema);
+		LOG.debug("UriArray built and bound to: {}", uri);
+		mUriBinder = new UriBoundAdapter<UriArray<A>>(uri, mBinderImpl);
+	}
+
+	@Override
+	public final Uri getInstanceUri() throws NotBoundException {
+		return mUriBinder.getInstanceUri();
+	}
+
+	@Override
+	public final void setInstanceUri(final Uri uri) {
+		mUriBinder.setInstanceUri(uri);
+	}
+
+	@Override
+	public final void save(final ContentResolver resolver,
+			final String fieldName)
+					throws NotBoundException {
+		mUriBinder.save(resolver, fieldName);
+	}
+
+	@Override
+	public final UriArray<A> load(final ContentResolver resolver,
+			final String fieldName)
+					throws NotBoundException {
+		return mUriBinder.load(resolver, fieldName);
+	}
+
+	@Override
+	public final void save(final Bundle outState, final String prefix)
+			throws NotBoundException {
+		mUriBinder.save(outState, prefix);
+	}
+
+	@Override
+	public final UriArray<A> load(final Bundle b,
+			final String prefix) throws NotBoundException {
+		return mUriBinder.load(b, prefix);
+	}
+
+	@Override
+	public final void delete(final ContentResolver resolver)
+			throws NotBoundException {
+		mUriBinder.delete(resolver);
+	}
 
 }

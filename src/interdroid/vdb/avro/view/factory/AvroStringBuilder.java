@@ -1,7 +1,7 @@
 package interdroid.vdb.avro.view.factory;
 
 import interdroid.vdb.avro.control.handler.EditTextHandler;
-import interdroid.vdb.avro.control.handler.ValueHandler;
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 
@@ -15,6 +15,7 @@ import android.net.Uri;
 import android.text.InputType;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.TextView;
 
 /**
@@ -38,9 +39,10 @@ class AvroStringBuilder extends AvroTypedTextViewBuilder {
 			final ViewGroup viewGroup, final Schema schema,
 			final Field field, final Uri uri,
 			final ValueHandler valueHandler) throws NotBoundException {
-		return buildEditText(activity, viewGroup, schema,
-				InputType.TYPE_CLASS_TEXT,
-				new EditTextHandler(dataModel, schema.getType(), valueHandler));
+		EditText view = buildEditText(activity, viewGroup, schema,
+				InputType.TYPE_CLASS_TEXT);
+		new EditTextHandler(dataModel, schema.getType(), valueHandler, view);
+		return view;
 	}
 
 	@Override

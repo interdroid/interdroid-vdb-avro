@@ -1,7 +1,7 @@
 package interdroid.vdb.avro.view.factory;
 
 import interdroid.vdb.avro.control.handler.TimeHandler;
-import interdroid.vdb.avro.control.handler.ValueHandler;
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.view.DataFormatUtil;

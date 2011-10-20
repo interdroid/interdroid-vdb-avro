@@ -13,24 +13,53 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
 
-public class UriDataManager {
-    private static final Logger logger = LoggerFactory
+/**
+ * A handler for persisting models to Uris.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
+public final class UriDataManager {
+	/** Access to logger. */
+    private static final Logger LOG = LoggerFactory
             .getLogger(UriDataManager.class);
 
-    static void safeClose(Cursor cursor) {
+    /**
+     * No construction.
+     */
+    private UriDataManager() {
+    	// No construction
+    }
+
+    /**
+     * Utility for safely closing a cursor.
+     * @param cursor the cursor to close
+     */
+    static void safeClose(final Cursor cursor) {
         if (null != cursor) {
             try {
                 cursor.close();
             } catch (Exception e) {
-                // Ignored
+                LOG.warn("Ignoring exception closing cursor.", e);
             }
         }
     }
 
+    /**
+     * Loads data from a content provider.
+     * @param resolver the resolver to load with
+     * @param rootUri the uri to load
+     * @param cursor the cursor to load from
+     * @param fieldName the name of the field being loaded
+     * @param fieldSchema the schema for the field
+     * @return the loaded data
+     * @throws NotBoundException if the data is not bound properly
+     */
     @SuppressWarnings("rawtypes")
-    static Object loadDataFromUri(ContentResolver resolver, Uri rootUri, Cursor cursor,
-            String fieldName, Schema fieldSchema) throws NotBoundException {
-        logger.debug("Loading field: " + fieldName + " : " + fieldSchema);
+    static Object loadDataFromUri(final ContentResolver resolver,
+    		final Uri rootUri, final Cursor cursor,
+            final String fieldName, final Schema fieldSchema)
+            		throws NotBoundException {
+        LOG.debug("Loading field: " + fieldName + " : " + fieldSchema);
         Object value = null;
         switch (fieldSchema.getType()) {
         case ARRAY:
@@ -74,18 +103,21 @@ public class UriDataManager {
             int recordId = cursor.getInt(cursor.getColumnIndex(fieldName));
             if (recordId > 0) {
                 Uri recordUri = getRecordUri(rootUri, fieldSchema);
-                value = new UriRecord(Uri.withAppendedPath(recordUri, String.valueOf(recordId)), fieldSchema).load(resolver);
+                value = new UriRecord(Uri.withAppendedPath(recordUri,
+                		String.valueOf(recordId)), fieldSchema).load(resolver);
             } else {
                 value = null;
             }
             break;
         case STRING:
-            logger.debug("Loading {} : columns: {}", fieldName, cursor.getColumnNames());
+            LOG.debug("Loading {} : columns: {}", fieldName,
+            		cursor.getColumnNames());
             value = cursor.getString(cursor.getColumnIndex(fieldName));
-            logger.debug("Loaded value: " + value);
+            LOG.debug("Loaded value: " + value);
             break;
         case UNION:
-            value = new UriUnion(fieldSchema).load(resolver, rootUri, cursor, fieldName);
+            value = new UriUnion(fieldSchema).load(resolver, rootUri, cursor,
+            		fieldName);
             break;
         default:
             throw new RuntimeException("Unsupported type: " + fieldSchema);
@@ -93,26 +125,47 @@ public class UriDataManager {
         return value;
     }
 
-    static Uri getRecordUri(Uri rootUri, Schema fieldSchema) {
+    /**
+     * @param rootUri the root uri we are working with
+     * @param fieldSchema the schema for the record
+     * @return the uri for a record
+     */
+    static Uri getRecordUri(final Uri rootUri, final Schema fieldSchema) {
         UriMatch match = EntityUriMatcher.getMatch(rootUri);
-        return Uri.withAppendedPath(match.getCheckoutUri(), fieldSchema.getFullName());
+        return Uri.withAppendedPath(match.getCheckoutUri(),
+        		fieldSchema.getFullName());
     }
 
+    /**
+     * Stores data to the given Uri.
+     * @param resolver the resolver to store with
+     * @param rootUri the root uri for what we are storing
+     * @param values the values to store to
+     * @param fieldName the name of the field
+     * @param fieldSchema the schema for the field
+     * @param data the data for the field
+     * @return the uri for what was stored
+     * @throws NotBoundException if the data is not bound properly
+     */
     @SuppressWarnings("rawtypes")
-    static Uri storeDataToUri(ContentResolver resolver, Uri rootUri, ContentValues values,
-            String fieldName, Schema fieldSchema, Object data) throws NotBoundException {
-        logger.debug("Storing to: " + rootUri + " fieldName: " + fieldName + " schema: " + fieldSchema);
+    static Uri storeDataToUri(final ContentResolver resolver,
+    		final Uri rootUri, final ContentValues values,
+            final String fieldName, final Schema fieldSchema, final Object data)
+            		throws NotBoundException {
+        LOG.debug("Storing to: " + rootUri + " fieldName: {} schema: {}",
+        		fieldName, fieldSchema);
         Uri dataUri = null;
         switch (fieldSchema.getType()) {
         case ARRAY:
             if (data != null) {
-                UriArray array = (UriArray)data;
+                UriArray array = (UriArray) data;
                 array.save(resolver, fieldName);
                 dataUri = array.getInstanceUri();
             } else {
                 // Make sure any old values don't exist
-                logger.warn("Clearing old values.");
-                new UriArray(Uri.withAppendedPath(rootUri, fieldName), fieldSchema).delete(resolver);
+                LOG.warn("Clearing old values.");
+                new UriArray(Uri.withAppendedPath(rootUri, fieldName),
+                		fieldSchema).delete(resolver);
             }
             break;
         case BOOLEAN:
@@ -141,11 +194,12 @@ public class UriDataManager {
             break;
         case MAP:
             if (data != null) {
-                UriMap map = (UriMap)data;
+                UriMap map = (UriMap) data;
                 map.save(resolver, fieldName);
                 dataUri = map.getInstanceUri();
             } else {
-                new UriMap(Uri.withAppendedPath(rootUri, fieldName), fieldSchema).delete(resolver);
+                new UriMap(Uri.withAppendedPath(rootUri, fieldName),
+                		fieldSchema).delete(resolver);
             }
             break;
         case NULL:
@@ -153,7 +207,7 @@ public class UriDataManager {
             break;
         case RECORD:
             if (data != null) {
-                UriRecord record = (UriRecord)data;
+                UriRecord record = (UriRecord) data;
                 record.save(resolver);
                 dataUri = record.getInstanceUri();
             }
@@ -163,7 +217,7 @@ public class UriDataManager {
             break;
         case UNION:
             if (data != null) {
-                UriUnion union = (UriUnion)data;
+                UriUnion union = (UriUnion) data;
                 union.save(resolver, rootUri, values, fieldName);
             }
             break;
@@ -174,21 +228,35 @@ public class UriDataManager {
         return dataUri;
     }
 
-    public static Uri insertUri(ContentResolver resolver, Uri baseUri,
-            ContentValues contentValues) {
-        logger.debug("Inserting into {}", baseUri);
+    /**
+     * Inserts the values in the given uri.
+     * @param resolver the resolver to use
+     * @param baseUri the uri to insert to
+     * @param contentValues the values to be inserted
+     * @return the uri for the inserted data
+     */
+    public static Uri insertUri(final ContentResolver resolver,
+    		final Uri baseUri, final ContentValues contentValues) {
+        LOG.debug("Inserting into {}", baseUri);
         return resolver.insert(baseUri, contentValues);
     }
 
-    public static void updateUriOrThrow(ContentResolver resolver, Uri rootUri,
-            ContentValues values) {
-        logger.debug("Updating: " + rootUri);
+    /**
+     * Updates the data at a uri or throws an exception.
+     * @param resolver the resolver to use
+     * @param rootUri the uri to update
+     * @param values the values to store
+     */
+    public static void updateUriOrThrow(final ContentResolver resolver,
+    		final Uri rootUri, final ContentValues values) {
+        LOG.debug("Updating: " + rootUri);
         if (values.size() > 0) {
-            // Turns out update returns 0 if nothing changed in the row. Ah well. Nice try.
+            // Turns out update returns 0 if nothing changed in the row.
             //          int count =
             resolver.update(rootUri, values, null, null);
             //          if (count != 1) {
-            //              throw new RuntimeException("Error updating record. Count was: "
+            //              throw new RuntimeException(
+            //                      "Error updating record. Count was: "
             //                      + count);
             //          }
         }

@@ -18,46 +18,67 @@ import android.widget.ImageView;
 import android.widget.Toast;
 import interdroid.util.ToastOnUI;
 import interdroid.vdb.R;
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.view.AvroIntentUtil;
 import interdroid.vdb.avro.view.UseCamera;
 
+/**
+ * Handler for a photo field.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
 public class CameraHandler implements OnClickListener {
-	private static final Logger logger = LoggerFactory
+	/** Access to logger. */
+	private static final Logger LOG = LoggerFactory
 			.getLogger(CameraHandler.class);
 
+	/** The data model we work in. */
 	private final AvroRecordModel mDataModel;
+	/** The activity we work for. */
 	private final Activity mActivity;
+	/** The value handler for the photo. */
 	private final ValueHandler mValueHandler;
-	private final Schema mSchema;
-	private final boolean mIsVideo;
+	/** The take photo button. */
 	private Button mButton;
 
-	public CameraHandler(AvroRecordModel dataModel, Activity activity,
-			Schema schema, ValueHandler valueHandler, Button cameraButton,
-			ImageView image) {
+	/**
+	 * Construct a camera handler.
+	 * @param dataModel the data model to work with.
+	 * @param activity the activity we work for
+	 * @param schema the schema for the field
+	 * @param valueHandler the value handler with the data
+	 * @param cameraButton the button which triggers taking a photo
+	 * @param image the image view to display the photo in
+	 */
+	public CameraHandler(final AvroRecordModel dataModel,
+			final Activity activity, final Schema schema,
+			final ValueHandler valueHandler, final Button cameraButton,
+			final ImageView image) {
 		mDataModel = dataModel;
 		mValueHandler = valueHandler;
-		mSchema = schema;
 		mActivity = activity;
-		mIsVideo = false;
 		setButton(cameraButton);
 		setImageView(image);
 	}
 
-	private void setButton(Button takePhoto) {
+	/**
+	 * Sets the button to click for a photo.
+	 * @param takePhoto the button
+	 */
+	private void setButton(final Button takePhoto) {
 		mButton = takePhoto;
 		mButton.setOnClickListener(this);
 	}
 
 	@Override
-	public void onClick(View arg0) {
+	public final void onClick(final View arg0) {
 		Uri uri;
 		try {
 			uri = mValueHandler.getValueUri();
 
-			logger.debug("Launching camera intent for URI: {} type: {}",
+			LOG.debug("Launching camera intent for URI: {} type: {}",
 					uri, mActivity.getContentResolver().getType(uri));
 			Intent cameraIntent = new Intent(
 					MediaStore.ACTION_IMAGE_CAPTURE, uri);
@@ -65,15 +86,19 @@ public class CameraHandler implements OnClickListener {
 			cameraIntent.putExtra("field", mValueHandler.getFieldName());
 			AvroIntentUtil.launchDefaultIntent(mActivity, cameraIntent);
 		} catch (NotBoundException e) {
-			logger.error("Not bound!");
+			LOG.error("Not bound!");
 			ToastOnUI.show(mActivity, R.string.error_opening_camera,
 					Toast.LENGTH_LONG);
 		}
 	}
 
+	/**
+	 * Sets the image view to display the photo in.
+	 * @param image the image view to use
+	 */
 	private void setImageView(final ImageView image) {
 		if (mValueHandler.getValue() != null) {
-			logger.debug("Setting bitmap.");
+			LOG.debug("Setting bitmap.");
 			try {
 				byte[] data = (byte[]) mValueHandler.getValue();
 				if (data != null && data.length > 0) {
@@ -100,8 +125,9 @@ public class CameraHandler implements OnClickListener {
 					});
 
 				}
+				mDataModel.onChanged();
 			} catch (Exception e) {
-				logger.error("Unable to set image.", e);
+				LOG.error("Unable to set image.", e);
 			}
 		}
 	}

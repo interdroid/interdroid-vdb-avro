@@ -16,10 +16,6 @@
 
 package interdroid.vdb.avro.view;
 
-import org.apache.avro.Schema;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import interdroid.util.view.AsyncTaskWithProgressDialog;
 import interdroid.vdb.Actions;
 import interdroid.vdb.avro.R;
@@ -27,6 +23,10 @@ import interdroid.vdb.avro.view.factory.AvroViewFactory;
 import interdroid.vdb.content.EntityUriMatcher;
 import interdroid.vdb.content.EntityUriMatcher.UriMatch;
 import interdroid.vdb.content.avro.AvroProviderRegistry;
+
+import org.apache.avro.Schema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import android.app.ListActivity;
 import android.content.ComponentName;
@@ -36,10 +36,10 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.AdapterView;
 import android.widget.CursorAdapter;
 import android.widget.ListView;
@@ -51,32 +51,54 @@ import android.widget.Toast;
  * contents of the {@link NotePadProvider}
  */
 public class AvroBaseList extends ListActivity {
-	private static final Logger logger =
+	/** Access to logger. */
+	private static final Logger LOG =
 			LoggerFactory.getLogger(AvroBaseList.class);
 
-	// Menu item ids
+	/** Item delete menu. */
 	public static final int MENU_ITEM_DELETE = Menu.FIRST;
-	public static final int MENU_ITEM_INSERT = Menu.FIRST + 1;
-	public static final int MENU_ITEM_COMMIT = Menu.FIRST + 2;
-	public static final int MENU_ITEM_EDIT = Menu.FIRST + 3;
+	/** Item insert menu. */
+	public static final int MENU_ITEM_INSERT = MENU_ITEM_DELETE + 1;
+	/** Item commit menu. */
+	public static final int MENU_ITEM_COMMIT = MENU_ITEM_INSERT + 1;
+	/** Item edit menu. */
+	public static final int MENU_ITEM_EDIT = MENU_ITEM_COMMIT + 1;
 
+	/** The branch uri we are listing. */
 	private Uri mBranchUri;
+	/** Are we in read only mode? */
 	private boolean mReadOnly = true;
+	/** The schema for the records we are listing. */
 	private Schema mSchema;
 
+	/** Construct a list activity. */
 	public AvroBaseList() {
-		logger.debug("Constructed AvroBaseList: " + this + ":");
+		LOG.debug("Constructed AvroBaseList: " + this + ":");
 	}
 
-	protected AvroBaseList(Schema schema, Uri defaultUri) {
+	/**
+	 * Construct a list activity for the given schema and uri.
+	 * @param schema the schema for the list type
+	 * @param defaultUri the uri with the data for the list
+	 */
+	protected AvroBaseList(final Schema schema, final Uri defaultUri) {
 		setup(schema, defaultUri);
 	}
 
-	protected AvroBaseList(Schema schema) {
+	/**
+	 * Construct a list activity for the given schema.
+	 * @param schema the schema for the list type
+	 */
+	protected AvroBaseList(final Schema schema) {
 		this(schema, null);
 	}
 
-	protected void setup(Schema schema, Uri defaultUri) {
+	/**
+	 * Setup for listing the given type.
+	 * @param schema the schema for the type
+	 * @param defaultUri the uri with the data
+	 */
+	protected final void setup(final Schema schema, final Uri defaultUri) {
 		if (schema.getType() != Schema.Type.RECORD) {
 			throw new RuntimeException("Invalid base type. Must be a record.");
 		}
@@ -85,14 +107,14 @@ public class AvroBaseList extends ListActivity {
 		if (defaultUri == null) {
 			mBranchUri = Uri.parse("content://" + schema.getNamespace()
 					+ "/branches/master/" + schema.getName());
-			logger.debug("Using default URI: {}", mBranchUri);
+			LOG.debug("Using default URI: {}", mBranchUri);
 		} else {
 			mBranchUri = defaultUri;
 		}
 	}
 
 	@Override
-	protected void onCreate(Bundle savedInstanceState) {
+	protected final void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		// Start the GIT service in the background.
@@ -114,7 +136,7 @@ public class AvroBaseList extends ListActivity {
 			String schemaJson = intent.getStringExtra(AvroBaseEditor.SCHEMA);
 			Schema schema = null;
 			if (schemaJson == null) {
-				logger.debug("Checking for schema for: {}", defaultUri);
+				LOG.debug("Checking for schema for: {}", defaultUri);
 				schema = AvroProviderRegistry.getSchema(this, defaultUri);
 				if (schema == null) {
 					throw new IllegalArgumentException(
@@ -124,7 +146,7 @@ public class AvroBaseList extends ListActivity {
 				schema = Schema.parse(schemaJson);
 			}
 
-			logger.debug("Setting up: {} {}", defaultUri, schema);
+			LOG.debug("Setting up: {} {}", defaultUri, schema);
 			setup(schema, defaultUri);
 		}
 
@@ -139,7 +161,8 @@ public class AvroBaseList extends ListActivity {
 			getIntent().setData(match.buildUri());
 		}
 
-		// For write checkouts we hold the branch Uri for launching the commit activity
+		// For write checkouts we hold the branch Uri
+		// for launching the commit activity
 		mReadOnly = match.isReadOnlyCheckout();
 		mBranchUri = match.getCheckoutUri();
 		if (mReadOnly) {
@@ -150,7 +173,7 @@ public class AvroBaseList extends ListActivity {
 		getListView().setOnCreateContextMenuListener(this);
 
 		if (intent.getAction() == Intent.ACTION_PICK) {
-			logger.debug("In pick mode.");
+			LOG.debug("In pick mode.");
 			// We are canceled if they back out without picking.
 			setResult(RESULT_CANCELED);
 		}
@@ -160,17 +183,27 @@ public class AvroBaseList extends ListActivity {
 		new InitTask().execute(getIntent());
 	}
 
-	private class InitTask extends AsyncTaskWithProgressDialog<Object, Void, Void> {
+	/**
+	 * Initialization task which loads the list.
+	 * @author nick &lt;palmer@cs.vu.nl&gt;
+	 *
+	 */
+	private class InitTask
+		extends AsyncTaskWithProgressDialog<Object, Void, Void> {
 
+		/**
+		 * Construct the dialog.
+		 */
 		public InitTask() {
 			super(AvroBaseList.this, getString(R.string.label_loading),
 					getString(R.string.label_wait));
 		}
 
 		@Override
-		protected Void doInBackground(Object... params) {
+		protected Void doInBackground(final Object... params) {
 
-			AvroBaseList.this.runOnUiThread(new Runnable() { public void run() {
+			AvroBaseList.this.runOnUiThread(new Runnable() { @Override
+			public void run() {
 				final CursorAdapter adapter =
 						new AvroListAdapter(AvroBaseList.this,
 								mSchema, getIntent().getData());
@@ -184,7 +217,7 @@ public class AvroBaseList extends ListActivity {
 	}
 
 	@Override
-	public boolean onCreateOptionsMenu(final Menu menu) {
+	public final boolean onCreateOptionsMenu(final Menu menu) {
 		super.onCreateOptionsMenu(menu);
 
 		if (!mReadOnly) {
@@ -210,7 +243,7 @@ public class AvroBaseList extends ListActivity {
 	}
 
 	@Override
-	public boolean onPrepareOptionsMenu(final Menu menu) {
+	public final boolean onPrepareOptionsMenu(final Menu menu) {
 		super.onPrepareOptionsMenu(menu);
 		final boolean haveItems = getListAdapter().getCount() > 0;
 
@@ -220,7 +253,7 @@ public class AvroBaseList extends ListActivity {
 		// of our own specific actions along with any extensions that can be
 		// found.
 		if (haveItems && !mReadOnly) {
-			logger.debug("Selected item is: {}", getSelectedItemId());
+			LOG.debug("Selected item is: {}", getSelectedItemId());
 			// This is the selected item.
 			Uri uri = ContentUris.withAppendedId(getIntent().getData(),
 					getSelectedItemId());
@@ -248,12 +281,13 @@ public class AvroBaseList extends ListActivity {
 	}
 
 	@Override
-	public boolean onOptionsItemSelected(final MenuItem item) {
+	public final boolean onOptionsItemSelected(final MenuItem item) {
 		switch (item.getItemId()) {
 		case MENU_ITEM_INSERT:
 			// Launch activity to insert a new item
 			Intent i = new Intent(Intent.ACTION_INSERT, getIntent().getData());
-			// We need a class name since we haven't registered AvroBaseEdit with all URIs.
+			// We need a class name since we haven't registered
+			// AvroBaseEdit with all URIs.
 			i.setClassName(this, AvroBaseEditor.class.getName());
 			startActivity(i);
 			return true;
@@ -266,19 +300,20 @@ public class AvroBaseList extends ListActivity {
 	}
 
 	@Override
-	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
+	public final void onCreateContextMenu(final ContextMenu menu,
+			final View view, final ContextMenuInfo menuInfo) {
 		AdapterView.AdapterContextMenuInfo info;
 		try {
 			info = (AdapterView.AdapterContextMenuInfo) menuInfo;
 		} catch (ClassCastException e) {
-			logger.error("bad menuInfo", e);
+			LOG.error("bad menuInfo", e);
 			return;
 		}
 
 		Cursor cursor = (Cursor) getListAdapter().getItem(info.position);
 		if (cursor == null) {
 			// For some reason the requested item isn't available, do nothing
-			logger.debug("Requested item not avaialble.");
+			LOG.debug("Requested item not avaialble.");
 			return;
 		}
 
@@ -291,57 +326,83 @@ public class AvroBaseList extends ListActivity {
 			menu.add(0, MENU_ITEM_DELETE, 0, "Delete " + mSchema.getName());
 			menu.add(0, MENU_ITEM_EDIT, 1, "Edit " + mSchema.getName());
 			// This is the selected item.
-			Uri uri = ContentUris.withAppendedId(getIntent().getData(), info.id);
+			Uri uri = ContentUris.withAppendedId(getIntent().getData(),
+					info.id);
 			Intent intent = new Intent(null, uri);
 			intent.addCategory(Intent.CATEGORY_ALTERNATIVE);
 			Intent[] specifics = new Intent[1];
 			specifics[0] = new Intent(Actions.ACTION_INIT_DB, uri);
 			MenuItem[] items = new MenuItem[1];
-			menu.addIntentOptions(Menu.CATEGORY_ALTERNATIVE, 0, 0, null, specifics, intent, 0,
+			menu.addIntentOptions(Menu.CATEGORY_ALTERNATIVE,
+					0, 0, null, specifics, intent, 0,
 					items);
 		}
 	}
 
 	@Override
-	public boolean onContextItemSelected(MenuItem item) {
+	public final boolean onContextItemSelected(final MenuItem item) {
 		AdapterView.AdapterContextMenuInfo info;
 		try {
 			info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
 		} catch (ClassCastException e) {
-			logger.error("bad menuInfo", e);
+			LOG.error("bad menuInfo", e);
 			return false;
 		}
 
 		switch (item.getItemId()) {
-		case MENU_ITEM_DELETE: {
-			// Delete the note that the context menu is for
-			Uri noteUri = ContentUris.withAppendedId(getIntent().getData(), info.id);
-			getContentResolver().delete(noteUri, null, null);
+		case MENU_ITEM_DELETE:
+			deleteItem(info);
 			return true;
+		case MENU_ITEM_EDIT:
+			startEditActivity(info);
+			return true;
+		default:
+			return false;
 		}
-		case MENU_ITEM_EDIT: {
-			Uri noteUri = ContentUris.withAppendedId(getIntent().getData(), info.id);
-			Intent i = new Intent(Intent.ACTION_EDIT, noteUri);
-			i.setClassName(this, AvroBaseEditor.class.getName());
-			startActivity(i);
-		}
-		}
-		return false;
+	}
+
+	/**
+	 * Delete an item from the list.
+	 * @param info the item to delete
+	 */
+	private void deleteItem(
+			final AdapterView.AdapterContextMenuInfo info) {
+		// Delete the note that the context menu is for
+		Uri noteUri = ContentUris.withAppendedId(
+				getIntent().getData(), info.id);
+		getContentResolver().delete(noteUri, null, null);
+	}
+
+	/**
+	 * Starts an edit activity for the given item.
+	 * @param info the tiem to edit
+	 */
+	private void startEditActivity(
+			final AdapterView.AdapterContextMenuInfo info) {
+		Uri noteUri =
+				ContentUris.withAppendedId(getIntent().getData(), info.id);
+		Intent i = new Intent(Intent.ACTION_EDIT, noteUri);
+		i.setClassName(this, AvroBaseEditor.class.getName());
+		startActivity(i);
 	}
 
 	@Override
-	protected void onListItemClick(ListView l, View v, int position, long id) {
+	protected final void onListItemClick(final ListView l, final View v,
+			final int position, final long id) {
 		Uri uri = ContentUris.withAppendedId(getIntent().getData(), id);
 
 		String action = getIntent().getAction();
-		if (Intent.ACTION_PICK.equals(action) || Intent.ACTION_GET_CONTENT.equals(action)) {
+		if (Intent.ACTION_PICK.equals(action)
+				|| Intent.ACTION_GET_CONTENT.equals(action)) {
 			// The caller is waiting for us to return a note selected by
 			// the user.  The have clicked on one, so return it now.
-			logger.debug("Setting Result URI: {}", getContentResolver().getType(uri));
+			LOG.debug("Setting Result URI: {}",
+					getContentResolver().getType(uri));
 			setResult(RESULT_OK, new Intent().setData(uri));
 		} else {
 			// Launch activity to view/edit the currently selected item
-			logger.debug("Launching edit for: {}", getContentResolver().getType(uri));
+			LOG.debug("Launching edit for: {}",
+					getContentResolver().getType(uri));
 			// TODO: We should try to find a custom one here as well.
 			Intent editIntent = new Intent(Intent.ACTION_EDIT, uri);
 			editIntent.setClassName(this, AvroBaseEditor.class.getName());

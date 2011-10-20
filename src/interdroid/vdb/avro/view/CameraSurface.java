@@ -13,17 +13,36 @@ import android.hardware.Camera.AutoFocusCallback;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.Size;
 import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.SurfaceHolder.Callback;
+import android.view.SurfaceView;
 
+/**
+ * A surface for display camera previews.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
 public class CameraSurface extends SurfaceView implements Callback {
-	private static final Logger logger = LoggerFactory
+	/** Access to logger. */
+	private static final Logger LOG = LoggerFactory
 			.getLogger(CameraSurface.class);
 
-	SurfaceHolder mHolder;
-	Camera mCamera;
+	/** The minimum size we would like to have. */
+	private static final int	MINIMUM_SIZE	= 512;
 
-	CameraSurface(Context context) {
+	/** The aspect tolerance we support. */
+	private static final double ASPECT_TOLERANCE = 0.05;
+
+
+	/** The holder for this surface. */
+	private final SurfaceHolder mHolder;
+	/** The camera we are using. */
+	private Camera mCamera;
+
+	/**
+	 * Construct a CameraSurface for the given context.
+	 * @param context the context in which to work.
+	 */
+	public CameraSurface(final Context context) {
 
 		super(context);
 
@@ -32,11 +51,12 @@ public class CameraSurface extends SurfaceView implements Callback {
 		mHolder = getHolder();
 		mHolder.addCallback(this);
 		mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-		logger.debug("CameraPreview: constructor");
+		LOG.debug("CameraPreview: constructor");
 	}
 
-	public void surfaceCreated(SurfaceHolder holder) {
-		logger.debug("CameraPreview: surface created");
+	@Override
+	public final void surfaceCreated(final SurfaceHolder holder) {
+		LOG.debug("CameraPreview: surface created");
 		// The Surface has been created, acquire the camera and tell it where
 		// to draw.
 		mCamera = Camera.open();
@@ -48,7 +68,7 @@ public class CameraSurface extends SurfaceView implements Callback {
 			for (Camera.Size supportedSize : supportedSizes) {
 				if (supportedSize.width > supportedSize.height
 						&& supportedSize.width < chosenSize.width
-						&& supportedSize.width >= 512) {
+						&& supportedSize.width >= MINIMUM_SIZE) {
 					chosenSize = supportedSize;
 				}
 			}
@@ -65,8 +85,9 @@ public class CameraSurface extends SurfaceView implements Callback {
 		}
 	}
 
-	public void surfaceDestroyed(SurfaceHolder holder) {
-		logger.debug("CameraPreview: surface destroyed");
+	@Override
+	public final void surfaceDestroyed(final SurfaceHolder holder) {
+		LOG.debug("CameraPreview: surface destroyed");
 		// Surface will be destroyed when we return, so stop the preview.
 		// Because the CameraDevice object is not a shared resource, it's very
 		// important to release it when the activity is paused.
@@ -75,11 +96,20 @@ public class CameraSurface extends SurfaceView implements Callback {
 		mCamera = null;
 	}
 
-	private Size getOptimalPreviewSize(List<Size> sizes, int w, int h) {
-		final double ASPECT_TOLERANCE = 0.05;
-		double targetRatio = (double) w / h;
-		if (sizes == null)
+	/**
+	 * @param sizes the available sizes
+	 * @param w the width
+	 * @param h the height
+	 * @return the optimal preview size
+	 */
+	private Size getOptimalPreviewSize(final List<Size> sizes,
+			final int w, final int h) {
+
+		if (sizes == null) {
 			return null;
+		}
+
+		double targetRatio = (double) w / h;
 
 		Size optimalSize = null;
 		double minDiff = Double.MAX_VALUE;
@@ -89,8 +119,9 @@ public class CameraSurface extends SurfaceView implements Callback {
 		// Try to find an size match aspect ratio and size
 		for (Size size : sizes) {
 			double ratio = (double) size.width / size.height;
-			if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE)
+			if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) {
 				continue;
+			}
 			if (Math.abs(size.height - targetHeight) < minDiff) {
 				optimalSize = size;
 				minDiff = Math.abs(size.height - targetHeight);
@@ -110,8 +141,11 @@ public class CameraSurface extends SurfaceView implements Callback {
 		return optimalSize;
 	}
 
-	public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
-		logger.debug("CameraPreview: surface changed");
+	@Override
+	public final void surfaceChanged(
+			final SurfaceHolder holder, final int format,
+			final int w, final int h) {
+		LOG.debug("CameraPreview: surface changed");
 		// Now that the size is known, set up the camera parameters and begin
 		// the preview.
 		Camera.Parameters parameters = mCamera.getParameters();
@@ -124,20 +158,29 @@ public class CameraSurface extends SurfaceView implements Callback {
 		mCamera.startPreview();
 	}
 
-	public void takePicture(final PictureTakenCallback bitmapCallback,
+	/**
+	 * Take a picture.
+	 * @param bitmapCallback the callback to call with a bitmap
+	 * @param cropSelectionFractionX the amount to crop in x
+	 * @param cropSelectionFractionY the amount to crop in y
+	 * @param directory the directory to write to
+	 * @param autofocus should we use autofocus
+	 */
+	public final void takePicture(final PictureTakenCallback bitmapCallback,
 			final double cropSelectionFractionX,
 			final double cropSelectionFractionY,
 			final File directory,
-			boolean autofocus) {
+			final boolean autofocus) {
 
 		System.gc();
-		logger.debug("CameraPreview: take picture");
+		LOG.debug("CameraPreview: take picture");
 		// TODO Auto-generated method stub
 		if (autofocus) {
 			mCamera.autoFocus(new AutoFocusCallback() {
 
 				@Override
-				public void onAutoFocus(boolean success, Camera camera) {
+				public void onAutoFocus(final boolean success,
+						final Camera camera) {
 					doTakePicture(bitmapCallback);
 				}
 
@@ -147,15 +190,19 @@ public class CameraSurface extends SurfaceView implements Callback {
 		}
 	}
 
+	/**
+	 * Handles the taking of a picture.
+	 * @param bitmapCallback the listner to send a bitmap to
+	 */
 	private void doTakePicture(final PictureTakenCallback bitmapCallback) {
-		logger.debug("CameraPreview: picture taken");
+		LOG.debug("CameraPreview: picture taken");
 
 		mCamera.takePicture(null, null, new PictureCallback() {
 
 			@Override
-			public void onPictureTaken(byte[] data, Camera camera) {
+			public void onPictureTaken(final byte[] data, final Camera camera) {
 				mCamera.stopPreview();
-				logger.debug("CameraPreview: preview stopped");
+				LOG.debug("CameraPreview: preview stopped");
 
 				bitmapCallback.onPrePictureTaken();
 				bitmapCallback.onPictureTaken(data);
@@ -163,18 +210,30 @@ public class CameraSurface extends SurfaceView implements Callback {
 				try {
 					mCamera.setPreviewDisplay(mHolder);
 				} catch (IOException e) {
-					logger.error("Error resetting display!", e);
+					LOG.error("Error resetting display!", e);
 				}
 				mCamera.startPreview();
-				logger.debug("CameraPreview: preview restarted");
+				LOG.debug("CameraPreview: preview restarted");
 			}
 		});
 	}
 
+	/**
+	 * The callback for when a picture is taken.
+	 * @author nick &lt;palmer@cs.vu.nl&gt;
+	 *
+	 */
 	interface PictureTakenCallback {
 
-		public void onPrePictureTaken();
+		/**
+		 * Called just before a picture is taken.
+		 */
+		void onPrePictureTaken();
 
+		/**
+		 * Called when a picture is taken.
+		 * @param data the bytes of the photo.
+		 */
 		void onPictureTaken(byte[] data);
 	}
 

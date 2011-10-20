@@ -17,26 +17,34 @@ import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+/**
+ * An activity which lets the user take a photo. It stores the resulting
+ * photo to a content provider uri.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
 public class UseCamera extends Activity {
-	private static final Logger logger = LoggerFactory
+	/** Access to logger. */
+	private static final Logger LOG = LoggerFactory
 			.getLogger(UseCamera.class);
 
-	CameraSurface mPreview;
-	Uri mUri;
-	String mField;
+	/** The camera surface used to show the preview. */
+	private CameraSurface mPreview;
+	/** The uri we are going to store to. */
+	private Uri mUri;
+	/** The field to store to in the content provider. */
+	private String mField;
 
-	protected void onCreate() {
-
-	}
-
-	protected void onStart() {
+	@Override
+	protected final void onStart() {
 		mPreview = new CameraSurface(this);
 		mPreview.setOnClickListener(new OnClickListener() {
 
 			@Override
-			public void onClick(View arg0) {
-				logger.debug("Taking picture!");
-				mPreview.takePicture(pictureCallback, 0, 0, getFilesDir(), true);
+			public void onClick(final View arg0) {
+				LOG.debug("Taking picture!");
+				mPreview.takePicture(
+						pictureCallback, 0, 0, getFilesDir(), true);
 			}
 
 		});
@@ -44,11 +52,12 @@ public class UseCamera extends Activity {
 		mField = getIntent().getStringExtra("field");
 
 		if (mUri == null || mField == null) {
-			ToastOnUI.show(this, R.string.error_opening_camera, Toast.LENGTH_LONG);
+			ToastOnUI.show(this,
+					R.string.error_opening_camera, Toast.LENGTH_LONG);
 			finish();
 		}
 
-		logger.debug("Taking picture for: {} {}", mUri, mField);
+		LOG.debug("Taking picture for: {} {}", mUri, mField);
 
 		LinearLayout layout = new LinearLayout(this);
 		LayoutParameters.setViewGroupLayoutParams(
@@ -59,18 +68,23 @@ public class UseCamera extends Activity {
 		super.onStart();
 	}
 
-	protected void onStop() {
+	@Override
+	protected final void onStop() {
 		// mPreview.mCamera.stopPreview();
 		super.onStop();
 	}
 
 	@Override
-	protected void onDestroy() {
+	protected final void onDestroy() {
 		mPreview = null;
 		super.onDestroy();
 	}
 
-	PictureTakenCallback pictureCallback = new PictureTakenCallback() {
+	/**
+	 * A class which holds our handlers for photos which are taken.
+	 */
+	private final PictureTakenCallback pictureCallback =
+			new PictureTakenCallback() {
 
 		@Override
 		public void onPrePictureTaken() {
@@ -79,7 +93,7 @@ public class UseCamera extends Activity {
 		}
 
 		@Override
-		public void onPictureTaken(byte[] data) {
+		public void onPictureTaken(final byte[] data) {
 			ContentValues values = new ContentValues();
 			values.put(mField, data);
 			getContentResolver().update(mUri, values, null, null);

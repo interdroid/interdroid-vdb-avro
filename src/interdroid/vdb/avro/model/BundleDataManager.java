@@ -6,14 +6,36 @@ import org.slf4j.LoggerFactory;
 
 import android.os.Bundle;
 
-public class BundleDataManager {
-    private static final Logger logger = LoggerFactory
+/**
+ * A handler for persisting models to bundles.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
+public final class BundleDataManager {
+	/** Access to logger. */
+    private static final Logger LOG = LoggerFactory
             .getLogger(BundleDataManager.class);
 
+    /**
+     * No construction.
+     */
+    private BundleDataManager() {
+    	// No construction please.
+    }
+
+    /**
+     * Loads data from a bundle.
+     * @param saved the bundle to load from
+     * @param fieldFullName the full name of the field
+     * @param fieldSchema the schema for the field
+     * @return the data
+     * @throws NotBoundException if the record model is not bound
+     */
     @SuppressWarnings("rawtypes")
-    static Object loadDataFromBundle(Bundle saved, String fieldFullName,
-            Schema fieldSchema) throws NotBoundException {
-        logger.debug("Loading data from bundle: " + fieldFullName);
+    static Object loadDataFromBundle(final Bundle saved,
+    		final String fieldFullName, final Schema fieldSchema)
+    				throws NotBoundException {
+        LOG.debug("Loading data from bundle: " + fieldFullName);
         Object value;
         switch (fieldSchema.getType()) {
         case ARRAY:
@@ -50,7 +72,8 @@ public class BundleDataManager {
             value = null;
             break;
         case RECORD:
-            value = new UriRecord(fieldSchema, saved).load(saved, fieldFullName);
+            value = new UriRecord(fieldSchema, saved).load(
+            		saved, fieldFullName);
             break;
         case STRING:
             value = saved.getString(fieldFullName);
@@ -64,9 +87,18 @@ public class BundleDataManager {
         return value;
     }
 
+    /**
+     * Stores data to a bundle.
+     * @param outState the bundle to store to
+     * @param fieldFullName the full name of the field to store
+     * @param fieldSchema the schema for the field
+     * @param data the data to store
+     * @throws NotBoundException if the data is not bound properly
+     */
     @SuppressWarnings("rawtypes")
-    static void storeDataToBundle(Bundle outState, String fieldFullName,
-            Schema fieldSchema, Object data) throws NotBoundException {
+    static void storeDataToBundle(final Bundle outState,
+    		final String fieldFullName, final Schema fieldSchema,
+    		final Object data) throws NotBoundException {
         if (data != null) {
             switch (fieldSchema.getType()) {
             case ARRAY:
@@ -98,7 +130,7 @@ public class BundleDataManager {
                 outState.putLong(fieldFullName, (Long) data);
                 break;
             case MAP:
-                UriMap<?, ?> map = (UriMap<?, ?>) data;
+                UriMap<?> map = (UriMap<?>) data;
                 map.save(outState, fieldFullName);
                 break;
             case NULL:

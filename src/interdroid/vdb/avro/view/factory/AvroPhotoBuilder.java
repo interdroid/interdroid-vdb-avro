@@ -4,7 +4,7 @@ import interdroid.util.view.LayoutUtil.LayoutParameters;
 import interdroid.util.view.ViewUtil;
 import interdroid.vdb.R;
 import interdroid.vdb.avro.control.handler.CameraHandler;
-import interdroid.vdb.avro.control.handler.ValueHandler;
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.view.DataFormatUtil;

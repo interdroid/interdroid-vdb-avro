@@ -3,7 +3,7 @@ package interdroid.vdb.avro.view.factory;
 import interdroid.util.view.LayoutUtil.LayoutParameters;
 import interdroid.util.view.ViewUtil;
 import interdroid.vdb.avro.control.handler.CheckboxHandler;
-import interdroid.vdb.avro.control.handler.ValueHandler;
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 

@@ -6,7 +6,7 @@ import java.util.Map;
 
 import interdroid.util.view.ViewUtil;
 import interdroid.vdb.avro.AvroSchemaProperties;
-import interdroid.vdb.avro.control.handler.ValueHandler;
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 

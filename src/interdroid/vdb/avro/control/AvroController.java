@@ -18,29 +18,57 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Toast;
 
-// TODO: The database should be wired to notify the controller and update the view should something else
+// TODO: The database should be wired to notify the controller
+// and update the view should something else
 // edit the database behind our back.
 
+/**
+ * The AvroController manages the model writing it as required by the activity.
+ *
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
 public class AvroController {
-    private static final Logger logger = LoggerFactory.getLogger(AvroController.class);
+	/**
+	 * Access to logger.
+	 */
+	private static final Logger LOG =
+			LoggerFactory.getLogger(AvroController.class);
 
+	/** The edit state. */
     public static final int STATE_EDIT = 0;
+    /** The insert state. */
     public static final int STATE_INSERT = 1;
+    /** The canceled state. */
     public static final int STATE_CANCELED = 2;
 
+    /** The schema we are managing. */
     private final Schema mSchema;
+    /** The name of the type. */
     private final String mTypeName;
+    /** The default uri for this type. */
     private final Uri mDefaultUri;
+    /** The editor we are working for. */
     private final AvroBaseEditor mActivity;
+    /** Are we in read only mode? */
     private boolean mReadOnly;
 
-    protected Uri mUri;
-    protected int mState;
-
+    /** The uri for the data. */
+    private Uri mUri;
+    /** The state we are in. */
+    private int mState;
+    /** The model of the record. */
     private AvroRecordModel mDataModel;
 
-    public AvroController(AvroBaseEditor activity, String typeName,
-            Uri defaultUri, Schema schema) {
+    /**
+     * Construct a controller.
+     * @param activity the activity we are working for
+     * @param typeName the name of the type
+     * @param defaultUri the uri for the data
+     * @param schema the schema for the data
+     */
+    public AvroController(final AvroBaseEditor activity, final String typeName,
+            final Uri defaultUri, final Schema schema) {
         mTypeName = typeName;
         mDefaultUri = defaultUri;
         mSchema = schema;
@@ -49,28 +77,28 @@ public class AvroController {
 
     /**
      * Take care of saving the current state in the model.
-     * @throws NotBoundException
+     * @throws NotBoundException if the model is not bound
      */
-    public void handleSave() throws NotBoundException {
+    public final void handleSave() throws NotBoundException {
         if (mState != STATE_CANCELED && !mReadOnly) {
             mDataModel.storeCurrentValue();
         }
     }
 
     /**
-     * Returns the name of the type the controller is currently handling
+     * Returns the name of the type the controller is currently handling.
      *
      * @return the name of the type
      */
-    public String getTypeName() {
+    public final String getTypeName() {
         return mTypeName;
     }
 
     /**
      * Take care of loading the data from the database to the model.
-     * @throws NotBoundException
+     * @throws NotBoundException if the record is not bound
      */
-    public void loadData() throws NotBoundException {
+    public final void loadData() throws NotBoundException {
         mDataModel.loadData();
 
         // Set the layout for this activity now that the model is ready.
@@ -82,9 +110,10 @@ public class AvroController {
      *
      * @param outState
      *            the bundle to save to
-     * @throws NotBoundException
+     * @throws NotBoundException if the record is not bound
      */
-    public void saveState(Bundle outState) throws NotBoundException {
+    public final void saveState(final Bundle outState)
+    		throws NotBoundException {
         if (mState != STATE_CANCELED) {
             mDataModel.saveState(outState);
         }
@@ -92,27 +121,27 @@ public class AvroController {
 
     /**
      * Take care of deleting the data for the model from the database.
-     * @throws NotBoundException
+     * @throws NotBoundException if the record is not bound
      */
-    public void handleDelete() throws NotBoundException {
+    public final void handleDelete() throws NotBoundException {
         mState = STATE_CANCELED;
         mDataModel.delete();
     }
 
     /**
-     * Take care of staring the data in the original verison of the model to the
+     * Take care of staring the data in the original version of the model to the
      * database.
-     * @throws NotBoundException
+     * @throws NotBoundException if the record is not bound
      */
-    public void storeOriginalValue() throws NotBoundException {
+    public final void storeOriginalValue() throws NotBoundException {
         mDataModel.storeOriginalValue();
     }
 
     /**
-     * Handle a cancel of the current operation
-     * @throws NotBoundException
+     * Handle a cancel of the current operation.
+     * @throws NotBoundException if the record is not bound
      */
-    public void handleCancel() throws NotBoundException {
+    public final void handleCancel() throws NotBoundException {
         if (mState == STATE_EDIT) {
             storeOriginalValue();
         } else if (mState == STATE_INSERT) {
@@ -131,12 +160,13 @@ public class AvroController {
      * @param savedState
      *            the saved state for the controller to load from
      * @return the uri of the data item.
-     * @throws NotBoundException
+     * @throws NotBoundException if the record is not bound
      */
-    public Uri setup(Intent intent, Bundle savedState) throws NotBoundException {
+    public final Uri setup(final Intent intent, final Bundle savedState)
+    		throws NotBoundException {
         if (intent.getData() == null) {
             if (mDefaultUri == null) {
-                logger.error("No URI and no default.");
+                LOG.error("No URI and no default.");
                 Toast.makeText(mActivity, "No URI specified and no default.",
                         Toast.LENGTH_SHORT).show();
                 return null;
@@ -152,43 +182,45 @@ public class AvroController {
         // Append the default entity name if we didn't get one already.
         if (match.entityName == null) {
             if (intent.hasExtra(AvroBaseEditor.ENTITY)) {
-                logger.debug("Adding intent entity: {}", intent.getStringExtra(AvroBaseEditor.ENTITY));
-                mUri = Uri.parse(mUri.toString() + "/" + intent.getStringExtra(AvroBaseEditor.ENTITY));
+                LOG.debug("Adding intent entity: {}",
+                		intent.getStringExtra(AvroBaseEditor.ENTITY));
+                mUri = Uri.parse(mUri.toString() + "/"
+                		+ intent.getStringExtra(AvroBaseEditor.ENTITY));
             } else {
-                logger.debug("Adding schema root entity: {}", mSchema.getName());
+                LOG.debug("Adding schema root entity: {}", mSchema.getName());
                 mUri = mUri.buildUpon().appendPath(mSchema.getName()).build();
             }
         }
 
-        logger.debug("Setting up for uri: " + mUri);
+        LOG.debug("Setting up for uri: " + mUri);
 
         // Do some setup based on the action being performed.
         String action = intent.getAction();
-        logger.debug("Performing action: " + action);
+        LOG.debug("Performing action: " + action);
         if (action == null) {
             action = Intent.ACTION_INSERT;
         }
         if (Intent.ACTION_EDIT.equals(action)) {
-            logger.debug("STATE_EDIT");
+            LOG.debug("STATE_EDIT");
             mState = STATE_EDIT;
         } else if (Intent.ACTION_INSERT.equals(action)
                 || Intent.ACTION_MAIN.equals(action)) {
-            logger.debug("STATE_INSERT");
+            LOG.debug("STATE_INSERT");
             mState = STATE_INSERT;
-            logger.debug("Inserting new record into: " + mUri);
+            LOG.debug("Inserting new record into: " + mUri);
             Uri tempUri = null;
             try {
                 tempUri = mActivity.getApplicationContext()
                     .getContentResolver().insert(mUri, new ContentValues());
             } catch (Exception e) {
-                logger.error("Insert threw something: ", e);
+                LOG.error("Insert threw something: ", e);
             }
-            logger.debug("Insert complete.");
+            LOG.debug("Insert complete.");
             // If we were unable to create a new field, then just finish
             // this activity. A RESULT_CANCELED will be sent back to the
             // original activity if they requested a result.
             if (tempUri == null) {
-                logger.error("Failed to insert into " + mUri);
+                LOG.error("Failed to insert into " + mUri);
                 Toast.makeText(mActivity, "Unable to insert data.",
                         Toast.LENGTH_SHORT).show();
                 mUri = null;
@@ -197,7 +229,7 @@ public class AvroController {
             mUri = tempUri;
         } else {
             // Whoops, unknown action! Bail.
-            logger.error("Unknown action, exiting");
+            LOG.error("Unknown action, exiting");
             Toast.makeText(mActivity, "Unknown action.", Toast.LENGTH_SHORT)
             .show();
             mUri = null;
@@ -218,7 +250,7 @@ public class AvroController {
      *
      * @return either EDIT_STATE or INSERT_STATE
      */
-    public int getState() {
+    public final int getState() {
         return mState;
     }
 
@@ -226,11 +258,14 @@ public class AvroController {
      * Sets the content resolver on the underlying data model.
      * @param contentResolver the resolver for the model to use
      */
-    public void setResolver(ContentResolver contentResolver) {
+    public final void setResolver(final ContentResolver contentResolver) {
         mDataModel.setResolver(contentResolver);
     }
 
-	public Schema getSchema() {
+    /**
+     * @return the schema for the type being controlled
+     */
+	public final Schema getSchema() {
 		return mSchema;
 	}
 

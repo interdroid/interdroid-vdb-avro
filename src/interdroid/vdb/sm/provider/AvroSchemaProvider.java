@@ -23,7 +23,7 @@ public class AvroSchemaProvider extends AvroContentProviderProxy {
 
 	// Register our change handler so that all schema's get a title
 	static {
-		// TODO: These should come from the defaults in the schema and be generated
+		// TODO: These should come from the defaults in the schema
 		ContentChangeHandler.register(AvroSchema.NAMESPACE,
 				AvroSchema.RECORD_DEFINITION, new ContentChangeHandler() {
 			public void preInsertHook(final ContentValues values) {

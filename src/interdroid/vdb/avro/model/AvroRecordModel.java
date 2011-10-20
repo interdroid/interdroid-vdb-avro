@@ -19,41 +19,45 @@ import android.os.Bundle;
  * values.
  */
 public class AvroRecordModel extends DataSetObserver {
-    private static final Logger logger = LoggerFactory.getLogger(AvroRecordModel.class);
-
-    /* =-=-=-= Helper Constants For More Readable Code In This Class =-=-=-= */
-//    static final String SEPARATOR = AvroContentProvider.SEPARATOR;
-//    static final String _COUNT = SEPARATOR + "count";
-//    static final String _KEY = AvroContentProvider.KEY_COLUMN_NAME;
-//    static final String _VALUE = AvroContentProvider.VALUE_COLUMN_NAME;
-//    static final String _TYPE = AvroContentProvider.TYPE_COLUMN_NAME;
-//    static final String _TYPE_NAME = AvroContentProvider.TYPE_NAME_COLUMN_NAME;
-//    static final String _URI_NAME = AvroContentProvider.TYPE_URI_COLUMN_NAME;
+	/** Access to logger. */
+    private static final Logger LOG =
+    		LoggerFactory.getLogger(AvroRecordModel.class);
 
     /* =-=-=-= Model State =-=-=-= */
+    /** The schema we are modeling. */
     private final Schema mSchema;
+    /** The uri for the data. */
     private final Uri mUri;
+    /** The activity using the model. */
     private final Activity mActivity;
 
+    /** The content resolver we are using. */
     private ContentResolver mResolver;
+    /** The current state of the model. */
     private UriRecord mCurrentStateModel;
+    /** The original state of the model. */
     private UriRecord mOriginalModel;
+    /** Is the model dirty. */
     private boolean mDirty;
 
-    // TODO: It would be really nice to have fine grained dirty flags at all levels.
+    // TODO: It would be really nice to have fine
+    // grained dirty flags at all levels.
+
 
     /**
      * Constructs a Model for the given Schema. The Schema must be of type
      * RECORD.
-     *
-     * @param schema
-     *            The schema to model
+	 *
+     * @param activity the activity to work for
+     * @param rootUri the uri to model
+     * @param schema the schema for the given uri
      */
-    public AvroRecordModel(Activity activity, Uri rootUri, Schema schema) {
+    public AvroRecordModel(final Activity activity, final Uri rootUri,
+    		final Schema schema) {
         if (schema.getType() != Type.RECORD) {
             throw new RuntimeException("Not a record!");
         }
-        logger.debug("Constructed model for: " + schema);
+        LOG.debug("Constructed model for: " + schema);
         mSchema = schema;
         mUri = rootUri;
         mResolver = activity.getContentResolver();
@@ -61,28 +65,31 @@ public class AvroRecordModel extends DataSetObserver {
     }
 
     /**
-     * Loads the original state of the model from the bundle
+     * Loads the original state of the model from the bundle.
      *
      * @param savedInstanceState
      *            the bundle to store to
-     * @throws NotBoundException
+     * @throws NotBoundException if the record model is not bound
      */
-    public void loadOriginals(Bundle savedInstanceState) throws NotBoundException {
+    public final void loadOriginals(final Bundle savedInstanceState)
+    		throws NotBoundException {
         if (savedInstanceState != null) {
-            logger.debug("Loading from bundle.");
-            mCurrentStateModel = new UriRecord(mUri, mSchema).load(savedInstanceState);
+            LOG.debug("Loading from bundle.");
+            mCurrentStateModel =
+            		new UriRecord(mUri, mSchema).load(savedInstanceState);
             if (mOriginalModel == null) {
-                mOriginalModel = new UriRecord(mUri, mSchema).load(savedInstanceState);
+                mOriginalModel =
+                		new UriRecord(mUri, mSchema).load(savedInstanceState);
             }
         }
     }
 
     /**
      * Restores the original values stored by the model to the database.
-     * @throws NotBoundException
+     * @throws NotBoundException if the record model is not bound
      */
-    public void storeOriginalValue() throws NotBoundException {
-        logger.debug("Storing original values.");
+    public final void storeOriginalValue() throws NotBoundException {
+        LOG.debug("Storing original values.");
         if (mDirty && mOriginalModel != null) {
             mOriginalModel.save(mResolver);
         }
@@ -90,10 +97,10 @@ public class AvroRecordModel extends DataSetObserver {
 
     /**
      * Stores the current values held by the model to the database.
-     * @throws NotBoundException
+     * @throws NotBoundException ifthe record model is not bound
      */
-    public void storeCurrentValue() throws NotBoundException {
-        logger.debug("Storing current state to uri: " + mUri);
+    public final void storeCurrentValue() throws NotBoundException {
+        LOG.debug("Storing current state to uri: " + mUri);
         if (mDirty && mCurrentStateModel != null) {
            mCurrentStateModel.save(mResolver);
         }
@@ -101,10 +108,10 @@ public class AvroRecordModel extends DataSetObserver {
 
     /**
      * Loads the model from the database.
-     * @throws NotBoundException
+     * @throws NotBoundException if the record model is not bound
      */
-    public void loadData() throws NotBoundException {
-        logger.debug("Loading data from: " + mUri);
+    public final void loadData() throws NotBoundException {
+        LOG.debug("Loading data from: " + mUri);
         mCurrentStateModel = new UriRecord(mUri, mSchema).load(mResolver);
         mDirty = false;
         // If there is no original model then load another copy
@@ -119,56 +126,72 @@ public class AvroRecordModel extends DataSetObserver {
      *
      * @param outState
      *            the bundle to save to
-     * @throws NotBoundException
+     * @throws NotBoundException if the record model is not bound
      */
-    public void saveState(Bundle outState) throws NotBoundException {
+    public final void saveState(final Bundle outState)
+    		throws NotBoundException {
         if (mDirty && mCurrentStateModel != null) {
-            logger.debug("Saving current state to bundle.");
+            LOG.debug("Saving current state to bundle.");
             mCurrentStateModel.save(outState);
         }
     }
 
     /**
      * Deletes the data for this model from the database.
-     * @throws NotBoundException
+     * @throws NotBoundException if the record model is not bound
      */
-    public void delete() throws NotBoundException {
+    public final void delete() throws NotBoundException {
         mOriginalModel.delete(mResolver);
     }
 
-
-    public Schema schema() {
+    /**
+     * @return the schema for the model.
+     */
+    public final Schema schema() {
         return mSchema;
     }
 
-    public void put(String mFieldName, Object value) {
+    /**
+     * Sets the value for the given field.
+     * @param mFieldName the field to set
+     * @param value the value to set the field to.
+     */
+    public final void put(final String mFieldName, final Object value) {
         if (mCurrentStateModel != null) {
-            logger.debug("Updating field: " + mFieldName + " to: " + value);
+            LOG.debug("Updating field: " + mFieldName + " to: " + value);
             mCurrentStateModel.put(mFieldName, value);
         }
+        mDirty = true;
     }
 
-    public void setResolver(ContentResolver contentResolver) {
+    /**
+     * Sets the resolver to be used to get access to data.
+     * @param contentResolver the resolver to be used
+     */
+    public final void setResolver(final ContentResolver contentResolver) {
         mResolver = contentResolver;
     }
 
-    public UriRecord getCurrentModel() {
+    /**
+     * @return the current data model.
+     */
+    public final UriRecord getCurrentModel() {
         return mCurrentStateModel;
     }
 
-    public Object get(String nameField) {
+    /**
+     * @param nameField the name of the field to get
+     * @return the value currently in the record for this field
+     */
+    public final Object get(final String nameField) {
         return mCurrentStateModel.get(nameField);
     }
 
-    public void runOnUI(Runnable runnable) {
+    /**
+     * Utility to run on the models activity ui thread.
+     * @param runnable the runnable to run on the ui thread.
+     */
+    public final void runOnUI(final Runnable runnable) {
         mActivity.runOnUiThread(runnable);
-    }
-
-    public void onChanged() {
-        mDirty = true;
-    }
-
-    public void onInvalidated() {
-        mDirty = true;
     }
 }

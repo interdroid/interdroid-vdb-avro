@@ -2,7 +2,7 @@ package interdroid.vdb.avro.control.handler;
 
 import interdroid.util.ToastOnUI;
 import interdroid.vdb.R;
-import interdroid.vdb.avro.model.AvroRecordModel;
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriRecord;
 import interdroid.vdb.avro.view.AvroIntentUtil;
@@ -23,20 +23,36 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+/**
+ * A handler for location data.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
 public class LocationHandler implements OnClickListener {
-	private static final Logger logger = LoggerFactory
+	/** Access to logger. */
+	private static final Logger LOG = LoggerFactory
 			.getLogger(LocationHandler.class);
 
-	private final AvroRecordModel mDataModel;
+	/** The activity we work in. */
 	private final Activity mActivity;
+	/** The value handler for the data. */
 	private final ValueHandler mValueHandler;
+	/** The schema for the data. */
 	private final Schema mSchema;
+	/** The button to launch the picker with. */
 	private Button mButton;
 
-	public LocationHandler(AvroRecordModel dataModel, Activity activity,
-			Schema schema, ValueHandler valueHandler,
-			Button cameraButton, ImageView image) {
-		mDataModel = dataModel;
+	/**
+	 * Construct a location handler.
+	 * @param activity the activity to work in
+	 * @param schema the schema for the data
+	 * @param valueHandler the value handler
+	 * @param cameraButton the button to trigger the picker
+	 * @param image the image view to display location in
+	 */
+	public LocationHandler(final Activity activity,
+			final Schema schema, final ValueHandler valueHandler,
+			final Button cameraButton, final ImageView image) {
 		mActivity = activity;
 		mValueHandler = valueHandler;
 		mSchema = schema;
@@ -45,40 +61,55 @@ public class LocationHandler implements OnClickListener {
 		setImageView(image);
 	}
 
-	public void setButton(Button pickButton) {
+	/**
+	 * Set the button to use to trigger picks.
+	 * @param pickButton the button to trigger picking.
+	 */
+	private void setButton(final Button pickButton) {
 		mButton = pickButton;
 		mButton.setOnClickListener(this);
 	}
 
 	@Override
-	public void onClick(View arg0) {
+	public final void onClick(final View arg0) {
 		Uri uri;
 		try {
 			UriRecord record = (UriRecord) mValueHandler.getValue();
 			if (record == null) {
-				logger.debug("Building new location record: {}", Uri.withAppendedPath(mValueHandler.getValueUri(), mValueHandler.getFieldName()));
-				uri = mActivity.getContentResolver().insert(Uri.withAppendedPath(mValueHandler.getValueUri(), mValueHandler.getFieldName()), null);
-				logger.debug("Got value URI: {}", uri);
+				LOG.debug("Building new location record: {}",
+						Uri.withAppendedPath(mValueHandler.getValueUri(),
+								mValueHandler.getFieldName()));
+				uri = mActivity.getContentResolver().insert(
+						Uri.withAppendedPath(mValueHandler.getValueUri(),
+								mValueHandler.getFieldName()), null);
+				LOG.debug("Got value URI: {}", uri);
 				record = new UriRecord(uri, mSchema);
 				mValueHandler.setValue(record);
 			} else {
 				uri = record.getInstanceUri();
 			}
 
-			logger.debug("Launching location picker intent for URI: {} type: {}", uri, mActivity.getContentResolver().getType(uri));
-			Intent locationIntent = new Intent(LocationPicker.ACTION_PICK_LOCATION, uri);
-			locationIntent.setClassName(mActivity, LocationPicker.class.getName());
+			LOG.debug("Launching location picker intent for URI: {} type: {}",
+					uri, mActivity.getContentResolver().getType(uri));
+			Intent locationIntent = new Intent(
+					LocationPicker.ACTION_PICK_LOCATION, uri);
+			locationIntent.setClassName(mActivity,
+					LocationPicker.class.getName());
 			AvroIntentUtil.launchDefaultIntent(mActivity, locationIntent);
 		} catch (NotBoundException e) {
-			logger.error("Not bound!");
+			LOG.error("Not bound!");
 			ToastOnUI.show(mActivity, R.string.error_picking_location,
 					Toast.LENGTH_LONG);
 		}
 	}
 
-	public final void setImageView(final ImageView image) {
+	/**
+	 * Sets the image view to display the location with.
+	 * @param image the image view to use
+	 */
+	private void setImageView(final ImageView image) {
 		if (mValueHandler.getValue() != null) {
-			logger.debug("Setting bitmap.");
+			LOG.debug("Setting bitmap.");
 			try {
 				UriRecord record = (UriRecord) mValueHandler.getValue();
 				byte[] data = (byte[]) record.get(LocationPicker.MAP_IMAGE);
@@ -106,7 +137,7 @@ public class LocationHandler implements OnClickListener {
 					});
 				}
 			} catch (Exception e) {
-				logger.error("Unable to set image.", e);
+				LOG.error("Unable to set image.", e);
 			}
 		}
 	}

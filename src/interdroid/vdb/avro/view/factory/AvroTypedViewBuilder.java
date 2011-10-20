@@ -1,14 +1,13 @@
 package interdroid.vdb.avro.view.factory;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import interdroid.util.view.ViewUtil;
 import interdroid.util.view.LayoutUtil.LayoutParameters;
-import interdroid.vdb.avro.control.handler.EditTextHandler;
-import interdroid.vdb.avro.control.handler.ValueHandler;
+import interdroid.util.view.ViewUtil;
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
@@ -89,12 +88,11 @@ public abstract class AvroTypedViewBuilder {
 	 * @param viewGroup the view group to add to
 	 * @param schema the schema to work with
 	 * @param inputType the input type parameters
-	 * @param textWatcher the text watcher
 	 * @return the built view
 	 */
-	protected static View buildEditText(final Activity activity,
-			final ViewGroup viewGroup, final Schema schema, final int inputType,
-			final EditTextHandler textWatcher) {
+	protected static EditText buildEditText(final Activity activity,
+			final ViewGroup viewGroup, final Schema schema,
+			final int inputType) {
 		LOG.debug("Building edit text for: " + schema);
 		EditText text = null;
 
@@ -105,7 +103,6 @@ public abstract class AvroTypedViewBuilder {
 		text.setInputType(inputType);
 
 		ViewUtil.addView(activity, viewGroup, text);
-		textWatcher.setWatched(text);
 		return text;
 	}
 

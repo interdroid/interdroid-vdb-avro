@@ -3,7 +3,7 @@ package interdroid.vdb.avro.view.factory;
 import java.util.List;
 
 import interdroid.vdb.R;
-import interdroid.vdb.avro.control.handler.ValueHandler;
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 

@@ -14,45 +14,80 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 
+/**
+ * Represents a union. This class is required because we need to be
+ * able to track the type and the value of that type which in Avro
+ * are implicit but for us must be explicitly managed.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
 public class UriUnion {
-	private static final Logger logger = LoggerFactory
+	/** Access to logger. */
+	private static final Logger LOG = LoggerFactory
 			.getLogger(UriUnion.class);
 
+	/** The current value for the union. */
 	private Object mValue;
-	private Schema mSchema;
+	/** The schema for the union. */
+	private final Schema mSchema;
+	/** The current type being held. */
 	private Type mType;
+	/** The name of the type if the type is a named type. */
 	private String mName;
 
-	public UriUnion(Schema fieldSchema) {
-		logger.debug("UriUnion constructed with schema: {} {}", fieldSchema.getType(), fieldSchema);
+	/**
+	 * Construct a new union.
+	 * @param fieldSchema the schema for the union
+	 */
+	public UriUnion(final Schema fieldSchema) {
+		LOG.debug("UriUnion constructed with schema: {} {}",
+				fieldSchema.getType(), fieldSchema);
 		if (!fieldSchema.getType().equals(Type.UNION)) {
-			logger.error("Wrong type for union.");
+			LOG.error("Wrong type for union.");
 			throw new RuntimeException();
 		}
 		mSchema = fieldSchema;
 	}
 
-	public Object getValue() {
+	/**
+	 * @return the current value for the union
+	 */
+	public final Object getValue() {
 		return mValue;
 	}
 
-	public void setValue(Object v, Schema schema) {
-		logger.debug("Union Value set to: {} {}", v, schema);
+	/**
+	 * Sets the value for the union to the given value which must be.
+	 * of the given schema
+	 * @param v the value to set
+	 * @param schema the schema for the value
+	 */
+	public final void setValue(final Object v, final Schema schema) {
+		LOG.debug("Union Value set to: {} {}", v, schema);
 		mValue = v;
 		mType = schema.getType();
 		mName = schema.getFullName();
 	}
 
-	public Type getType() {
+	/**
+	 * @return the type the union currently holds
+	 */
+	public final Type getType() {
 		return mType;
 	}
 
-	public String getTypeName() {
+	/**
+	 * @return the name for the type the union curently holds or null
+	 */
+	public final String getTypeName() {
 		return mName;
 	}
 
-	public Schema getValueSchema() {
-		for(Schema type : mSchema.getTypes()) {
+	/**
+	 * @return the schema for the value the union currently holds
+	 */
+	public final Schema getValueSchema() {
+		for (Schema type : mSchema.getTypes()) {
 			if (type.getType() == mType) {
 				if (UriBoundAdapter.isNamedType(mType)) {
 					if (type.getName().equals(mName)) {
@@ -66,36 +101,69 @@ public class UriUnion {
 		return null;
 	}
 
-	public void save(ContentResolver resolver, Uri rootUri, ContentValues values, String fieldName) throws NotBoundException {
-		values.put(NameHelper.getTypeName(fieldName), mType == null ? null : mType.toString());
+	/**
+	 * Saves this union.
+	 * @param resolver the resolver to use to save
+	 * @param rootUri the root uri for the data being saved
+	 * @param values the values being saved
+	 * @param fieldName the name of the field being saved
+	 * @throws NotBoundException if the data is not properly bound
+	 */
+	public final void save(final ContentResolver resolver, final Uri rootUri,
+			final ContentValues values, final String fieldName)
+					throws NotBoundException {
+		if (mType == null) {
+			values.putNull(NameHelper.getTypeName(fieldName));
+		} else {
+			values.put(NameHelper.getTypeName(fieldName), mType.toString());
+		}
 		values.put(NameHelper.getTypeNameName(fieldName), mName);
 		if (mValue != null) {
-			UriDataManager.storeDataToUri(resolver, rootUri, values, fieldName, getTypeSchema(), mValue);
+			UriDataManager.storeDataToUri(resolver, rootUri, values,
+					fieldName, getTypeSchema(), mValue);
 			if (UriBoundAdapter.isBoundType(mType)) {
-				values.put(fieldName, getInstanceId((UriBound<?>)mValue));
+				values.put(fieldName, getInstanceId((UriBound<?>) mValue));
 			}
 		} else {
 			values.put(fieldName, -1);
 		}
-		logger.debug("Values now has: {}", values);
+		LOG.debug("Values now has: {}", values);
 	}
 
-	private int getInstanceId(UriBound<?> value) throws NotBoundException {
-	Uri uri = value.getInstanceUri();
-	UriMatch match = EntityUriMatcher.getMatch(uri);
-	logger.debug("Instance id for: {} : {}", uri, match.entityIdentifier);
-	if (match.entityIdentifier != null) {
-		return Integer.parseInt(match.entityIdentifier);
-	} else {
-		return -1;
-	}
+	/**
+	 * Returns the instance id for the given value.
+	 * @param value the value to check
+	 * @return the instance id or -1 if it has no id
+	 * @throws NotBoundException if the data is not properly bound
+	 */
+	private int getInstanceId(final UriBound<?> value)
+			throws NotBoundException {
+		Uri uri = value.getInstanceUri();
+		UriMatch match = EntityUriMatcher.getMatch(uri);
+		LOG.debug("Instance id for: {} : {}", uri, match.entityIdentifier);
+		if (match.entityIdentifier != null) {
+			return Integer.parseInt(match.entityIdentifier);
+		} else {
+			return -1;
+		}
 	}
 
-	public UriUnion load(ContentResolver resolver, Uri rootUri, Cursor cursor, String fieldName) throws NotBoundException {
+	/**
+	 * Loads the data from the union from the content provider.
+	 * @param resolver the resolver to use
+	 * @param rootUri the root uri for the data being loaded
+	 * @param cursor the cursor to load from
+	 * @param fieldName the name of the field being loaded
+	 * @return the loaded union
+	 * @throws NotBoundException if the data is not properly bound
+	 */
+	public final UriUnion load(final ContentResolver resolver,
+			final Uri rootUri, final Cursor cursor, final String fieldName)
+					throws NotBoundException {
 		String name = NameHelper.getTypeName(fieldName);
-		logger.debug("Looking for column: {}", name);
+		LOG.debug("Looking for column: {}", name);
 		int index = cursor.getColumnIndex(name);
-		logger.debug("Got column: {}", index);
+		LOG.debug("Got column: {}", index);
 		if (index >= 0) {
 			String typeName = cursor.getString(index);
 
@@ -103,49 +171,87 @@ public class UriUnion {
 				mType = Type.valueOf(typeName);
 				mName = cursor.getString(cursor.getColumnIndex(
 						NameHelper.getTypeNameName(fieldName)));
-				mValue = UriDataManager.loadDataFromUri(resolver, rootUri, cursor, fieldName, getTypeSchema());
+				mValue = UriDataManager.loadDataFromUri(resolver, rootUri,
+						cursor, fieldName, getTypeSchema());
 			}
 		} else {
-			logger.debug("Cursor doesn't have field: {} {}", fieldName, cursor.getColumnNames());
-			throw new RuntimeException("Column not in cursor:" + fieldName + rootUri);
+			LOG.debug("Cursor doesn't have field: {} {}",
+					fieldName, cursor.getColumnNames());
+			throw new RuntimeException("Column not in cursor:"
+					+ fieldName + " " + rootUri);
 		}
 		return this;
 	}
 
-	public void save(Bundle outState, String fieldFullName) throws NotBoundException {
-		outState.putString(NameHelper.getTypeName(fieldFullName), mType == null ? null : mType.toString());
+	/**
+	 * Save this union to the bundle.
+	 * @param outState the bundle to save to
+	 * @param fieldFullName the name of the field for this union
+	 * @throws NotBoundException if the data is not properly bound
+	 */
+	public final void save(final Bundle outState, final String fieldFullName)
+			throws NotBoundException {
+		if (mType == null) {
+			outState.putString(NameHelper.getTypeName(fieldFullName), null);
+		} else {
+			outState.putString(NameHelper.getTypeName(fieldFullName),
+					mType.toString());
+		}
 		outState.putString(NameHelper.getTypeNameName(fieldFullName), mName);
-		BundleDataManager.storeDataToBundle(outState, fieldFullName, getTypeSchema(), mValue);
+		BundleDataManager.storeDataToBundle(outState, fieldFullName,
+				getTypeSchema(), mValue);
 		if (mValue != null && UriBoundAdapter.isBoundType(mType)) {
-			outState.putParcelable(fieldFullName, ((UriBound<?>)mValue).getInstanceUri());
+			outState.putParcelable(fieldFullName,
+					((UriBound<?>) mValue).getInstanceUri());
 		}
 	}
 
-	public UriUnion delete(ContentValues values, String fieldName) {
+	/**
+	 * Deletes this union.
+	 * @param values the values to store to
+	 * @param fieldName the name of this field.
+	 * @return null
+	 */
+	public final UriUnion delete(final ContentValues values,
+			final String fieldName) {
 		values.putNull(NameHelper.getTypeName(fieldName));
 		values.putNull(NameHelper.getTypeNameName(fieldName));
 		return null;
 	}
 
-	public UriUnion load(Bundle saved, String fieldName) throws NotBoundException {
-		mType = Type.valueOf(saved.getString(NameHelper.getTypeName(fieldName)));
+	/**
+	 * Loads a union from the bundle.
+	 * @param saved the bundle to load from
+	 * @param fieldName the name of the field to load
+	 * @return the loaded union
+	 * @throws NotBoundException if the data isn't bound properly
+	 */
+	public final UriUnion load(final Bundle saved, final String fieldName)
+			throws NotBoundException {
+		mType = Type.valueOf(saved.getString(
+				NameHelper.getTypeName(fieldName)));
 		mName = saved.getString(NameHelper.getTypeNameName(fieldName));
 
 		Schema fieldType = getTypeSchema();
-		setValue(BundleDataManager.loadDataFromBundle(saved, fieldName, fieldType), fieldType);
+		setValue(BundleDataManager.loadDataFromBundle(saved,
+				fieldName, fieldType), fieldType);
 		return this;
 	}
 
+	/**
+	 * @return the schema for the held type
+	 */
 	private Schema getTypeSchema() {
 		Schema fieldType = null;
 		if (mType == null) {
 			return null;
 		}
 		for (Schema unionType : mSchema.getTypes()) {
-			if (unionType.getType().equals(mType) &&
-					(!UriBoundAdapter.isNamedType(mType) ||
-							(mName.equals(unionType.getFullName()) || mName.equals(unionType.getName()))
-					)) {
+			if (unionType.getType().equals(mType)
+					&& (!UriBoundAdapter.isNamedType(mType)
+							|| (mName.equals(unionType.getFullName())
+									|| mName.equals(unionType.getName()))
+							)) {
 				fieldType = unionType;
 				break;
 			}
@@ -157,14 +263,20 @@ public class UriUnion {
 		return fieldType;
 	}
 
-	public final void delete(final ContentResolver resolver) throws NotBoundException {
+	/**
+	 * Deletes using the given content resolver.
+	 * @param resolver the resolver to use
+	 * @throws NotBoundException if this is not bound properly.
+	 */
+	public final void delete(final ContentResolver resolver)
+			throws NotBoundException {
 		if (mValue != null && UriBoundAdapter.isBoundType(getType())) {
 			((UriBound<?>) mValue).delete(resolver);
 		}
 	}
 
 	@Override
-	public String toString() {
+	public final String toString() {
 		if (mValue == null) {
 			return "[]";
 		}

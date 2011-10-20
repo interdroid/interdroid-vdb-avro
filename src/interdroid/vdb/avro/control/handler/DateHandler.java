@@ -1,5 +1,6 @@
 package interdroid.vdb.avro.control.handler;
 
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.view.DataFormatUtil;
 
 import java.text.ParseException;
@@ -12,15 +13,31 @@ import org.slf4j.LoggerFactory;
 import android.widget.DatePicker;
 import android.widget.DatePicker.OnDateChangedListener;
 
+/**
+ * Handler for date values.
+ *
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
 public class DateHandler implements OnDateChangedListener {
+	/** We use middle of the day so time zones don't move us across a date. */
+	private static final int	DEFAULT_HOUR	= 12;
 
-	private static final Logger logger = LoggerFactory
+	/** Access to logger. */
+	private static final Logger LOG = LoggerFactory
 			.getLogger(DateHandler.class);
 
+	/** The view we handle. */
 	private DatePicker mView;
+	/** The value handler we set and get data from. */
 	private ValueHandler mValueHandler;
 
-	public DateHandler(DatePicker view, ValueHandler valueHandler) {
+	/**
+	 * Construct a date handler.
+	 * @param view the view we handle
+	 * @param valueHandler the value handler we use for data access
+	 */
+	public DateHandler(final DatePicker view, final ValueHandler valueHandler) {
 		mView = view;
 		mValueHandler = valueHandler;
 		// Set the initial value
@@ -30,20 +47,23 @@ public class DateHandler implements OnDateChangedListener {
 					(Long) mValueHandler.getValue());
 			value.setTime(d);
 		} catch (ParseException e) {
-			logger.error("Error parsing date! Defaulting to now.", e);
+			LOG.error("Error parsing date! Defaulting to now.", e);
 		}
-		logger.debug("Initializing to: {} {} " + value.get(Calendar.YEAR), value.get(Calendar.MONTH), value.get(Calendar.DATE));
-		mView.init(value.get(Calendar.YEAR), value.get(Calendar.MONTH), value.get(Calendar.DATE), this);
+		LOG.debug("Initializing to: {} {} " + value.get(Calendar.YEAR),
+				value.get(Calendar.MONTH), value.get(Calendar.DATE));
+		mView.init(value.get(Calendar.YEAR), value.get(Calendar.MONTH),
+				value.get(Calendar.DATE), this);
 	}
 
 	@Override
-	public void onDateChanged(DatePicker arg0, int year, int month, int day) {
-		logger.debug("Updating date: {} {} " + day, year, month);
+	public final void onDateChanged(final DatePicker arg0,
+			final int year, final int month, final int day) {
+		LOG.debug("Updating date: {} {} " + day, year, month);
 		// Update the model
 		Calendar value = Calendar.getInstance();
-		value.set(year, month, day, 12, 0, 0);
+		value.set(year, month, day, DEFAULT_HOUR, 0, 0);
 		long parsed = DataFormatUtil.formatDateForStorage(value);
-		logger.debug("Setting date to: {}", parsed);
+		LOG.debug("Setting date to: {}", parsed);
 		mValueHandler.setValue(parsed);
 	}
 

@@ -1,15 +1,12 @@
 package interdroid.vdb.avro.control.handler;
 
-
 import interdroid.util.view.AddListener;
 import interdroid.util.view.DraggableAdapter;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriArray;
-import interdroid.vdb.avro.model.UriRecord;
 import interdroid.vdb.avro.view.factory.AvroViewFactory;
 
-import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,121 +17,161 @@ import android.database.DataSetObserver;
 import android.view.View;
 import android.view.ViewGroup;
 
+/**
+ * Handles array values.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
 public class ArrayHandler implements DraggableAdapter, AddListener  {
+	/**
+	 * Access to logger.
+	 */
+	private static final Logger LOG =
+			LoggerFactory.getLogger(ArrayHandler.class);
 
-	private static final Logger logger = LoggerFactory.getLogger(ArrayHandler.class);
+	/** The observable data sets. */
+	private DataSetObservable mObservables = new DataSetObservable();
 
-	private DataSetObservable observables = new DataSetObservable();
-
+	/** The activity we work for. */
 	private final Activity mActivity;
+	/** The array with data. */
 	private final UriArray<Object> mArray;
+	/** The model this array sits in. */
 	private final AvroRecordModel mDataModel;
+	/** The view group we are working in. */
 	private final ViewGroup mViewGroup;
+	/** The field which the array represents. */
 	private final Field mField;
 
-	public ArrayHandler(Activity activity, AvroRecordModel dataModel,
-			ViewGroup viewGroup, UriArray<Object> array, Field field) {
+	/**
+	 * Construct a new array handler.
+	 * @param activity the activity to work in
+	 * @param dataModel the model for the data
+	 * @param viewGroup the view group to add views to
+	 * @param array the array with data
+	 * @param field the field with the array
+	 */
+	public ArrayHandler(final Activity activity,
+			final AvroRecordModel dataModel, final ViewGroup viewGroup,
+			final UriArray<Object> array, final Field field) {
 		mActivity = activity;
 		mArray = array;
 		mDataModel = dataModel;
 		mViewGroup = viewGroup;
 		mField = field;
-		observables.registerObserver(mDataModel);
+		mObservables.registerObserver(mDataModel);
 	}
 
-	private View getSubView(int offset) throws NotBoundException {
-		return AvroViewFactory.buildArrayView(mActivity, mDataModel, this, mArray, mField, offset);
+	/**
+	 * @param offset the offset into the data array
+	 * @return returns a view for the data at the given offset
+	 * @throws NotBoundException if the model is not bound
+	 */
+	private View getSubView(final int offset) throws NotBoundException {
+		return AvroViewFactory.buildArrayView(mActivity, mDataModel,
+				this, mArray, mField, offset);
 	}
 
 	@Override
-	public boolean areAllItemsEnabled() {
+	public final boolean areAllItemsEnabled() {
 		return true;
 	}
 
 	@Override
-	public boolean isEnabled(int position) {
+	public final boolean isEnabled(final int position) {
 		return true;
 	}
 
 	@Override
-	public void registerDataSetObserver(DataSetObserver observer) {
-		observables.registerObserver(observer);
+	public final void registerDataSetObserver(final DataSetObserver observer) {
+		mObservables.registerObserver(observer);
 	}
 
 	@Override
-	public void unregisterDataSetObserver(DataSetObserver observer) {
-		observables.unregisterObserver(observer);
+	public final void unregisterDataSetObserver(
+			final DataSetObserver observer) {
+		mObservables.unregisterObserver(observer);
 	}
 
 	@Override
-	public int getCount() {
+	public final int getCount() {
 		return mArray.size();
 	}
 
 	@Override
-	public Object getItem(int position) {
+	public final Object getItem(final int position) {
 		return mArray.get(position);
 	}
 
 	@Override
-	public long getItemId(int position) {
+	public final long getItemId(final int position) {
 		return position;
 	}
 
 	@Override
-	public boolean hasStableIds() {
+	public final boolean hasStableIds() {
 		return false;
 	}
 
 	@Override
-	public View getView(int position, View convertView, ViewGroup parent) {
+	public final View getView(final int position, final View convertView,
+			final ViewGroup parent) {
 		try {
 			return getSubView(position);
 		} catch (NotBoundException e) {
-			logger.error("Shouldn't happen: {}", e);
+			LOG.error("Shouldn't happen: {}", e);
 			return null;
 		}
 	}
 
 	@Override
-	public int getItemViewType(int position) {
+	public final int getItemViewType(final int position) {
 		return 0;
 	}
 
 	@Override
-	public int getViewTypeCount() {
+	public final int getViewTypeCount() {
 		return 1;
 	}
 
 	@Override
-	public boolean isEmpty() {
+	public final boolean isEmpty() {
 		return mArray.isEmpty();
 	}
 
 	@Override
-	public void onRemove(int offset) {
+	public final void onRemove(final int offset) {
 		mArray.remove(offset);
-		observables.notifyChanged();
+		mObservables.notifyChanged();
 		mViewGroup.postInvalidate();
 	}
 
 	@Override
-	public void onDrop(int from, int to) {
-		mArray.add(from < to ? to - 1 : to, mArray.remove(from));
-		observables.notifyChanged();
+	public final void onDrop(final int from, final int to) {
+		if (from < to) {
+			mArray.add(to - 1, mArray.remove(from));
+		} else {
+			mArray.add(to, mArray.remove(from));
+		}
+		mObservables.notifyChanged();
 		mViewGroup.postInvalidate();
 	}
 
 	@Override
-	public void onAddItem() {
+	public final void onAddItem() {
 		mArray.add(null);
-		observables.notifyChanged();
+		mObservables.notifyChanged();
 		mViewGroup.postInvalidate();
 	}
 
-	public void setItem(int offset, Object value) {
+	/**
+	 * Sets the value at the given offset.
+	 * @param offset the offset to set
+	 * @param value the value to set to
+	 */
+	public final void setItem(final int offset, final Object value) {
 		mArray.set(offset, value);
-		observables.notifyChanged();
+		mObservables.notifyChanged();
 		mViewGroup.postInvalidate();
 	}
 

@@ -5,7 +5,7 @@ import java.util.List;
 import interdroid.util.view.ViewUtil;
 import interdroid.vdb.R;
 import interdroid.vdb.avro.control.handler.RecordTypeSelectHandler;
-import interdroid.vdb.avro.control.handler.ValueHandler;
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriRecord;
@@ -55,8 +55,7 @@ class AvroRecordBuilder extends AvroTypedViewBuilder {
 							R.string.label_edit, schema));
 		}
 		button.setOnClickListener(
-				getRecordTypeSelectorHandler(activity, dataModel, schema,
-						valueHandler, viewGroup, button));
+				getRecordTypeSelectorHandler(activity, schema, valueHandler));
 		ViewUtil.addView(activity, viewGroup, button);
 		return button;
 	}
@@ -64,19 +63,14 @@ class AvroRecordBuilder extends AvroTypedViewBuilder {
 	/**
 	 * Returns an on click listener for the given data.
 	 * @param activity the activity to work in
-	 * @param dataModel the data model to get data from
 	 * @param schema the schema for the data
 	 * @param valueHandler the value handler for the data
-	 * @param container the view group
-	 * @param button the button to press
 	 * @return the on click listener
 	 */
 	private static OnClickListener getRecordTypeSelectorHandler(
-			final Activity activity, final AvroRecordModel dataModel,
-			final Schema schema, final ValueHandler valueHandler,
-			final ViewGroup container, final Button button) {
-		return new RecordTypeSelectHandler(activity, dataModel, schema,
-				valueHandler, button);
+			final Activity activity, final Schema schema,
+			final ValueHandler valueHandler) {
+		return new RecordTypeSelectHandler(activity, schema, valueHandler);
 	}
 
 	@Override

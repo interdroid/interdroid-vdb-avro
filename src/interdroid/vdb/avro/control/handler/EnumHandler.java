@@ -1,6 +1,7 @@
 package interdroid.vdb.avro.control.handler;
 
 import interdroid.vdb.R;
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.view.factory.AvroViewFactory;
 
@@ -15,18 +16,45 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
 
+/**
+ * Handler for enumerations.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
 public class EnumHandler
 implements DialogInterface.OnClickListener, OnClickListener {
-
-	protected final Activity mActivity;
-	protected final AvroRecordModel mDataModel;
-	protected final Schema mSchema;
-	protected final TextView mTextView;
-
+	/**
+	 * The activity to work in.
+	 */
+	private final Activity mActivity;
+	/**
+	 * The data model we work for.
+	 */
+	private final AvroRecordModel mDataModel;
+	/**
+	 * The schema for the data.
+	 */
+	private final Schema mSchema;
+	/**
+	 * The text view to display the selection in.
+	 */
+	private final TextView mTextView;
+	/**
+	 * The value handler for the data.
+	 */
 	private final ValueHandler mValueHandler;
 
-	public EnumHandler(Activity activity, AvroRecordModel dataModel,
-			Schema schema, TextView view, ValueHandler valueHandler) {
+	/**
+	 * Construct a new enumeration handler.
+	 * @param activity the activity to work in
+	 * @param dataModel the model for the data.
+	 * @param schema the schema for the data
+	 * @param view the view to display with
+	 * @param valueHandler the value handler to get data from
+	 */
+	public EnumHandler(final Activity activity, final AvroRecordModel dataModel,
+			final Schema schema, final TextView view,
+			final ValueHandler valueHandler) {
 		mActivity = activity;
 		mDataModel = dataModel;
 		mSchema = schema;
@@ -43,7 +71,7 @@ implements DialogInterface.OnClickListener, OnClickListener {
 	 * Sets the text using the value in the handler.
 	 */
 	protected final void setText() {
-		final Integer ordinal = (Integer)mValueHandler.getValue();
+		final Integer ordinal = (Integer) mValueHandler.getValue();
 		mDataModel.runOnUI(new Runnable() {
 			public void run() {
 				if (ordinal == null) {
@@ -56,7 +84,7 @@ implements DialogInterface.OnClickListener, OnClickListener {
 	}
 
 	@Override
-	public void onClick(final View v) {
+	public final void onClick(final View v) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(mActivity);
 		builder.setTitle(AvroViewFactory.toTitle(mActivity,
 				R.string.label_pick, mSchema));
@@ -74,7 +102,7 @@ implements DialogInterface.OnClickListener, OnClickListener {
 	}
 
 	@Override
-	public void onClick(final DialogInterface dialog, final int which) {
+	public final void onClick(final DialogInterface dialog, final int which) {
 		mValueHandler.setValue(which);
 		mTextView.setText(mSchema.getEnumSymbols().get(which));
 		mTextView.postInvalidate();

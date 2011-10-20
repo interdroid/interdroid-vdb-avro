@@ -4,30 +4,47 @@ import org.apache.avro.Schema.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.widget.EditText;
 
+/**
+ * Handler for an edit text.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
 public class EditTextHandler implements TextWatcher {
-	private static final Logger logger = LoggerFactory.getLogger(EditTextHandler.class);
+	/** Access to logger. */
+	private static final Logger LOG =
+			LoggerFactory.getLogger(EditTextHandler.class);
 
+	/** The model we work in. */
 	private final AvroRecordModel mDataModel;
+	/** The type we are showing. */
 	private final Type mType;
+	/** The value handler we use to get and set data. */
 	private final ValueHandler mValueHandler;
 
-	public EditTextHandler(AvroRecordModel dataModel, Type type, ValueHandler valueHandler) {
+	/**
+	 * Construct this type of handler.
+	 * @param dataModel the data model we work in.
+	 * @param type the type we are handling
+	 * @param valueHandler the value handler to set and get from
+	 * @param text the edit text to handle
+	 */
+	public EditTextHandler(final AvroRecordModel dataModel,
+			final Type type, final ValueHandler valueHandler,
+			final EditText text) {
 		mDataModel = dataModel;
 		mType = type;
 		mValueHandler = valueHandler;
-	}
-
-	public Object getValue() {
-		return mValueHandler.getValue();
+		setWatched(text);
 	}
 
 	@Override
-	public void afterTextChanged(Editable s) {
+	public final void afterTextChanged(final Editable s) {
 		if (s.length() == 0) {
 			mValueHandler.setValue(null);
 		} else {
@@ -55,29 +72,45 @@ public class EditTextHandler implements TextWatcher {
 	}
 
 	@Override
-	public void beforeTextChanged(CharSequence s, int start, int count,
-			int after) {
+	public void beforeTextChanged(final CharSequence s,
+			final int start, final int count, final int after) {
 		// Do Nothing
 	}
 
 	@Override
-	public void onTextChanged(CharSequence s, int start, int before,
-			int count) {
+	public void onTextChanged(final CharSequence s, final int start,
+			final int before, final int count) {
 		// Do Nothing
 	}
 
-	public String toString() {
+	@Override
+	public final String toString() {
 		return "EditTextHandler: " + mType + " : " + mValueHandler;
 	}
 
+	/**
+	 * Sets the edit text we watch.
+	 * @param text the edit text to watch.
+	 */
+	private void setWatched(final EditText text) {
 
-	public void setWatched(final EditText text) {
-
-		if (getValue() != null) {
-			logger.debug("Setting value: " + getValue() + " for: " + this);
-			mDataModel.runOnUI(new Runnable() { public void run() { text.setText(String.valueOf(getValue())); } });
+		if (mValueHandler.getValue() != null) {
+			LOG.debug("Setting value: {} for: {}",
+					mValueHandler.getValue(), this);
+			mDataModel.runOnUI(new Runnable()
+			{
+				public void run() {
+					text.setText(String.valueOf(mValueHandler.getValue()));
+				}
+			});
 		} else {
-			logger.debug("Text watcher has null value: " + this);
+			LOG.debug("Text watcher has null value: {}", this);
+			mDataModel.runOnUI(new Runnable()
+			{
+				public void run() {
+					text.setText("");
+				}
+			});
 		}
 
 		// Must come after the setText.

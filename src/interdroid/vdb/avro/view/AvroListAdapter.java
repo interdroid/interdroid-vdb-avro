@@ -15,18 +15,12 @@ import org.slf4j.LoggerFactory;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CheckBox;
 import android.widget.CursorAdapter;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
-import android.widget.TextView;
 
 /**
  * This class provides a list adapter for data stored by an Avro VDB.
@@ -44,11 +38,6 @@ public class AvroListAdapter extends CursorAdapter {
 	 * The schema for the data.
 	 */
 	private Schema mSchema;
-
-	/**
-	 * The Uri we are listing.
-	 */
-	private Uri mUri;
 
 	/**
 	 * The title fields.
@@ -72,7 +61,6 @@ public class AvroListAdapter extends CursorAdapter {
 		super(context, getCursor(context, schema, uri));
 		mThis = context.getString(R.string.title_this) + " " + schema.getName();
 		mSchema = schema;
-		mUri = uri;
 		mTitleFields = getTitleFields(schema);
 	}
 

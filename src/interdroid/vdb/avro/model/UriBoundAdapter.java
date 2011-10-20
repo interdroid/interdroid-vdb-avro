@@ -6,101 +6,196 @@ import android.content.ContentResolver;
 import android.net.Uri;
 import android.os.Bundle;
 
+/**
+ * An adapter for implementing the UriBound interface.
+ * This adapter holds the bound uri and takes care of various
+ * bound checks and provides implementations with some handy
+ * utilities for easing the implementation.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ * @param <A> the type being bound
+ */
 public class UriBoundAdapter<A> implements UriBound<A> {
 
-    public static interface UriBoundAdapterImpl<A> {
-        public A loadImpl(Bundle b, String prefix) throws NotBoundException;
+	/**
+	 * The interface for the implementation of a UriBoundAdapter.
+	 * @author nick &lt;palmer@cs.vu.nl&gt;
+	 *
+	 * @param <A> the type being bound.
+	 */
+	public static interface UriBoundAdapterImpl<A> {
+		/**
+		 * The implementation of UriBound.loadImpl.
+		 * @param b the bundle to load from
+		 * @param prefix the prefix to load with
+		 * @return the data
+		 * @throws NotBoundException if the data isn't bound.
+		 */
+		A loadImpl(Bundle b, String prefix)
+				throws NotBoundException;
 
-        public void saveImpl(Bundle b, String prefix) throws NotBoundException;
+		/**
+		 * The implementation of UriBound.saveImpl.
+		 * @param b the bundle to save to
+		 * @param prefix the prefix to load with
+		 * @throws NotBoundException if the data isn't bound
+		 */
+		void saveImpl(Bundle b, String prefix)
+				throws NotBoundException;
 
-        public void deleteImpl(ContentResolver resolver) throws NotBoundException;
+		/**
+		 * The implementation of UriBound.delete.
+		 * @param resolver the resolver to use
+		 * @throws NotBoundException if the data isn't bound
+		 */
+		void deleteImpl(ContentResolver resolver)
+				throws NotBoundException;
 
-        public A loadImpl(ContentResolver resolver, String fieldName) throws NotBoundException;
+		/**
+		 * The implementation of UriBound.load.
+		 * @param resolver the resolver to load from
+		 * @param fieldName the field to load
+		 * @return the value for the field
+		 * @throws NotBoundException if the data isn't bound
+		 */
+		A loadImpl(ContentResolver resolver, String fieldName)
+				throws NotBoundException;
 
-        public void saveImpl(ContentResolver resolver, String fieldName) throws NotBoundException;
-    }
+		/**
+		 * The implementation of UriBound.save.
+		 * @param resolver the resolver to save with
+		 * @param fieldName the field to be saved
+		 * @throws NotBoundException if the data isn't bound
+		 */
+		void saveImpl(ContentResolver resolver, String fieldName)
+				throws NotBoundException;
+	}
 
-    private Uri mInstanceUri;
-    private UriBoundAdapterImpl<A> mAdapter;
+	/**
+	 * The instance uri this data is bound to.
+	 */
+	private Uri mInstanceUri;
+	/**
+	 * The adapter implementation we use to handle binding.
+	 */
+	private UriBoundAdapterImpl<A> mAdapter;
 
-    public UriBoundAdapter(final Uri uri, final UriBoundAdapterImpl<A> adapter) {
-        mInstanceUri = uri;
-        mAdapter = adapter;
-    }
+	/**
+	 * Constructs an adapter for the given Uri using the given implementation.
+	 * @param uri the uri to use
+	 * @param adapter the adapter to use for binding
+	 */
+	public UriBoundAdapter(final Uri uri,
+			final UriBoundAdapterImpl<A> adapter) {
+		mInstanceUri = uri;
+		mAdapter = adapter;
+	}
 
-    public UriBoundAdapter(String prefix, Bundle saved, UriBoundAdapterImpl<A> adapter) {
-        mInstanceUri = saved.getParcelable(NameHelper.getTypeNameUri(prefix));
-        mAdapter = adapter;
-    }
+	/**
+	 * Constructs an adapter using the given prefix, bundle and implementation.
+	 * @param prefix the prefix to load with
+	 * @param saved the bundle to load from
+	 * @param adapter the adapter with the implementation
+	 */
+	public UriBoundAdapter(final String prefix, final Bundle saved,
+			final UriBoundAdapterImpl<A> adapter) {
+		mInstanceUri = saved.getParcelable(NameHelper.getTypeNameUri(prefix));
+		mAdapter = adapter;
+	}
 
-    public UriBoundAdapter(Bundle saved, UriBoundAdapterImpl<A> adapter) {
-        this(null, saved, adapter);
-    }
+	/**
+	 * Constructs an adapter with the given bundle and implementation.
+	 * @param saved the bundle to load from
+	 * @param adapter the adapter with the implementation
+	 */
+	public UriBoundAdapter(final Bundle saved,
+			final UriBoundAdapterImpl<A> adapter) {
+		this(null, saved, adapter);
+	}
 
-    public final Uri getInstanceUri() throws NotBoundException {
-        if (mInstanceUri == null) {
-            throw new NotBoundException();
-        }
-        return mInstanceUri;
-    }
+	@Override
+	public final Uri getInstanceUri() throws NotBoundException {
+		if (mInstanceUri == null) {
+			throw new NotBoundException();
+		}
+		return mInstanceUri;
+	}
 
-    public final void setInstanceUri(final Uri uri) {
-        mInstanceUri = uri;
-    }
+	@Override
+	public final void setInstanceUri(final Uri uri) {
+		mInstanceUri = uri;
+	}
 
-    @Override
-    public final void save(final ContentResolver resolver, final String fieldName) throws NotBoundException {
-        verifyBound();
-        mAdapter.saveImpl(resolver, fieldName);
-    }
+	@Override
+	public final void save(final ContentResolver resolver,
+			final String fieldName) throws NotBoundException {
+		verifyBound();
+		mAdapter.saveImpl(resolver, fieldName);
+	}
 
-    private void verifyBound() throws NotBoundException {
-        if (mInstanceUri == null) {
-            throw new NotBoundException();
-        }
-    }
+	/**
+	 * @throws NotBoundException if this is not bound.
+	 */
+	private void verifyBound() throws NotBoundException {
+		if (mInstanceUri == null) {
+			throw new NotBoundException();
+		}
+	}
 
-    @Override
-    public final A load(ContentResolver resolver, String fieldName) throws NotBoundException {
-        verifyBound();
-        return mAdapter.loadImpl(resolver, fieldName);
-    }
+	@Override
+	public final A load(final ContentResolver resolver,
+			final String fieldName) throws NotBoundException {
+		verifyBound();
+		return mAdapter.loadImpl(resolver, fieldName);
+	}
 
-    public final void save(Bundle b, String prefix) throws NotBoundException {
-        mAdapter.saveImpl(b, null);
-    }
+	@Override
+	public final void save(final Bundle b,
+			final String prefix) throws NotBoundException {
+		mAdapter.saveImpl(b, null);
+	}
 
-    @Override
-    public final A load(Bundle b, String prefix) throws NotBoundException {
-        return mAdapter.loadImpl(b, prefix);
-    }
-
-
-    @Override
-    public final void delete(ContentResolver resolver) throws NotBoundException {
-        verifyBound();
-        mAdapter.deleteImpl(resolver);
-    }
+	@Override
+	public final A load(final Bundle b, final String prefix)
+			throws NotBoundException {
+		return mAdapter.loadImpl(b, prefix);
+	}
 
 
-    protected static boolean isBoundType(Type type) {
-        switch (type) {
-        case ARRAY:
-        case MAP:
-        case RECORD:
-            return true;
-        }
-        return false;
-    }
+	@Override
+	public final void delete(final ContentResolver resolver)
+			throws NotBoundException {
+		verifyBound();
+		mAdapter.deleteImpl(resolver);
+	}
 
-    public static boolean isNamedType(Type type) {
-        switch (type) {
-        case RECORD:
-        case ENUM:
-        case FIXED:
-            return true;
-        default:
-            return false;
-        }
-    }
+	/**
+	 * @param type the type to check
+	 * @return true if the type is uri bound
+	 */
+	protected static boolean isBoundType(final Type type) {
+		switch (type) {
+		case ARRAY:
+		case MAP:
+		case RECORD:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	/**
+	 * @param type the type to check
+	 * @return true if the type is a named type
+	 */
+	public static boolean isNamedType(final Type type) {
+		switch (type) {
+		case RECORD:
+		case ENUM:
+		case FIXED:
+			return true;
+		default:
+			return false;
+		}
+	}
 }

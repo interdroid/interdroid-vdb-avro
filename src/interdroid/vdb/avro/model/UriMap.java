@@ -3,7 +3,6 @@ package interdroid.vdb.avro.model;
 import interdroid.vdb.avro.model.UriBoundAdapter.UriBoundAdapterImpl;
 import interdroid.vdb.content.EntityUriMatcher;
 import interdroid.vdb.content.EntityUriMatcher.UriMatch;
-import interdroid.vdb.content.avro.AvroContentProvider;
 
 import java.util.HashMap;
 
@@ -18,68 +17,91 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 
-public class UriMap<K, V> extends HashMap<K, V> implements UriBound<UriMap<K, V>> {
-    private static final Logger logger = LoggerFactory.getLogger(UriMap.class);
+/**
+ * Represents a UriBound Map implementation.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ * @param <V> the value type
+ */
+public class UriMap<V> extends HashMap<String, V>
+implements UriBound<UriMap<V>> {
+	/** Access to logger. */
+    private static final Logger LOG = LoggerFactory.getLogger(UriMap.class);
 
+    /** The serial version id for this class. */
     private static final long serialVersionUID = 1L;
+    /** The schema for the map. */
     private final Schema mSchema;
 
-    private static final String _KEY = AvroContentProvider.KEY_COLUMN_NAME;
-
-    public Schema getSchema() {
+    /**
+     * @return the schema for this map.
+     */
+    public final Schema getSchema() {
         return mSchema;
     }
 
-    private UriBoundAdapter<UriMap<K,V>> mUriBinder;
+    /** The binder adapterused to bind this to a uri. */
+    private UriBoundAdapter<UriMap<V>> mUriBinder;
 
-    private UriBoundAdapterImpl<UriMap<K, V>> mBinderImpl =
-            new UriBoundAdapterImpl<UriMap<K, V>>() {
+    /** The implementation we use for the uri binder. */
+    private UriBoundAdapterImpl<UriMap<V>> mBinderImpl =
+            new UriBoundAdapterImpl<UriMap<V>>() {
 
         @SuppressWarnings("unchecked")
         @Override
-        public UriMap<K, V> loadImpl(Bundle saved, String fieldFullName) throws NotBoundException {
+        public UriMap<V> loadImpl(final Bundle saved,
+        		final String fieldFullName) throws NotBoundException {
             String keyName = NameHelper.getMapKeyName(fieldFullName);
             String valueName = NameHelper.getMapValueName(fieldFullName);
 
             int count = saved.getInt(NameHelper.getCountName(fieldFullName));
             for (int i = 0; i < count; i++) {
-                String key = saved.getString(NameHelper.getIndexedFieldName(keyName, i));
-                put((K) key, (V) BundleDataManager.loadDataFromBundle(saved, valueName, getSchema().getValueType()));
+                String key = saved.getString(
+                		NameHelper.getIndexedFieldName(keyName, i));
+                put(key, (V) BundleDataManager.loadDataFromBundle(
+                		saved, valueName, getSchema().getValueType()));
             }
 
             return UriMap.this;
         }
 
         @Override
-        public void saveImpl(Bundle outState, String fieldFullName) throws NotBoundException {
+        public void saveImpl(final Bundle outState, final String fieldFullName)
+        		throws NotBoundException {
             String keyName = NameHelper.getMapKeyName(fieldFullName);
             String valueName = NameHelper.getMapValueName(fieldFullName);
-            outState.putParcelable(NameHelper.getTypeNameUri(fieldFullName), getInstanceUri());
+            outState.putParcelable(
+            		NameHelper.getTypeNameUri(fieldFullName), getInstanceUri());
             outState.putInt(NameHelper.getCountName(fieldFullName), size());
             int i = 0;
-            for (K key : keySet()) {
+            for (String key : keySet()) {
                 String keyId = NameHelper.getIndexedFieldName(keyName, i);
                 String valueId = NameHelper.getIndexedFieldName(valueName, i++);
 
                 outState.putString(keyId, (String) key);
-                BundleDataManager.storeDataToBundle(outState, valueId, getSchema().getValueType(), get(key));
+                BundleDataManager.storeDataToBundle(
+                		outState, valueId, getSchema().getValueType(),
+                		get(key));
             }
         }
 
         @Override
-        public void deleteImpl(ContentResolver resolver) throws NotBoundException {
+        public void deleteImpl(final ContentResolver resolver)
+        		throws NotBoundException {
             deleteImpl(resolver, true);
         }
 
-        private void deleteImpl(ContentResolver resolver, boolean recursion)
+        private void deleteImpl(final ContentResolver resolver,
+        		final boolean recursion)
                 throws NotBoundException {
-            logger.debug("Deleting Map: " + getInstanceUri());
+            LOG.debug("Deleting Map: " + getInstanceUri());
             if (recursion) {
-                if (UriBoundAdapter.isBoundType(getSchema().getValueType().getType())) {
+                if (UriBoundAdapter.isBoundType(
+                		getSchema().getValueType().getType())) {
                     for (Object element : UriMap.this.values()) {
                         ((UriBound<?>) element).delete(resolver);
                     }
-                } else if(getSchema().getValueType().getType() == Type.UNION) {
+                } else if (getSchema().getValueType().getType() == Type.UNION) {
                     for (Object element : UriMap.this.values()) {
                         ((UriUnion) element).delete(resolver);
                     }
@@ -89,23 +111,26 @@ public class UriMap<K, V> extends HashMap<K, V> implements UriBound<UriMap<K, V>
         }
 
         @Override
-        public void saveImpl(ContentResolver resolver, String fieldName)
+        public void saveImpl(final ContentResolver resolver,
+        		final String fieldName)
                 throws NotBoundException {
 
             deleteImpl(resolver, false);
 
             ContentValues values = new ContentValues();
 
-            for (Object key : UriMap.this.keySet()) {
+            for (String key : UriMap.this.keySet()) {
                 values.clear();
-                values.put(_KEY, (String)key);
-                // First insert a row with just the key so we can get the ID of the
-                // row in
+                values.put(NameHelper.getMapKeyName(fieldName), key);
+                // First insert a row with just the key so we can get
+                // the ID of the row in
                 // case the row is really an array or some other table based row
-                Uri idUri = UriDataManager.insertUri(resolver, getInstanceUri(), values);
-                logger.debug("Got id uri for map row: " + idUri);
+                Uri idUri = UriDataManager.insertUri(resolver,
+                		getInstanceUri(), values);
+                LOG.debug("Got id uri for map row: " + idUri);
 
-                Uri dataUri = UriDataManager.storeDataToUri(resolver, idUri, values, fieldName,
+                Uri dataUri = UriDataManager.storeDataToUri(resolver,
+                		idUri, values, fieldName,
                         getSchema().getValueType(), get(key));
                 if (dataUri != null) {
                     UriMatch match = EntityUriMatcher.getMatch(dataUri);
@@ -117,44 +142,55 @@ public class UriMap<K, V> extends HashMap<K, V> implements UriBound<UriMap<K, V>
 
         @SuppressWarnings("unchecked")
         @Override
-        public UriMap<K, V> loadImpl(ContentResolver resolver,
-                String fieldName) throws NotBoundException {
+        public UriMap<V> loadImpl(final ContentResolver resolver,
+                final String fieldName) throws NotBoundException {
 
-            logger.debug("Loading map from uri: " + getInstanceUri() + " : " + fieldName + " : " + getSchema());
-            Cursor cursor = resolver.query(getInstanceUri(), null, null, null, null);
+            LOG.debug("Loading map from: " + getInstanceUri() + " : {} : {}",
+            		fieldName, getSchema());
+            Cursor cursor = resolver.query(getInstanceUri(),
+            		null, null, null, null);
             try {
                 if (cursor != null) {
                     int keyIndex = cursor
-                            .getColumnIndex(AvroContentProvider.KEY_COLUMN_NAME);
+                            .getColumnIndex(
+                            		NameHelper.getMapKeyName(fieldName));
                     int valueIndex = cursor
                             .getColumnIndex(fieldName);
                     while (cursor.moveToNext()) {
-                        Uri dataUri = Uri.withAppendedPath(getInstanceUri(), cursor.getString(keyIndex));
+                        Uri dataUri = Uri.withAppendedPath(getInstanceUri(),
+                        		cursor.getString(keyIndex));
                         Cursor dataCursor = cursor;
                         try {
-                            if (UriBoundAdapter.isBoundType(getSchema().getValueType().getType())) {
+                            if (UriBoundAdapter.isBoundType(
+                            		getSchema().getValueType().getType())) {
                                 int recordId = cursor.getInt(valueIndex);
                                 if (recordId > 0) {
                                     dataUri = Uri.withAppendedPath(
-                                            UriDataManager.getRecordUri(getInstanceUri(), getSchema().getValueType()),
+                                            UriDataManager.getRecordUri(
+                                            		getInstanceUri(),
+                                            		getSchema().getValueType()),
                                             String.valueOf(recordId));
-                                    dataCursor = resolver.query(dataUri, null, null, null, null);
+                                    dataCursor = resolver.query(dataUri,
+                                    		null, null, null, null);
                                     if (dataCursor != null) {
                                         dataCursor.moveToFirst();
                                     }
                                 }
                             }
-                            put((K) cursor.getString(keyIndex),
-                                    (V) UriDataManager.loadDataFromUri(resolver, dataUri,
-                                            dataCursor, fieldName, getSchema().getValueType()));
+                            put(cursor.getString(keyIndex),
+                                    (V) UriDataManager.loadDataFromUri(resolver,
+                                    		dataUri, dataCursor, fieldName,
+                                    		getSchema().getValueType()));
                         } finally {
-                            if (UriBoundAdapter.isBoundType(getSchema().getValueType().getType())) {
+                            if (UriBoundAdapter.isBoundType(
+                            		getSchema().getValueType().getType())) {
                                 UriDataManager.safeClose(dataCursor);
                             }
                         }
                     }
                 } else {
-                    throw new RuntimeException("Unable to load: " + getInstanceUri());
+                    throw new RuntimeException("Unable to load: {}"
+                    		+ getInstanceUri());
                 }
             } finally {
                 UriDataManager.safeClose(cursor);
@@ -165,52 +201,65 @@ public class UriMap<K, V> extends HashMap<K, V> implements UriBound<UriMap<K, V>
 
     };
 
-    public UriMap(final Schema schema, Bundle saved) {
+    /**
+     * Construct from the given bundle and schema.
+     * @param schema the schema for the map
+     * @param saved the bundle with saved data
+     */
+    public UriMap(final Schema schema, final Bundle saved) {
         mSchema = schema;
-        mUriBinder = new UriBoundAdapter<UriMap<K, V>>(saved, mBinderImpl);
+        mUriBinder = new UriBoundAdapter<UriMap<V>>(saved, mBinderImpl);
     }
 
-    public UriMap(Uri uri, final Schema schema) {
+    /**
+     * Construct bound to the given uri with the given schema.
+     * @param uri the uri to bind to
+     * @param schema the schema for the map
+     */
+    public UriMap(final Uri uri, final Schema schema) {
         mSchema = schema;
-        mUriBinder = new UriBoundAdapter<UriMap<K, V>>(uri, mBinderImpl);
+        mUriBinder = new UriBoundAdapter<UriMap<V>>(uri, mBinderImpl);
     }
 
     @Override
-    public Uri getInstanceUri() throws NotBoundException {
+    public final Uri getInstanceUri() throws NotBoundException {
         return mUriBinder.getInstanceUri();
     }
 
     @Override
-    public void save(Bundle outState, String fieldName) throws NotBoundException {
+    public final void save(final Bundle outState,
+    		final String fieldName) throws NotBoundException {
         mUriBinder.save(outState, fieldName);
     }
 
     @Override
-    public void delete(final ContentResolver resolver)
+    public final void delete(final ContentResolver resolver)
             throws NotBoundException {
         mUriBinder.delete(resolver);
     }
 
     @Override
-    public UriMap<K, V> load(final Bundle b, final String prefix) throws NotBoundException {
+    public final UriMap<V> load(final Bundle b, final String prefix)
+    		throws NotBoundException {
         return mUriBinder.load(b, prefix);
     }
 
     @Override
-    public void setInstanceUri(Uri uri) {
+    public final void setInstanceUri(final Uri uri) {
         mUriBinder.setInstanceUri(uri);
     }
 
     @Override
-    public void save(ContentResolver resolver, String fieldName)
+    public final void save(final ContentResolver resolver,
+    		final String fieldName)
             throws NotBoundException {
         mUriBinder.save(resolver, fieldName);
     }
 
     @Override
-    public UriMap<K, V> load(ContentResolver resolver, String fieldName)
+    public final UriMap<V> load(final ContentResolver resolver,
+    		final String fieldName)
             throws NotBoundException {
-        // TODO Auto-generated method stub
-        return null;
+        return mUriBinder.load(resolver, fieldName);
     }
 }

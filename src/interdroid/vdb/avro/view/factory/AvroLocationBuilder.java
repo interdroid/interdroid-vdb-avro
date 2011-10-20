@@ -4,7 +4,7 @@ import interdroid.util.view.LayoutUtil.LayoutParameters;
 import interdroid.util.view.ViewUtil;
 import interdroid.vdb.R;
 import interdroid.vdb.avro.control.handler.LocationHandler;
-import interdroid.vdb.avro.control.handler.ValueHandler;
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 
@@ -64,8 +64,8 @@ class AvroLocationBuilder extends AvroTypedViewBuilder {
 		ViewUtil.addView(activity, viewGroup, layout);
 
 		// Construct a handler
-		new LocationHandler(dataModel, activity, schema, valueHandler,
-				cameraButton, image);
+		new LocationHandler(activity, schema, valueHandler, cameraButton,
+				image);
 
 		return layout;
 	}

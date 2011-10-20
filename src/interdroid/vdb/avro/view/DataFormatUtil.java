@@ -151,7 +151,7 @@ public final class DataFormatUtil {
 	 * @param maxSize the maximum size. Use <= 0 to not resize
 	 * @return a preview bitmap.
 	 */
-	public static Bitmap getBitmap(final byte[] data, int maxSize) {
+	public static Bitmap getBitmap(final byte[] data, final int maxSize) {
 		Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
 		if (maxSize > 0) {
 			// 200 x 100 -> 100 / 50

@@ -1,16 +1,5 @@
 package interdroid.vdb.avro.view;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
-import org.apache.avro.Schema.Type;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import interdroid.util.ToastOnUI;
 import interdroid.util.view.AsyncTaskWithProgressDialog;
 import interdroid.vdb.Authority;
@@ -20,8 +9,17 @@ import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriRecord;
 import interdroid.vdb.avro.model.UriUnion;
 import interdroid.vdb.content.EntityUriBuilder;
-import interdroid.vdb.content.avro.AvroProviderRegistry;
 import interdroid.vdb.content.avro.AvroSchemaRegistrationHandler;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.avro.Schema;
+import org.apache.avro.Schema.Field;
+import org.apache.avro.Schema.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -31,10 +29,17 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Toast;
 
+/**
+ * An activity which knows how to take a schema record and build a db with it.
+ * @author nick &lt;palmer@cs.vu.nl&gt;
+ *
+ */
 public class AvroDBMaker extends Activity {
-	private static final Logger logger = LoggerFactory
+	/** Access to logger. */
+	private static final Logger LOG = LoggerFactory
 			.getLogger(AvroDBMaker.class);
 
+	/** Exception thrown when the schema is invalid. */
 	private static class InvalidSchemaException extends Exception {
 
 		/**
@@ -44,99 +49,128 @@ public class AvroDBMaker extends Activity {
 
 	}
 
+	/** A class which holds data about a named type. */
 	private static class NamedType {
+		// Checkstyle shouldn't require getters and setters for private
+		// inner classes.
+		// CHECKSTYLE:OFF
+		/** The name for the type. */
 		String name;
+		/** The namespace for the type. */
 		String namespace;
+		/** The doc for the type. */
 		String doc;
+		/** Any aliases for the type. */
 		List<String> aliases;
+		/** The UI Label for the type. */
 		public String label;
+		/** Should this be shown in the list view. */
 		public boolean in_list;
+		// CHECKSTYLE:ON
 	}
 
+	/** Construct a db maker. */
 	public AvroDBMaker() {
-		logger.debug("Constructed AvroDBMaker: " + this);
+		LOG.debug("Constructed AvroDBMaker: " + this);
 	}
 
 	@Override
-	protected void onCreate(Bundle savedInstanceState) {
+	protected final void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 	}
 
-	private class LoadTask extends AsyncTaskWithProgressDialog<Void, Void, Uri> {
+	/** Dialog to display while we make a database. */
+	private final class LoadTask
+		extends AsyncTaskWithProgressDialog<Void, Void, Uri> {
 
+		/** Build the dialog. */
 		public LoadTask() {
-			super(AvroDBMaker.this, getString(R.string.label_loading), getString(R.string.label_wait));
+			super(AvroDBMaker.this, getString(R.string.label_loading),
+			getString(R.string.label_wait));
 		}
 
 		@Override
-		protected Uri doInBackground(Void... params) {
+		protected Uri doInBackground(final Void... params) {
 			Schema schema = getSchema();
 			// Now we need to create the database
 			Uri uri = null;
 			try {
-				uri =createDb(schema);
+				uri = createDb(schema);
 			} catch (IOException e) {
-				logger.error("Error registering schema!", e);
+				LOG.error("Error registering schema!", e);
 			}
 			return uri;
 		}
 	}
 
-	protected void onStart() {
+	@Override
+	protected final void onStart() {
 		super.onStart();
 		processSchema();
 	}
 
+	/**
+	 * Processes the schema record into a schema.
+	 */
 	private void processSchema() {
 		AsyncTask<Void, Void, Uri> load = new LoadTask().execute();
 		try {
 			Uri dbUri = load.get();
 			if (dbUri != null) {
-				logger.debug("DB Created!");
+				LOG.debug("DB Created!");
 				Intent i = new Intent(Intent.ACTION_VIEW, dbUri);
-				logger.debug("Finishing this activity.");
+				LOG.debug("Finishing this activity.");
 				this.setResult(RESULT_OK, i);
 				finish();
 			} else {
 				throw new InvalidSchemaException();
 			}
 		} catch (Throwable e) {
-			logger.error("Unknown error.", e);
-			ToastOnUI.show(this, R.string.error_unknown_loading_and_creating, Toast.LENGTH_LONG);
-			logger.error("Schema was invalid. Launching Edit.");
+			LOG.error("Unknown error.", e);
+			ToastOnUI.show(this, R.string.error_unknown_loading_and_creating,
+					Toast.LENGTH_LONG);
+			LOG.error("Schema was invalid. Launching Edit.");
 			ToastOnUI.show(this, e.getMessage(), Toast.LENGTH_LONG);
 			startActivityForResult(getEditIntent(), 0);
 		}
 	}
 
 	@Override
-	protected void onActivityResult (int requestCode, int resultCode, Intent data)
-	{
-		logger.error("Got activity result: {} {} " + data, requestCode, resultCode);
+	protected final void onActivityResult(final int requestCode,
+			final int resultCode, final Intent data) {
+		LOG.error("Got activity result: {} {} " + data,
+				requestCode, resultCode);
 		if (resultCode == RESULT_OK) {
-			logger.error("Edit activity said okay, attempting to process again.");
+			LOG.error("Edit activity said okay, attempting to process again.");
 			processSchema();
 		} else {
-			logger.error("Edit activity failed to return okay result. Finishing.");
+			LOG.error("Edit activity failed to return okay result. Finishing.");
 			this.setResult(resultCode);
 			finish();
 		}
 	}
 
+	/**
+	 * @return an intent for editing the schema record being processed.
+	 */
 	private Intent getEditIntent() {
 		Intent request = getIntent();
 		Intent editIntent;
 		if (request.getData() == null) {
 			editIntent = new Intent(Intent.ACTION_EDIT);
-			editIntent.putExtra(AvroBaseEditor.SCHEMA, request.getStringExtra(AvroBaseEditor.SCHEMA));
+			editIntent.putExtra(AvroBaseEditor.SCHEMA,
+					request.getStringExtra(AvroBaseEditor.SCHEMA));
 		} else {
 			editIntent = new Intent(Intent.ACTION_EDIT, request.getData());
 		}
 		editIntent.setClassName(this, AvroBaseEditor.class.getName());
-		logger.debug("Editing with: {}", editIntent);
+		LOG.debug("Editing with: {}", editIntent);
 		return editIntent;
 	}
 
+	/**
+	 * @return the schema given to construct a db from.
+	 */
 	private Schema getSchema() {
 		Intent intent = getIntent();
 		Schema schema = null;
@@ -144,109 +178,176 @@ public class AvroDBMaker extends Activity {
 
 			String schemaJson = intent.getStringExtra(AvroBaseEditor.SCHEMA);
 			if (schemaJson == null) {
-				ToastOnUI.show(AvroDBMaker.this, R.string.error_no_schema, Toast.LENGTH_LONG);
+				ToastOnUI.show(AvroDBMaker.this, R.string.error_no_schema,
+						Toast.LENGTH_LONG);
 				return null;
 			} else {
 				try {
 					schema = Schema.parse(schemaJson);
 				} catch (Exception e) {
-					ToastOnUI.show(AvroDBMaker.this, R.string.error_parsing_schema, Toast.LENGTH_LONG);
+					ToastOnUI.show(AvroDBMaker.this,
+							R.string.error_parsing_schema, Toast.LENGTH_LONG);
 				}
 			}
 		} else {
 			try {
 				schema = loadSchema(intent.getData());
 			} catch (NotBoundException e) {
-				ToastOnUI.show(AvroDBMaker.this, R.string.error_parsing_schema, Toast.LENGTH_LONG);
+				ToastOnUI.show(AvroDBMaker.this,
+						R.string.error_parsing_schema, Toast.LENGTH_LONG);
 			} catch (Exception e) {
-				logger.error("Schema Invalid!", e);
+				LOG.error("Schema Invalid!", e);
 			}
 		}
 
 		return schema;
 	}
 
-	private Schema loadSchema(Uri data) throws NotBoundException, InvalidSchemaException {
-		logger.debug("Loading schema from record: {}", data);
+	/**
+	 * Load the schema from the given uri.
+	 * @param data the uri to load from
+	 * @return the schema
+	 * @throws NotBoundException if the uri is not bound
+	 * @throws InvalidSchemaException if the schema is invalid
+	 */
+	private Schema loadSchema(final Uri data)
+			throws NotBoundException, InvalidSchemaException {
+		LOG.debug("Loading schema from record: {}", data);
 		if (isValidSchemaUri(data)) {
-			UriRecord record = new UriRecord(data, AvroSchema.RECORD).load(getContentResolver());
-			logger.debug("Record loaded. Converting to schema.");
+			UriRecord record =
+					new UriRecord(data, AvroSchema.RECORD)
+					.load(getContentResolver());
+			LOG.debug("Record loaded. Converting to schema.");
 			return convertRecordToSchema(record);
 		}
 		return null;
 	}
 
-	private boolean isValidSchemaUri(Uri data) {
+	/**
+	 * @param data the uri to check
+	 * @return true if the uri is a valid schema uri
+	 */
+	private boolean isValidSchemaUri(final Uri data) {
 		// TODO: What does a valid URI look like?
 		return true;
 	}
 
+	/**
+	 * converts the given record to an avro schema object.
+	 * @param record the record to convert
+	 * @return the converted schema
+	 * @throws InvalidSchemaException if the schema is invalid
+	 */
 	@SuppressWarnings("unchecked")
-	private Schema convertRecordToSchema(UriRecord record) throws InvalidSchemaException {
+	private Schema convertRecordToSchema(final UriRecord record)
+			throws InvalidSchemaException {
 
 		NamedType typeInfo = getNamedTypeInfo(record, true);
-		Schema schema = Schema.createRecord(typeInfo.name, typeInfo.doc, typeInfo.namespace, false);
+		Schema schema = Schema.createRecord(typeInfo.name,
+				typeInfo.doc, typeInfo.namespace, false);
 		addAliases(typeInfo, schema);
-		logger.debug("Processing schema fields.");
-		List<UriRecord> fields = (List<UriRecord>)record.get("fields");
+		LOG.debug("Processing schema fields.");
+		List<UriRecord> fields = (List<UriRecord>) record.get("fields");
 		List<Schema.Field> schemaFields = new ArrayList<Schema.Field>();
 		if (fields != null) {
-			for(UriRecord field: fields) {
+			for (UriRecord field : fields) {
 				Schema.Field f = convertToSchemaField(field);
 				schemaFields.add(f);
 			}
 			schema.setFields(schemaFields);
 		} else {
-			ToastOnUI.show(this, getText(R.string.error_no_fields_in_record) + " " + typeInfo.name, Toast.LENGTH_LONG);
+			ToastOnUI.show(this, getText(R.string.error_no_fields_in_record)
+					+ " " + typeInfo.name, Toast.LENGTH_LONG);
 			throw new InvalidSchemaException();
 		}
 
-		// Now we need to make sure that what we built is really valid. I.E. No Namespace problems...
-		// This will throw an exception if there is a problem reparsing the schema.
+		// Now we need to make sure that what we built is really valid.
+		// I.E. No Namespace problems...
+		// This will throw an exception if there is a problem with the schema.
 		schema = Schema.parse(schema.toString());
 
 		return schema;
 	}
 
-	private NamedType getFieldTypeInfo(UriRecord record) throws InvalidSchemaException {
+	/**
+	 * @param record the record to getinfo on
+	 * @return a NamedType with data on the record
+	 * @throws InvalidSchemaException if the schema is invalid
+	 */
+	private NamedType getFieldTypeInfo(final UriRecord record)
+			throws InvalidSchemaException {
 		NamedType typeInfo = getNamedTypeInfo(record, false);
-		typeInfo.in_list = (Boolean)record.get("list");
+		typeInfo.in_list = (Boolean) record.get("list");
 		return typeInfo;
 	}
-	private NamedType getNamedTypeInfo(UriRecord record, boolean namespaceRequired) throws InvalidSchemaException {
+
+	/**
+	 *
+	 * @param record the record to get data from
+	 * @param namespaceRequired true if a namespace is required
+	 * @return the NamedType info
+	 * @throws InvalidSchemaException if the schema isinvlid
+	 */
+	private NamedType getNamedTypeInfo(final UriRecord record,
+			final boolean namespaceRequired) throws InvalidSchemaException {
 		NamedType typeInfo = new NamedType();
-		typeInfo.name = sanitizeName((String)record.get("name"));
-		typeInfo.doc = (String)record.get("doc");
-		typeInfo.namespace = sanitizeNamespace((String)record.get("namespace"), namespaceRequired);
-		typeInfo.label = (String)record.get("label");
+		typeInfo.name = sanitizeName((String) record.get("name"));
+		typeInfo.doc = (String) record.get("doc");
+		typeInfo.namespace = sanitizeNamespace(
+				(String) record.get("namespace"), namespaceRequired);
+		typeInfo.label = (String) record.get("label");
 		return typeInfo;
 	}
 
 	// TODO: This should be enforced in the UI.
-	private String sanitizeNamespace(String string, boolean required) throws InvalidSchemaException {
+	/**
+	 * @param string the namespace
+	 * @param required if a namespace is required
+	 * @return a sanitized namespace
+	 * @throws InvalidSchemaException if the name is required
+	 */
+	private String sanitizeNamespace(final String string,
+			final boolean required) throws InvalidSchemaException {
+		String clean = string;
 		if (TextUtils.isEmpty(string)) {
 			if (required) {
-				ToastOnUI.show(this, R.string.error_name_required, Toast.LENGTH_LONG);
+				ToastOnUI.show(this, R.string.error_name_required,
+						Toast.LENGTH_LONG);
 				throw new InvalidSchemaException();
 			}
 		} else {
-			string = string.replace(' ', '.');
-			string = string.replaceAll("/[^A-Za-z0-9_\\.]/", "");
+			clean = clean.replace(' ', '.');
+			clean = clean.replaceAll("/[^A-Za-z0-9_\\.]/", "");
 		}
-		return string;
+		return clean;
 	}
 
-	private String sanitizeName(String string) throws InvalidSchemaException {
+	/**
+	 * @param string the name to clean
+	 * @return a clean version of the name
+	 * @throws InvalidSchemaException if thenameis invalid
+	 */
+	private String sanitizeName(final String string)
+			throws InvalidSchemaException {
+		String clean = string;
 		if (TextUtils.isEmpty(string)) {
-			ToastOnUI.show(this, R.string.error_name_required, Toast.LENGTH_LONG);
+			ToastOnUI.show(this, R.string.error_name_required,
+					Toast.LENGTH_LONG);
 			throw new InvalidSchemaException();
 		}
-		string = string.replace(' ', '_');
-		string = string.replaceAll("/[^A-Za-z0-9_]/", "");
-		return string;
+		clean = clean.replace(' ', '_');
+		clean = clean.replaceAll("/[^A-Za-z0-9_]/", "");
+		return clean;
 	}
 
-	private List<String> sanitizeNames(List<String> values) throws InvalidSchemaException {
+	/**
+	 * Sanitizes a collection of names.
+	 * @param values the names to clean
+	 * @return the cleaned names
+	 * @throws InvalidSchemaException if the names are invalid
+	 */
+	private List<String> sanitizeNames(final List<String> values)
+			throws InvalidSchemaException {
 		List<String> clean = new ArrayList<String>();
 		for (String value : values) {
 			clean.add(sanitizeName(value));
@@ -254,7 +355,14 @@ public class AvroDBMaker extends Activity {
 		return clean;
 	}
 
-	private void addAliases(NamedType typeInfo, Schema schema) throws InvalidSchemaException {
+	/**
+	 * Adds the aliases to given schema.
+	 * @param typeInfo the info from which to get aliases
+	 * @param schema the schema to which to add the aliases
+	 * @throws InvalidSchemaException if the schema is invalid
+	 */
+	private void addAliases(final NamedType typeInfo, final Schema schema)
+			throws InvalidSchemaException {
 		if (typeInfo.aliases != null) {
 			for (String alias : typeInfo.aliases) {
 				schema.addAlias(sanitizeName(alias));
@@ -262,7 +370,12 @@ public class AvroDBMaker extends Activity {
 		}
 	}
 
-	private void addAliases(NamedType typeInfo, Field field) {
+	/**
+	 * Adds aliases to the given field.
+	 * @param typeInfo the info from which to get aliases
+	 * @param field the field to add them to
+	 */
+	private void addAliases(final NamedType typeInfo, final Field field) {
 		if (typeInfo.aliases != null) {
 			for (String alias : typeInfo.aliases) {
 				field.addAlias(alias);
@@ -270,15 +383,24 @@ public class AvroDBMaker extends Activity {
 		}
 	}
 
-	private Schema.Field convertToSchemaField(UriRecord field) throws InvalidSchemaException {
-		logger.debug("Converting field: {}", field);
+	/**
+	 * Converts a field record into a field.
+	 * @param field the field to convert
+	 * @return the schema field
+	 * @throws InvalidSchemaException if the schema is invalid
+	 */
+	private Schema.Field convertToSchemaField(final UriRecord field)
+			throws InvalidSchemaException {
+		LOG.debug("Converting field: {}", field);
 		NamedType typeInfo = getFieldTypeInfo(field);
 
 		// TODO: Fix the way we load Enumerations...
 		//        String order = (String)field.get("order");
 
-		Schema fieldSchema = convertTypeToSchema((UriRecord)field.get("type"));
-		Schema.Field f = new Schema.Field(typeInfo.name, fieldSchema, typeInfo.doc, null);// ,  Schema.Field.Order.valueOf(String.valueOf(order)));
+		Schema fieldSchema = convertTypeToSchema((UriRecord) field.get("type"));
+		Schema.Field f = new Schema.Field(typeInfo.name, fieldSchema,
+				typeInfo.doc, null);
+		// ,  Schema.Field.Order.valueOf(String.valueOf(order)));
 		addAliases(typeInfo, f);
 		if (!TextUtils.isEmpty(typeInfo.label)) {
 			f.addProp("ui.label", typeInfo.label);
@@ -289,10 +411,16 @@ public class AvroDBMaker extends Activity {
 		return f;
 	}
 
-
-	private Schema convertTypeToSchema(UriRecord fieldType) throws InvalidSchemaException {
-		logger.debug("Converting field type: {}", fieldType);
-		UriUnion type = (UriUnion)fieldType.get("type");
+	/**
+	 * Converts a Type record to a schema.
+	 * @param fieldType the type field to convert
+	 * @return the converted schema
+	 * @throws InvalidSchemaException if the schema is invalid
+	 */
+	private Schema convertTypeToSchema(final UriRecord fieldType)
+			throws InvalidSchemaException {
+		LOG.debug("Converting field type: {}", fieldType);
+		UriUnion type = (UriUnion) fieldType.get("type");
 		UriRecord typeRecord = (UriRecord) type.getValue();
 		String typeName = typeRecord.getSchema().getName();
 
@@ -320,12 +448,21 @@ public class AvroDBMaker extends Activity {
 		return schema;
 	}
 
-	private Schema convertComplexToSchema(UriRecord typeRecord) throws InvalidSchemaException {
-		logger.debug("Converting complex type: {}", typeRecord);
+	/**
+	 * Converts a complex type to a schema.
+	 * @param typeRecord the field to convert
+	 * @return the resulting schema
+	 * @throws InvalidSchemaException if the schema is invalid
+	 */
+	private Schema convertComplexToSchema(final UriRecord typeRecord)
+			throws InvalidSchemaException {
+		LOG.debug("Converting complex type: {}", typeRecord);
 		Integer offset = (Integer) typeRecord.get("ComplexType");
 		// TODO: Fix the way we load enumerations
 		Schema schema = null;
 		switch(offset) {
+		// I know the constants here suck but what to do?
+		// CHECKSTYLE:OFF
 		case 0: // Date
 			schema = Schema.create(Type.LONG);
 			schema.addProp("ui.widget", "date");
@@ -341,35 +478,43 @@ public class AvroDBMaker extends Activity {
 		case 3: // Location
 			List<Field> fields = new ArrayList<Field>();
 
-			Field f = new Field("Latitude", Schema.create(Type.INT), "latitude", null);
+			Field f = new Field("Latitude",
+					Schema.create(Type.INT), "latitude", null);
 			f.addProp("ui.label", "Latitude");
 			fields.add(f);
 
-			f = new Field("Longitude", Schema.create(Type.INT), "longitude", null);
+			f = new Field("Longitude",
+					Schema.create(Type.INT), "longitude", null);
 			f.addProp("ui.label", "Longitude");
 			fields.add(f);
 
-			f = new Field("RadiusLatitude", Schema.create(Type.INT), "radius latitude", null);
+			f = new Field("RadiusLatitude",
+					Schema.create(Type.INT), "radius latitude", null);
 			f.addProp("ui.label", "Radius Latitude");
 			fields.add(f);
 
-			f = new Field("RadiusLongitude", Schema.create(Type.INT), "radius longitude", null);
+			f = new Field("RadiusLongitude",
+					Schema.create(Type.INT), "radius longitude", null);
 			f.addProp("ui.label", "Radius Longitude");
 			fields.add(f);
 
-			f = new Field("RadiusInMeters", Schema.create(Type.LONG), "radius in meters", null);
+			f = new Field("RadiusInMeters",
+					Schema.create(Type.LONG), "radius in meters", null);
 			f.addProp("ui.label", "Radius In Meters");
 			fields.add(f);
 
-			f = new Field("MapImage", Schema.create(Type.BYTES), "map image", null);
+			f = new Field("MapImage",
+					Schema.create(Type.BYTES), "map image", null);
 			f.addProp("ui.label", "Map Image");
 			fields.add(f);
 
-			f = new Field("Altitude", Schema.create(Type.LONG), "altitude", null);
+			f = new Field("Altitude",
+					Schema.create(Type.LONG), "altitude", null);
 			f.addProp("ui.label", "Altitude");
 			fields.add(f);
 
-			f = new Field("Accuracy", Schema.create(Type.LONG), "accuracy", null);
+			f = new Field("Accuracy",
+					Schema.create(Type.LONG), "accuracy", null);
 			f.addProp("ui.label", "Accuracy");
 			fields.add(f);
 
@@ -378,17 +523,28 @@ public class AvroDBMaker extends Activity {
 			schema.addProp("ui.widget", "location");
 			break;
 		default:
-			ToastOnUI.show(this, R.string.error_unknown_complex_type, Toast.LENGTH_LONG);
+			ToastOnUI.show(this, R.string.error_unknown_complex_type,
+					Toast.LENGTH_LONG);
 			throw new InvalidSchemaException();
 		}
+		// CHECKSTYLE:ON
 		return schema;
 	}
 
-	private Schema convertPrimitiveToSchema(UriRecord typeRecord) throws InvalidSchemaException {
-		logger.debug("Converting primitive type: {}", typeRecord);
+	/**
+	 * Converts a primitive type to a schema.
+	 * @param typeRecord the primitive to convert
+	 * @return the schema for the field
+	 * @throws InvalidSchemaException if the schema is invalid
+	 */
+	private Schema convertPrimitiveToSchema(final UriRecord typeRecord)
+			throws InvalidSchemaException {
+		LOG.debug("Converting primitive type: {}", typeRecord);
 		Integer offset = (Integer) typeRecord.get("PrimitiveType");
 		// TODO: Fix the way we load enumerations
 		Schema schema = null;
+		// I know the constants here suck, but what to do?
+		// CHECKSTYLE:OFF
 		switch(offset) {
 		case 0: // \"String\"
 			schema = Schema.create(Type.STRING);
@@ -415,69 +571,117 @@ public class AvroDBMaker extends Activity {
 			schema = Schema.create(Type.NULL);
 			break;
 		default:
-			ToastOnUI.show(this, R.string.error_unknown_primitive_type, Toast.LENGTH_LONG);
+			ToastOnUI.show(this, R.string.error_unknown_primitive_type,
+					Toast.LENGTH_LONG);
 			throw new InvalidSchemaException();
 		}
+		// CHECKSTYLE:ON
 		return schema;
 	}
 
+	/**
+	 * Converts a union field to a schema.
+	 * @param typeRecord the record
+	 * @return the union schema
+	 * @throws InvalidSchemaException if the schema is invalid
+	 */
 	@SuppressWarnings("unchecked")
-	private Schema convertUnionToSchema(UriRecord typeRecord) throws InvalidSchemaException {
-		logger.debug("Converting union: {}", typeRecord);
+	private Schema convertUnionToSchema(final UriRecord typeRecord)
+			throws InvalidSchemaException {
+		LOG.debug("Converting union: {}", typeRecord);
 		List<UriRecord> branches = (List<UriRecord>) typeRecord.get("branches");
 		List<Schema> branchSchemas = new ArrayList<Schema>();
-		for (UriRecord type: branches) {
+		for (UriRecord type : branches) {
 			branchSchemas.add(convertTypeToSchema(type));
 		}
 		return Schema.createUnion(branchSchemas);
 	}
 
-	private Schema convertFixedToSchema(UriRecord typeRecord) throws InvalidSchemaException {
-		logger.debug("Converting fixed: {}", typeRecord);
+	/**
+	 * Converts a fixed field record to a schema.
+	 * @param typeRecord the record to convert
+	 * @return the fixed schema
+	 * @throws InvalidSchemaException if the schema is invalid
+	 */
+	private Schema convertFixedToSchema(final UriRecord typeRecord)
+			throws InvalidSchemaException {
+		LOG.debug("Converting fixed: {}", typeRecord);
 		NamedType typeInfo = getNamedTypeInfo(typeRecord, false);
-		Integer size = (Integer)typeRecord.get("size");
-		Schema schema = Schema.createFixed(typeInfo.name, typeInfo.doc, typeInfo.namespace, size);
+		Integer size = (Integer) typeRecord.get("size");
+		Schema schema = Schema.createFixed(typeInfo.name, typeInfo.doc,
+				typeInfo.namespace, size);
 		addAliases(typeInfo, schema);
 
 		return schema;
 	}
 
-	private Schema convertMapToSchema(UriRecord typeRecord) throws InvalidSchemaException {
-		logger.debug("Converting map: {}", typeRecord);
-		Schema valueType = convertTypeToSchema((UriRecord)typeRecord.get("values"));
+	/**
+	 * Converts a record for a map to a schema.
+	 * @param typeRecord the record to convert
+	 * @return the schema for the map
+	 * @throws InvalidSchemaException if the schema is invalid
+	 */
+	private Schema convertMapToSchema(final UriRecord typeRecord)
+			throws InvalidSchemaException {
+		LOG.debug("Converting map: {}", typeRecord);
+		Schema valueType = convertTypeToSchema(
+				(UriRecord) typeRecord.get("values"));
 		return Schema.createMap(valueType);
 	}
 
-	private Schema convertArrayToSchema(UriRecord typeRecord) throws InvalidSchemaException {
-		logger.debug("Converting array: {}", typeRecord);
-		Schema elementType = convertTypeToSchema((UriRecord)typeRecord.get("elements"));
+	/**
+	 * Converts an array record to a schema.
+	 * @param typeRecord the record to convert
+	 * @return the array schema
+	 * @throws InvalidSchemaException if the schema is invalid
+	 */
+	private Schema convertArrayToSchema(final UriRecord typeRecord)
+			throws InvalidSchemaException {
+		LOG.debug("Converting array: {}", typeRecord);
+		Schema elementType = convertTypeToSchema(
+				(UriRecord) typeRecord.get("elements"));
 		return Schema.createArray(elementType);
 	}
 
+	/**
+	 * Converts an enumeration to a schema.
+	 * @param typeRecord the record to convert
+	 * @return the enumeration schema
+	 * @throws InvalidSchemaException if the record is invalid
+	 */
 	@SuppressWarnings("unchecked")
-	private Schema convertEnumerationToSchema(UriRecord typeRecord) throws InvalidSchemaException {
-		logger.debug("Converting enum: {}", typeRecord);
+	private Schema convertEnumerationToSchema(final UriRecord typeRecord)
+			throws InvalidSchemaException {
+		LOG.debug("Converting enum: {}", typeRecord);
 		NamedType typeInfo = getNamedTypeInfo(typeRecord, false);
 		List<String> values = (List<String>) typeRecord.get("symbols");
 		values = sanitizeNames(values);
-		Schema schema = Schema.createEnum(typeInfo.name, typeInfo.doc, typeInfo.namespace, values);
+		Schema schema = Schema.createEnum(typeInfo.name, typeInfo.doc,
+				typeInfo.namespace, values);
 		addAliases(typeInfo, schema);
 
 		return schema;
 	}
 
-	private Uri createDb(Schema schema) throws IOException {
+	/**
+	 * Creates a database from the given schema.
+	 * @param schema the schema to create a db from
+	 * @return the uri for the new database
+	 * @throws IOException if the db could not be created
+	 */
+	private Uri createDb(final Schema schema) throws IOException {
 		if (schema != null) {
 			// Register the schema with the provider registry.
-			logger.debug("Initializing database: {}", schema);
+			LOG.debug("Initializing database: {}", schema);
 			AvroSchemaRegistrationHandler.registerSchema(this, schema);
 
 			// Give back a URI for this database
-			Uri uri = EntityUriBuilder.branchUri(Authority.VDB, schema.getNamespace(), "master");
-			logger.debug("Uri for {} is {}", schema.getNamespace(), uri);
+			Uri uri = EntityUriBuilder.branchUri(Authority.VDB,
+					schema.getNamespace(), "master");
+			LOG.debug("Uri for {} is {}", schema.getNamespace(), uri);
 			return uri;
 		} else {
-			logger.error("Unable to init. Schema is null.");
+			LOG.error("Unable to init. Schema is null.");
 		}
 		return null;
 	}

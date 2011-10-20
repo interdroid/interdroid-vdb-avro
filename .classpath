@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
+	<classpathentry excluding="interdroid/vdb/avro/package-info.java|interdroid/vdb/avro/control/package-info.java|interdroid/vdb/avro/control/handler/package-info.java|interdroid/vdb/avro/control/handler/value/package-info.java|interdroid/vdb/avro/model/package-info.java|interdroid/vdb/avro/view/package-info.java|interdroid/vdb/avro/view/factory/package-info.java|interdroid/vdb/sm/provider/package-info.java" kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry kind="lib" path="/vdb/external/avro-1.6.0-SNAPSHOT.jar"/>

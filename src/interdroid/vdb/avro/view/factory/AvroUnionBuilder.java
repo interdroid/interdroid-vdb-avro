@@ -6,7 +6,7 @@ import interdroid.util.view.LayoutUtil.LayoutWeight;
 import interdroid.util.view.ViewUtil;
 import interdroid.util.view.LayoutUtil.LayoutParameters;
 import interdroid.vdb.avro.control.handler.UnionHandler;
-import interdroid.vdb.avro.control.handler.ValueHandler;
+import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriUnion;
