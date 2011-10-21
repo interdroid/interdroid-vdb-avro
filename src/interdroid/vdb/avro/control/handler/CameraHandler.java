@@ -1,7 +1,6 @@
 package interdroid.vdb.avro.control.handler;
 
 
-import org.apache.avro.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,22 +39,18 @@ public class CameraHandler implements OnClickListener {
 	private final Activity mActivity;
 	/** The value handler for the photo. */
 	private final ValueHandler mValueHandler;
-	/** The take photo button. */
-	private Button mButton;
 
 	/**
 	 * Construct a camera handler.
 	 * @param dataModel the data model to work with.
 	 * @param activity the activity we work for
-	 * @param schema the schema for the field
 	 * @param valueHandler the value handler with the data
 	 * @param cameraButton the button which triggers taking a photo
 	 * @param image the image view to display the photo in
 	 */
 	public CameraHandler(final AvroRecordModel dataModel,
-			final Activity activity, final Schema schema,
-			final ValueHandler valueHandler, final Button cameraButton,
-			final ImageView image) {
+			final Activity activity, final ValueHandler valueHandler,
+			final Button cameraButton, final ImageView image) {
 		mDataModel = dataModel;
 		mValueHandler = valueHandler;
 		mActivity = activity;
@@ -68,8 +63,7 @@ public class CameraHandler implements OnClickListener {
 	 * @param takePhoto the button
 	 */
 	private void setButton(final Button takePhoto) {
-		mButton = takePhoto;
-		mButton.setOnClickListener(this);
+		takePhoto.setOnClickListener(this);
 	}
 
 	@Override
@@ -80,7 +74,7 @@ public class CameraHandler implements OnClickListener {
 
 			LOG.debug("Launching camera intent for URI: {} type: {}",
 					uri, mActivity.getContentResolver().getType(uri));
-			Intent cameraIntent = new Intent(
+			final Intent cameraIntent = new Intent(
 					MediaStore.ACTION_IMAGE_CAPTURE, uri);
 			cameraIntent.setClassName(mActivity, UseCamera.class.getName());
 			cameraIntent.putExtra("field", mValueHandler.getFieldName());
@@ -100,7 +94,7 @@ public class CameraHandler implements OnClickListener {
 		if (mValueHandler.getValue() != null) {
 			LOG.debug("Setting bitmap.");
 			try {
-				byte[] data = (byte[]) mValueHandler.getValue();
+				final byte[] data = (byte[]) mValueHandler.getValue();
 				if (data != null && data.length > 0) {
 					final Bitmap bitmap =
 							BitmapFactory.decodeByteArray(data, 0, data.length);

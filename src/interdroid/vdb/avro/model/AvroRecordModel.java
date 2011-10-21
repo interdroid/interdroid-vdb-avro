@@ -34,7 +34,7 @@ public class AvroRecordModel extends DataSetObserver {
     /** The content resolver we are using. */
     private ContentResolver mResolver;
     /** The current state of the model. */
-    private UriRecord mCurrentStateModel;
+    private UriRecord mCurrentModel;
     /** The original state of the model. */
     private UriRecord mOriginalModel;
     /** Is the model dirty. */
@@ -54,8 +54,9 @@ public class AvroRecordModel extends DataSetObserver {
      */
     public AvroRecordModel(final Activity activity, final Uri rootUri,
     		final Schema schema) {
+    	super();
         if (schema.getType() != Type.RECORD) {
-            throw new RuntimeException("Not a record!");
+            throw new IllegalArgumentException("Not a record!");
         }
         LOG.debug("Constructed model for: " + schema);
         mSchema = schema;
@@ -67,19 +68,19 @@ public class AvroRecordModel extends DataSetObserver {
     /**
      * Loads the original state of the model from the bundle.
      *
-     * @param savedInstanceState
+     * @param saved
      *            the bundle to store to
      * @throws NotBoundException if the record model is not bound
      */
-    public final void loadOriginals(final Bundle savedInstanceState)
+    public final void loadOriginals(final Bundle saved)
     		throws NotBoundException {
-        if (savedInstanceState != null) {
+        if (saved != null) {
             LOG.debug("Loading from bundle.");
-            mCurrentStateModel =
-            		new UriRecord(mUri, mSchema).load(savedInstanceState);
+            mCurrentModel =
+            		new UriRecord(mUri, mSchema).load(saved);
             if (mOriginalModel == null) {
                 mOriginalModel =
-                		new UriRecord(mUri, mSchema).load(savedInstanceState);
+                		new UriRecord(mUri, mSchema).load(saved);
             }
         }
     }
@@ -101,8 +102,8 @@ public class AvroRecordModel extends DataSetObserver {
      */
     public final void storeCurrentValue() throws NotBoundException {
         LOG.debug("Storing current state to uri: " + mUri);
-        if (mDirty && mCurrentStateModel != null) {
-           mCurrentStateModel.save(mResolver);
+        if (mDirty && mCurrentModel != null) {
+           mCurrentModel.save(mResolver);
         }
     }
 
@@ -112,7 +113,7 @@ public class AvroRecordModel extends DataSetObserver {
      */
     public final void loadData() throws NotBoundException {
         LOG.debug("Loading data from: " + mUri);
-        mCurrentStateModel = new UriRecord(mUri, mSchema).load(mResolver);
+        mCurrentModel = new UriRecord(mUri, mSchema).load(mResolver);
         mDirty = false;
         // If there is no original model then load another copy
         // TODO: Can we do a clone here?
@@ -130,9 +131,9 @@ public class AvroRecordModel extends DataSetObserver {
      */
     public final void saveState(final Bundle outState)
     		throws NotBoundException {
-        if (mDirty && mCurrentStateModel != null) {
+        if (mDirty && mCurrentModel != null) {
             LOG.debug("Saving current state to bundle.");
-            mCurrentStateModel.save(outState);
+            mCurrentModel.save(outState);
         }
     }
 
@@ -157,9 +158,9 @@ public class AvroRecordModel extends DataSetObserver {
      * @param value the value to set the field to.
      */
     public final void put(final String mFieldName, final Object value) {
-        if (mCurrentStateModel != null) {
+        if (mCurrentModel != null) {
             LOG.debug("Updating field: " + mFieldName + " to: " + value);
-            mCurrentStateModel.put(mFieldName, value);
+            mCurrentModel.put(mFieldName, value);
         }
         mDirty = true;
     }
@@ -176,7 +177,7 @@ public class AvroRecordModel extends DataSetObserver {
      * @return the current data model.
      */
     public final UriRecord getCurrentModel() {
-        return mCurrentStateModel;
+        return mCurrentModel;
     }
 
     /**
@@ -184,7 +185,7 @@ public class AvroRecordModel extends DataSetObserver {
      * @return the value currently in the record for this field
      */
     public final Object get(final String nameField) {
-        return mCurrentStateModel.get(nameField);
+        return mCurrentModel.get(nameField);
     }
 
     /**

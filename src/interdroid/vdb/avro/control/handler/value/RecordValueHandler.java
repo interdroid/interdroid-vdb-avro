@@ -24,7 +24,7 @@ public class RecordValueHandler implements ValueHandler {
 	/** The name of the field we are handling. */
 	private final String mFieldName;
 	/** The data model for the record. */
-	private AvroRecordModel mDataModel;
+	private final AvroRecordModel mDataModel;
 
 	/**
 	 * Construct a handler for record fields.

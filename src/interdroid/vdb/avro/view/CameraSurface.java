@@ -172,7 +172,6 @@ public class CameraSurface extends SurfaceView implements Callback {
 			final File directory,
 			final boolean autofocus) {
 
-		System.gc();
 		LOG.debug("CameraPreview: take picture");
 		// TODO Auto-generated method stub
 		if (autofocus) {

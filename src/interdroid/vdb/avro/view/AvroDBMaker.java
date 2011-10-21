@@ -65,7 +65,7 @@ public class AvroDBMaker extends Activity {
 		/** The UI Label for the type. */
 		public String label;
 		/** Should this be shown in the list view. */
-		public boolean in_list;
+		public boolean inList;
 		// CHECKSTYLE:ON
 	}
 
@@ -277,7 +277,7 @@ public class AvroDBMaker extends Activity {
 	private NamedType getFieldTypeInfo(final UriRecord record)
 			throws InvalidSchemaException {
 		NamedType typeInfo = getNamedTypeInfo(record, false);
-		typeInfo.in_list = (Boolean) record.get("list");
+		typeInfo.inList = (Boolean) record.get("list");
 		return typeInfo;
 	}
 
@@ -405,7 +405,7 @@ public class AvroDBMaker extends Activity {
 		if (!TextUtils.isEmpty(typeInfo.label)) {
 			f.addProp("ui.label", typeInfo.label);
 		}
-		if (typeInfo.in_list) {
+		if (typeInfo.inList) {
 			f.addProp("ui.list", "true");
 		}
 		return f;
@@ -442,7 +442,8 @@ public class AvroDBMaker extends Activity {
 		} else if ("Complex".equals(typeName)) {
 			schema = convertComplexToSchema(typeRecord);
 		} else {
-			throw new RuntimeException("Unknown type record: " + typeName);
+			throw new IllegalArgumentException(
+					"Unknown type record: " + typeName);
 		}
 
 		return schema;

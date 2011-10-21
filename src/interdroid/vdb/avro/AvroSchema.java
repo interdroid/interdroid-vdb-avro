@@ -76,7 +76,7 @@ public final class AvroSchema {
 	*/
 	static {
 		// Taken from proposed schema for schemas:
-		String schema =
+		final String schema =
 			"{\"type\": \"record\", \"name\": \"Type\", \"namespace\": \"interdroid.vdb.content.avro.schemas\","
 			+ "\n "
 			+ "\n \"fields\": ["

@@ -29,13 +29,13 @@ implements UriBound<UriArray<A>> {
 			.getLogger(UriArray.class);
 
 	/** The adapter used to bind this to a Uri. */
-	private UriBoundAdapter<UriArray<A>> mUriBinder;
+	private final UriBoundAdapter<UriArray<A>> mUriBinder;
 
 	/** The default size to construct arrays with. */
 	private static final int DEFAULT_ARRAY_SIZE = 10;
 
 	/** The implementation of our UriBoundAdapter. */
-	private UriBoundAdapterImpl<UriArray<A>> mBinderImpl =
+	private final UriBoundAdapterImpl<UriArray<A>> mBinderImpl =
 			new UriBoundAdapterImpl<UriArray<A>>() {
 
 		@Override
@@ -45,18 +45,18 @@ implements UriBound<UriArray<A>> {
 
 			deleteImpl(resolver, false);
 
-			ContentValues values = new ContentValues();
+			final ContentValues values = new ContentValues();
 			for (Object value : UriArray.this) {
 				values.clear();
 				// First insert a null row
-				Uri idUri = UriDataManager.insertUri(resolver,
+				final Uri idUri = UriDataManager.insertUri(resolver,
 						getInstanceUri(), values);
 				LOG.debug("Got id uri for array row: " + idUri);
-				Uri dataUri = UriDataManager.storeDataToUri(resolver,
+				final Uri dataUri = UriDataManager.storeDataToUri(resolver,
 						idUri, values, fieldName,
 						getSchema().getElementType(), value);
 				if (dataUri != null) {
-					UriMatch match = EntityUriMatcher.getMatch(dataUri);
+					final UriMatch match = EntityUriMatcher.getMatch(dataUri);
 					values.put(fieldName, match.entityIdentifier);
 				}
 				UriDataManager.updateUriOrThrow(resolver, idUri, values);
@@ -69,7 +69,7 @@ implements UriBound<UriArray<A>> {
 				final String fieldName) throws NotBoundException {
 			LOG.debug("Loading array from uri: {} : {}", getInstanceUri(),
 					getSchema());
-			Cursor cursor = resolver.query(getInstanceUri(),
+			final Cursor cursor = resolver.query(getInstanceUri(),
 					null, null, null, null);
 			try {
 				if (cursor != null) {
@@ -79,7 +79,7 @@ implements UriBound<UriArray<A>> {
 								getSchema().getElementType()));
 					}
 				} else {
-					throw new RuntimeException("Unable to load: "
+					throw new IllegalArgumentException("Unable to load: "
 							+ getInstanceUri());
 				}
 			} finally {
@@ -127,7 +127,7 @@ implements UriBound<UriArray<A>> {
 				saveArray(outState, fieldFullName);
 				break;
 			case BOOLEAN:
-				boolean[] bools = saveBoolean();
+				final boolean[] bools = saveBoolean();
 				outState.putBooleanArray(fieldFullName, bools);
 				break;
 			case BYTES:
@@ -172,7 +172,7 @@ implements UriBound<UriArray<A>> {
 				}
 				break;
 			default:
-				throw new RuntimeException("Unsupported array type: "
+				throw new IllegalArgumentException("Unsupported array type: "
 						+ getSchema());
 			}
 		}
@@ -188,7 +188,7 @@ implements UriBound<UriArray<A>> {
 		private void
 				saveSize(final Bundle outState, final String fieldFullName) {
 			outState.putInt(NameHelper.getCountName(fieldFullName),
-					(int) size());
+					size());
 		}
 
 		private void saveMap(final Bundle outState, final String fieldFullName)
@@ -203,7 +203,7 @@ implements UriBound<UriArray<A>> {
 
 		private void
 				saveLong(final Bundle outState, final String fieldFullName) {
-			long[] longs = new long[(int) size()];
+			long[] longs = new long[size()];
 			int i = 0;
 			for (Object element : UriArray.this) {
 				longs[i++] = (Long) element;
@@ -213,7 +213,7 @@ implements UriBound<UriArray<A>> {
 
 		private void saveInt(final Bundle outState,
 				final String fieldFullName) {
-			int[] ints = new int[(int) size()];
+			int[] ints = new int[size()];
 			int i = 0;
 			for (Object element : UriArray.this) {
 				ints[i++] = (Integer) element;
@@ -223,7 +223,7 @@ implements UriBound<UriArray<A>> {
 
 		private void
 				saveFloat(final Bundle outState, final String fieldFullName) {
-			float[] floats = new float[(int) size()];
+			float[] floats = new float[size()];
 			int i = 0;
 			for (Object element : UriArray.this) {
 				floats[i++] = (Float) element;
@@ -233,7 +233,7 @@ implements UriBound<UriArray<A>> {
 
 		private void
 				saveString(final Bundle outState, final String fieldFullName) {
-			String[] strings = new String[(int) size()];
+			String[] strings = new String[size()];
 			int i = 0;
 			for (Object element : UriArray.this) {
 				strings[i++] = (String) element;
@@ -243,7 +243,7 @@ implements UriBound<UriArray<A>> {
 
 		private void saveDouble(final Bundle outState,
 				final String fieldFullName) {
-			double[] doubles = new double[(int) size()];
+			double[] doubles = new double[size()];
 			int i = 0;
 			for (Object element : UriArray.this) {
 				doubles[i++] = (Double) element;
@@ -263,7 +263,7 @@ implements UriBound<UriArray<A>> {
 		}
 
 		private boolean[] saveBoolean() {
-			boolean[] bools = new boolean[(int) size()];
+			boolean[] bools = new boolean[size()];
 			int i = 0;
 			for (Object element : UriArray.this) {
 				bools[i++] = (Boolean) element;
@@ -329,7 +329,7 @@ implements UriBound<UriArray<A>> {
 				loadUnion(saved, fieldName);
 				break;
 			default:
-				throw new RuntimeException("Unsupported array type: "
+				throw new IllegalArgumentException("Unsupported array type: "
 						+ getSchema());
 			}
 
@@ -516,9 +516,9 @@ implements UriBound<UriArray<A>> {
 	}
 
 	@Override
-	public final UriArray<A> load(final Bundle b,
+	public final UriArray<A> load(final Bundle saved,
 			final String prefix) throws NotBoundException {
-		return mUriBinder.load(b, prefix);
+		return mUriBinder.load(saved, prefix);
 	}
 
 	@Override

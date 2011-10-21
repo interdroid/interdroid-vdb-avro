@@ -18,25 +18,25 @@ final class NameHelper {
 
     /* =-=-=-= Helper Constants For More Readable Code =-=-=-= */
 	/** The separator for field names. */
-    static final String SEPARATOR =
+    private static final String SEPARATOR =
     		AvroContentProvider.SEPARATOR;
     /** The count field suffix. */
-    static final String SUFFIX_COUNT =
+    private static final String SUFFIX_COUNT =
     		SEPARATOR + "count";
     /** The key field suffix. */
-    static final String SUFFIX_KEY =
+    private static final String SUFFIX_KEY =
     		AvroContentProvider.KEY_COLUMN_NAME;
     /** the value field suffix. */
-    static final String SUFFIX_VALUE =
+    private static final String SUFFIX_VALUE =
     		AvroContentProvider.VALUE_COLUMN_NAME;
     /** The type field suffix. */
-    static final String SUFFIX_TYPE =
+    private static final String SUFFIX_TYPE =
     		AvroContentProvider.TYPE_COLUMN_NAME;
     /** The type name suffix. */
-    static final String SUFFIX_TYPE_NAME =
+    private static final String SUFFIX_TYPE_NAME =
     		AvroContentProvider.TYPE_NAME_COLUMN_NAME;
     /** The uri name suffix. */
-    static final String SUFFIX_URI_NAME =
+    private static final String SUFFIX_URI_NAME =
     		AvroContentProvider.TYPE_URI_COLUMN_NAME;
 
     /**
@@ -44,7 +44,7 @@ final class NameHelper {
      * @param fieldName the field name
      * @return the full field name for a field
      */
-    static String getFieldFullName(final String dataFullName,
+    static String getFieldFullName(final String dataFullName, // NOPMD by nick
     		final String fieldName) {
         return dataFullName + SEPARATOR + fieldName;
     }
@@ -54,18 +54,18 @@ final class NameHelper {
    	 * @param fieldFullName the full field name
    	 * @return the name of a count field
    	 */
-    static String getCountName(final String fieldFullName) {
+    static String getCountName(final String fieldFullName) { // NOPMD by nick
         return fieldFullName + SUFFIX_COUNT;
     }
 
     /**
      * @param fieldFullName the full name for the field
-     * @param i the index into the array
+     * @param index the index into the array
      * @return a field name with the index appended
      */
-    static String getIndexedFieldName(final String fieldFullName,
-    		final int i) {
-        return fieldFullName + SEPARATOR + i;
+    static String getIndexedFieldName(final String fieldFullName, // NOPMD nick
+    		final int index) {
+        return fieldFullName + SEPARATOR + index;
     }
 
     /**
@@ -73,9 +73,9 @@ final class NameHelper {
      * @param fullName the full name for the field
      * @return a name with the given prefix added if non-null
      */
-    static String getPrefixName(final String prefix,
+    static String getPrefixName(final String prefix, // NOPMD by nick
     		final String fullName) {
-        String dataFullName = fullName;
+        String dataFullName = fullName; // NOPMD by nick
         if (prefix != null) {
             dataFullName = prefix + SEPARATOR + fullName;
         }
@@ -86,7 +86,7 @@ final class NameHelper {
      * @param fieldFullName the full name of the field
      * @return the map key column name
      */
-    static String getMapValueName(final String fieldFullName) {
+    static String getMapValueName(final String fieldFullName) { // NOPMD by nick
         return fieldFullName + SUFFIX_VALUE;
     }
 
@@ -94,7 +94,7 @@ final class NameHelper {
      * @param fieldFullName the full name of the field
      * @return the map value column name
      */
-    static String getMapKeyName(final String fieldFullName) {
+    static String getMapKeyName(final String fieldFullName) { // NOPMD by nick
         return fieldFullName + SUFFIX_KEY;
     }
 
@@ -102,7 +102,7 @@ final class NameHelper {
      * @param fieldName the full field name
      * @return the type field for the field
      */
-    static String getTypeName(final String fieldName) {
+    static String getTypeName(final String fieldName) { // NOPMD by nick
         return fieldName + SUFFIX_TYPE;
     }
 
@@ -110,7 +110,7 @@ final class NameHelper {
      * @param fieldName the full field name
      * @return the type name for the field
      */
-    static String getTypeNameName(final String fieldName) {
+    static String getTypeNameName(final String fieldName) { // NOPMD by nick
         return fieldName + SUFFIX_TYPE_NAME;
     }
 
@@ -118,7 +118,7 @@ final class NameHelper {
      * @param fieldName the full field name
      * @return the uri name for the field
      */
-    static String getTypeNameUri(final String fieldName) {
+    static String getTypeNameUri(final String fieldName) { // NOPMD by nick
         return fieldName + SUFFIX_URI_NAME;
     }
 

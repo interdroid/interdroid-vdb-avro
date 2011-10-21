@@ -97,35 +97,50 @@ public class UnionHandler implements OnCheckedChangeListener {
 	 * @return true if the union type matches.
 	 */
 	private boolean isMatchingType(final Schema innerType) {
+		boolean ret = false; // NOPMD by nick
 		LOG.debug("Checking for type match: {} {}",
 				innerType.getType(), mUnion.getType());
 		if (innerType.getType().equals(mUnion.getType())) {
 			LOG.debug("Checking if type is named.");
 			if (UriBoundAdapter.isNamedType(mUnion.getType())) {
-				LOG.debug("Checking if short names match: {} {}",
-						innerType.getName(), mUnion.getTypeName());
-				LOG.debug("Checking if long names match: {} {}",
-						innerType.getFullName(), mUnion.getTypeName());
-				if (// Is named and Both names are null
-					((innerType.getName() == null
-					&& mUnion.getTypeName() == null)
-					// or Is Named and The names match
-					|| (innerType.getName() != null
-						&& innerType.getName().equals(mUnion.getTypeName()))
-					|| (innerType.getFullName() != null
-						&& innerType.getFullName().equals(mUnion.getTypeName()))
-					)
-				) {
-					LOG.debug("Types match.");
-					return true;
-				}
+				ret = typeNamesMatch(innerType);
 			} else {
 				LOG.debug("Simple types match.");
-				return true;
+				ret = true;
 			}
 		}
-		LOG.debug("Types don't match");
-		return false;
+		if (!ret) {
+			LOG.debug("Types don't match");
+		}
+		return ret;
+	}
+
+	/**
+	 * @param innerType the type to check against
+	 * @return true if the type names match
+	 */
+	private boolean typeNamesMatch(final Schema innerType) {
+		boolean ret;
+		LOG.debug("Checking if short names match: {} {}",
+				innerType.getName(), mUnion.getTypeName());
+		LOG.debug("Checking if long names match: {} {}",
+				innerType.getFullName(), mUnion.getTypeName());
+		if (// Is named and Both names are null
+			((innerType.getName() == null
+			&& mUnion.getTypeName() == null)
+			// or Is Named and The names match
+			|| (innerType.getName() != null
+				&& innerType.getName().equals(mUnion.getTypeName()))
+			|| (innerType.getFullName() != null
+				&& innerType.getFullName().equals(mUnion.getTypeName()))
+			)
+		) {
+			LOG.debug("Types match.");
+			ret = true;
+		} else {
+			ret = false;
+		}
+		return ret;
 	}
 
 	@Override
@@ -139,7 +154,7 @@ public class UnionHandler implements OnCheckedChangeListener {
 				}
 			}
 			// Set the value based on this button
-			ValueHandler innerHandler = mHandlers.get(buttonView);
+			final ValueHandler innerHandler = mHandlers.get(buttonView);
 			LOG.debug("Union value set to: {} : {}",
 					innerHandler.getValue(), mSchema.get(buttonView));
 			mUnion.setValue(innerHandler.getValue(), mSchema.get(buttonView));
@@ -158,17 +173,17 @@ public class UnionHandler implements OnCheckedChangeListener {
 	 */
 	public final ValueHandler getHandler(final RadioButton radioButton,
 			final Schema innerSchema) {
-		final Object value;
+		final Object value; // NOPMD by nick
 		if (isMatchingType(innerSchema)) {
 			value = mUnion.getValue();
 		} else {
 			value = null;
 		}
 
-		ValueHandler handler = new ValueHandler() {
+		final ValueHandler handler = new ValueHandler() { // NOPMD by nick
 
 			/** The value we are currently holding. */
-			private Object mValue = value;
+			private Object mValue = value; // NOPMD by nick
 
 			@Override
 			public Object getValue() {
@@ -176,8 +191,8 @@ public class UnionHandler implements OnCheckedChangeListener {
 			}
 
 			@Override
-			public void setValue(final Object value) {
-				mValue = value;
+			public void setValue(final Object newValue) {
+				mValue = newValue;
 				onCheckedChanged(radioButton, true);
 			}
 

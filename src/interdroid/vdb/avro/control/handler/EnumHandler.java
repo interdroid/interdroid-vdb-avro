@@ -73,6 +73,7 @@ implements DialogInterface.OnClickListener, OnClickListener {
 	protected final void setText() {
 		final Integer ordinal = (Integer) mValueHandler.getValue();
 		mDataModel.runOnUI(new Runnable() {
+			@Override
 			public void run() {
 				if (ordinal == null) {
 					mTextView.setText(R.string.none);
@@ -84,19 +85,19 @@ implements DialogInterface.OnClickListener, OnClickListener {
 	}
 
 	@Override
-	public final void onClick(final View v) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(mActivity);
+	public final void onClick(final View view) {
+		final AlertDialog.Builder builder = new AlertDialog.Builder(mActivity);
 		builder.setTitle(AvroViewFactory.toTitle(mActivity,
 				R.string.label_pick, mSchema));
-		List<String> items = mSchema.getEnumSymbols();
-		CharSequence[] itemArray =
+		final List<String> items = mSchema.getEnumSymbols();
+		final CharSequence[] itemArray =
 				items.toArray(new CharSequence[items.size()]);
 		Integer selection = (Integer) mValueHandler.getValue();
 		if (selection == null) {
 			selection = -1;
 		}
 		builder.setSingleChoiceItems(itemArray, selection, this);
-		AlertDialog dialog = builder.create();
+		final AlertDialog dialog = builder.create();
 		dialog.setCancelable(false);
 		dialog.show();
 	}

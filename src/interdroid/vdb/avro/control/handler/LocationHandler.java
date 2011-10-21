@@ -39,8 +39,6 @@ public class LocationHandler implements OnClickListener {
 	private final ValueHandler mValueHandler;
 	/** The schema for the data. */
 	private final Schema mSchema;
-	/** The button to launch the picker with. */
-	private Button mButton;
 
 	/**
 	 * Construct a location handler.
@@ -66,8 +64,7 @@ public class LocationHandler implements OnClickListener {
 	 * @param pickButton the button to trigger picking.
 	 */
 	private void setButton(final Button pickButton) {
-		mButton = pickButton;
-		mButton.setOnClickListener(this);
+		pickButton.setOnClickListener(this);
 	}
 
 	@Override
@@ -91,7 +88,7 @@ public class LocationHandler implements OnClickListener {
 
 			LOG.debug("Launching location picker intent for URI: {} type: {}",
 					uri, mActivity.getContentResolver().getType(uri));
-			Intent locationIntent = new Intent(
+			final Intent locationIntent = new Intent(
 					LocationPicker.ACTION_PICK_LOCATION, uri);
 			locationIntent.setClassName(mActivity,
 					LocationPicker.class.getName());
@@ -111,8 +108,9 @@ public class LocationHandler implements OnClickListener {
 		if (mValueHandler.getValue() != null) {
 			LOG.debug("Setting bitmap.");
 			try {
-				UriRecord record = (UriRecord) mValueHandler.getValue();
-				byte[] data = (byte[]) record.get(LocationPicker.MAP_IMAGE);
+				final UriRecord record = (UriRecord) mValueHandler.getValue();
+				final byte[] data =
+						(byte[]) record.get(LocationPicker.MAP_IMAGE);
 				if (data != null && data.length > 0) {
 					final Bitmap bitmap =
 							BitmapFactory.decodeByteArray(data, 0, data.length);

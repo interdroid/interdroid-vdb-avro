@@ -26,10 +26,8 @@ public class TimeHandler implements OnTimeChangedListener {
 	/** The year of the start of the epoch time. */
 	private static final int	EPOCH_START_YEAR	= 1970;
 
-	/** The time picker we are handling. */
-	private TimePicker mView;
 	/** The value handler to get data from. */
-	private ValueHandler mValueHandler;
+	private final ValueHandler mValueHandler;
 
 	/**
 	 * Construct a time handler.
@@ -37,23 +35,22 @@ public class TimeHandler implements OnTimeChangedListener {
 	 * @param valueHandler the value handler to get and set data with
 	 */
 	public TimeHandler(final TimePicker view, final ValueHandler valueHandler) {
-		mView = view;
 		mValueHandler = valueHandler;
 		// Set the initial value
-		Calendar value = Calendar.getInstance();
+		final Calendar value = Calendar.getInstance();
 		try {
-			Date d = DataFormatUtil.getTimeAsDate(
+			final Date date = DataFormatUtil.getTimeAsDate(
 					(Long) mValueHandler.getValue());
 			value.set(EPOCH_START_YEAR, Calendar.JANUARY, 1,
-					d.getHours(), d.getMinutes(), 0);
+					date.getHours(), date.getMinutes(), 0);
 		} catch (ParseException e) {
 			LOG.error("Error parsing time! Defaulting to now.", e);
 		}
 		LOG.debug("Initializing time to: {} {}",
 				value.get(Calendar.HOUR_OF_DAY), value.get(Calendar.MINUTE));
-		mView.setCurrentHour(value.get(Calendar.HOUR_OF_DAY));
-		mView.setCurrentMinute(value.get(Calendar.MINUTE));
-		mView.setOnTimeChangedListener(this);
+		view.setCurrentHour(value.get(Calendar.HOUR_OF_DAY));
+		view.setCurrentMinute(value.get(Calendar.MINUTE));
+		view.setOnTimeChangedListener(this);
 	}
 
 	@Override
@@ -61,9 +58,9 @@ public class TimeHandler implements OnTimeChangedListener {
 			final int minute) {
 		LOG.debug("Updating time: {} {}", hourOfDay, minute);
 		// Update the model
-		Calendar value = Calendar.getInstance();
+		final Calendar value = Calendar.getInstance();
 		value.set(EPOCH_START_YEAR, Calendar.JANUARY, 1, hourOfDay, minute, 0);
-		long format = DataFormatUtil.formatTimeForStorage(value);
+		final long format = DataFormatUtil.formatTimeForStorage(value);
 		LOG.debug("Setting time to: {}", format);
 		mValueHandler.setValue(format);
 	}

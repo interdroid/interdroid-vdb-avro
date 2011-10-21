@@ -50,14 +50,14 @@ public class RecordTypeSelectHandler implements OnClickListener {
     }
 
 	@Override
-    public final void onClick(final View v) {
-        Uri uri;
+    public final void onClick(final View view) {
+        Uri uri = null;
         if (mValueHandler.getValue() == null) {
             // Do an insert so we can stash away the URI for the record
-            uri = Uri.withAppendedPath(
+            final Uri storeUri = Uri.withAppendedPath(
             		EntityUriBuilder.branchUri(mSchema.getNamespace(),
                         AvroSchema.NAMESPACE, "master"), mSchema.getName());
-            uri = mActivity.getContentResolver().insert(uri,
+            uri = mActivity.getContentResolver().insert(storeUri,
             		new ContentValues());
             mValueHandler.setValue(new UriRecord(uri, mSchema));
         } else {
@@ -66,12 +66,11 @@ public class RecordTypeSelectHandler implements OnClickListener {
             } catch (NotBoundException e) {
                 LOG.error(
                 	"Unable to get record URI because record is not bound.");
-                uri = null;
             }
         }
         LOG.debug("Launching edit on URI: {} type: {}",
         		uri, mActivity.getContentResolver().getType(uri));
-        Intent editIntent = new Intent(Intent.ACTION_EDIT, uri);
+        final Intent editIntent = new Intent(Intent.ACTION_EDIT, uri);
         editIntent.putExtra(AvroBaseEditor.SCHEMA, mSchema.toString());
         AvroIntentUtil.launchEditIntent(mActivity, editIntent);
     }

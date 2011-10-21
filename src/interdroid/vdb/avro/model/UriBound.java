@@ -53,12 +53,12 @@ public interface UriBound<A> {
 
     /**
      * Load the data from the bundle.
-     * @param b the bundle to load from
+     * @param saved the bundle to load from
      * @param prefix the prefix the data was stored with
      * @return the value for the data
      * @throws NotBoundException if the data is not properly bound
      */
-    A load(Bundle b, String prefix) throws NotBoundException;
+    A load(Bundle saved, String prefix) throws NotBoundException;
 
     /**
      * Deletes the data from the content provider.

@@ -59,7 +59,7 @@ public class UseCamera extends Activity {
 
 		LOG.debug("Taking picture for: {} {}", mUri, mField);
 
-		LinearLayout layout = new LinearLayout(this);
+		final LinearLayout layout = new LinearLayout(this);
 		LayoutParameters.setViewGroupLayoutParams(
 				LayoutParameters.W_FILL_H_FILL, layout);
 		layout.addView(mPreview);
@@ -76,7 +76,6 @@ public class UseCamera extends Activity {
 
 	@Override
 	protected final void onDestroy() {
-		mPreview = null;
 		super.onDestroy();
 	}
 
@@ -94,7 +93,7 @@ public class UseCamera extends Activity {
 
 		@Override
 		public void onPictureTaken(final byte[] data) {
-			ContentValues values = new ContentValues();
+			final ContentValues values = new ContentValues();
 			values.put(mField, data);
 			getContentResolver().update(mUri, values, null, null);
 			finish();

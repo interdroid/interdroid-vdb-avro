@@ -44,7 +44,7 @@ public class UriUnion {
 				fieldSchema.getType(), fieldSchema);
 		if (!fieldSchema.getType().equals(Type.UNION)) {
 			LOG.error("Wrong type for union.");
-			throw new RuntimeException();
+			throw new IllegalArgumentException("Not a union.");
 		}
 		mSchema = fieldSchema;
 	}
@@ -59,12 +59,12 @@ public class UriUnion {
 	/**
 	 * Sets the value for the union to the given value which must be.
 	 * of the given schema
-	 * @param v the value to set
+	 * @param value the value to set
 	 * @param schema the schema for the value
 	 */
-	public final void setValue(final Object v, final Schema schema) {
-		LOG.debug("Union Value set to: {} {}", v, schema);
-		mValue = v;
+	public final void setValue(final Object value, final Schema schema) {
+		LOG.debug("Union Value set to: {} {}", value, schema);
+		mValue = value;
 		mType = schema.getType();
 		mName = schema.getFullName();
 	}
@@ -87,18 +87,21 @@ public class UriUnion {
 	 * @return the schema for the value the union currently holds
 	 */
 	public final Schema getValueSchema() {
+		Schema ret = null; // NOPMD by nick
 		for (Schema type : mSchema.getTypes()) {
 			if (type.getType() == mType) {
 				if (UriBoundAdapter.isNamedType(mType)) {
 					if (type.getName().equals(mName)) {
-						return type;
+						ret = type;
+						break;
 					}
 				} else {
-					return type;
+					ret = type;
+					break;
 				}
 			}
 		}
-		return null;
+		return ret;
 	}
 
 	/**
@@ -118,14 +121,14 @@ public class UriUnion {
 			values.put(NameHelper.getTypeName(fieldName), mType.toString());
 		}
 		values.put(NameHelper.getTypeNameName(fieldName), mName);
-		if (mValue != null) {
+		if (mValue == null) {
+			values.put(fieldName, -1);
+		} else {
 			UriDataManager.storeDataToUri(resolver, rootUri, values,
 					fieldName, getTypeSchema(), mValue);
 			if (UriBoundAdapter.isBoundType(mType)) {
 				values.put(fieldName, getInstanceId((UriBound<?>) mValue));
 			}
-		} else {
-			values.put(fieldName, -1);
 		}
 		LOG.debug("Values now has: {}", values);
 	}
@@ -138,14 +141,14 @@ public class UriUnion {
 	 */
 	private int getInstanceId(final UriBound<?> value)
 			throws NotBoundException {
-		Uri uri = value.getInstanceUri();
-		UriMatch match = EntityUriMatcher.getMatch(uri);
+		int ret = -1; // NOPMD by nick
+		final Uri uri = value.getInstanceUri();
+		final UriMatch match = EntityUriMatcher.getMatch(uri);
 		LOG.debug("Instance id for: {} : {}", uri, match.entityIdentifier);
 		if (match.entityIdentifier != null) {
-			return Integer.parseInt(match.entityIdentifier);
-		} else {
-			return -1;
+			ret = Integer.parseInt(match.entityIdentifier);
 		}
+		return ret;
 	}
 
 	/**
@@ -160,12 +163,12 @@ public class UriUnion {
 	public final UriUnion load(final ContentResolver resolver,
 			final Uri rootUri, final Cursor cursor, final String fieldName)
 					throws NotBoundException {
-		String name = NameHelper.getTypeName(fieldName);
+		final String name = NameHelper.getTypeName(fieldName);
 		LOG.debug("Looking for column: {}", name);
-		int index = cursor.getColumnIndex(name);
+		final int index = cursor.getColumnIndex(name);
 		LOG.debug("Got column: {}", index);
 		if (index >= 0) {
-			String typeName = cursor.getString(index);
+			final String typeName = cursor.getString(index);
 
 			if (typeName != null) {
 				mType = Type.valueOf(typeName);
@@ -177,7 +180,7 @@ public class UriUnion {
 		} else {
 			LOG.debug("Cursor doesn't have field: {} {}",
 					fieldName, cursor.getColumnNames());
-			throw new RuntimeException("Column not in cursor:"
+			throw new IllegalStateException("Column not in cursor:"
 					+ fieldName + " " + rootUri);
 		}
 		return this;
@@ -232,7 +235,7 @@ public class UriUnion {
 				NameHelper.getTypeName(fieldName)));
 		mName = saved.getString(NameHelper.getTypeNameName(fieldName));
 
-		Schema fieldType = getTypeSchema();
+		final Schema fieldType = getTypeSchema();
 		setValue(BundleDataManager.loadDataFromBundle(saved,
 				fieldName, fieldType), fieldType);
 		return this;
@@ -242,23 +245,23 @@ public class UriUnion {
 	 * @return the schema for the held type
 	 */
 	private Schema getTypeSchema() {
-		Schema fieldType = null;
-		if (mType == null) {
-			return null;
-		}
-		for (Schema unionType : mSchema.getTypes()) {
-			if (unionType.getType().equals(mType)
-					&& (!UriBoundAdapter.isNamedType(mType)
-							|| (mName.equals(unionType.getFullName())
-									|| mName.equals(unionType.getName()))
-							)) {
-				fieldType = unionType;
-				break;
+		Schema fieldType = null; // NOPMD by nick
+		if (mType != null) {
+			for (Schema unionType : mSchema.getTypes()) {
+				if (unionType.getType().equals(mType)
+						&& (!UriBoundAdapter.isNamedType(mType)
+								|| (mName.equals(unionType.getFullName())
+										|| mName.equals(unionType.getName()))
+								)) {
+					fieldType = unionType;
+					break;
+				}
 			}
-		}
-		if (fieldType == null) {
-			throw new RuntimeException("Unable to find union inner type: "
-					+ mType + " : " + mName);
+			if (fieldType == null) {
+				throw new
+				IllegalStateException("Unable to find union inner type: "
+						+ mType + " : " + mName);
+			}
 		}
 		return fieldType;
 	}
@@ -277,10 +280,11 @@ public class UriUnion {
 
 	@Override
 	public final String toString() {
-		if (mValue == null) {
-			return "[]";
+		String ret = "[]"; // NOPMD by nick
+		if (mValue != null) {
+			ret = "[" + mValue.toString() + "]";
 		}
-		return "[" + mValue.toString() + "]";
+		return ret;
 	}
 
 }

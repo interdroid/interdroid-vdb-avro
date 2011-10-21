@@ -23,24 +23,24 @@ public class UriBoundAdapter<A> implements UriBound<A> {
 	 *
 	 * @param <A> the type being bound.
 	 */
-	public static interface UriBoundAdapterImpl<A> {
+	static interface UriBoundAdapterImpl<A> {
 		/**
 		 * The implementation of UriBound.loadImpl.
-		 * @param b the bundle to load from
+		 * @param saved the bundle to load from
 		 * @param prefix the prefix to load with
 		 * @return the data
 		 * @throws NotBoundException if the data isn't bound.
 		 */
-		A loadImpl(Bundle b, String prefix)
+		A loadImpl(Bundle saved, String prefix)
 				throws NotBoundException;
 
 		/**
 		 * The implementation of UriBound.saveImpl.
-		 * @param b the bundle to save to
+		 * @param saved the bundle to save to
 		 * @param prefix the prefix to load with
 		 * @throws NotBoundException if the data isn't bound
 		 */
-		void saveImpl(Bundle b, String prefix)
+		void saveImpl(Bundle saved, String prefix)
 				throws NotBoundException;
 
 		/**
@@ -150,15 +150,15 @@ public class UriBoundAdapter<A> implements UriBound<A> {
 	}
 
 	@Override
-	public final void save(final Bundle b,
+	public final void save(final Bundle saved,
 			final String prefix) throws NotBoundException {
-		mAdapter.saveImpl(b, null);
+		mAdapter.saveImpl(saved, null);
 	}
 
 	@Override
-	public final A load(final Bundle b, final String prefix)
+	public final A load(final Bundle saved, final String prefix)
 			throws NotBoundException {
-		return mAdapter.loadImpl(b, prefix);
+		return mAdapter.loadImpl(saved, prefix);
 	}
 
 
@@ -174,14 +174,17 @@ public class UriBoundAdapter<A> implements UriBound<A> {
 	 * @return true if the type is uri bound
 	 */
 	protected static boolean isBoundType(final Type type) {
+		boolean ret;
 		switch (type) {
 		case ARRAY:
 		case MAP:
 		case RECORD:
-			return true;
+			ret = true;
+			break;
 		default:
-			return false;
+			ret = false;
 		}
+		return ret;
 	}
 
 	/**
@@ -189,13 +192,16 @@ public class UriBoundAdapter<A> implements UriBound<A> {
 	 * @return true if the type is a named type
 	 */
 	public static boolean isNamedType(final Type type) {
+		boolean ret;
 		switch (type) {
 		case RECORD:
 		case ENUM:
 		case FIXED:
-			return true;
+			ret = true;
+			break;
 		default:
-			return false;
+			ret = false;
 		}
+		return ret;
 	}
 }

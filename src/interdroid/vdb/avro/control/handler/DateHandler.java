@@ -27,10 +27,8 @@ public class DateHandler implements OnDateChangedListener {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(DateHandler.class);
 
-	/** The view we handle. */
-	private DatePicker mView;
 	/** The value handler we set and get data from. */
-	private ValueHandler mValueHandler;
+	private final ValueHandler mValueHandler;
 
 	/**
 	 * Construct a date handler.
@@ -38,20 +36,19 @@ public class DateHandler implements OnDateChangedListener {
 	 * @param valueHandler the value handler we use for data access
 	 */
 	public DateHandler(final DatePicker view, final ValueHandler valueHandler) {
-		mView = view;
 		mValueHandler = valueHandler;
 		// Set the initial value
-		Calendar value = Calendar.getInstance();
+		final Calendar value = Calendar.getInstance();
 		try {
-			Date d = DataFormatUtil.getDateAsDate(
+			final Date date = DataFormatUtil.getDateAsDate(
 					(Long) mValueHandler.getValue());
-			value.setTime(d);
+			value.setTime(date);
 		} catch (ParseException e) {
 			LOG.error("Error parsing date! Defaulting to now.", e);
 		}
 		LOG.debug("Initializing to: {} {} " + value.get(Calendar.YEAR),
 				value.get(Calendar.MONTH), value.get(Calendar.DATE));
-		mView.init(value.get(Calendar.YEAR), value.get(Calendar.MONTH),
+		view.init(value.get(Calendar.YEAR), value.get(Calendar.MONTH),
 				value.get(Calendar.DATE), this);
 	}
 
@@ -60,9 +57,9 @@ public class DateHandler implements OnDateChangedListener {
 			final int year, final int month, final int day) {
 		LOG.debug("Updating date: {} {} " + day, year, month);
 		// Update the model
-		Calendar value = Calendar.getInstance();
+		final Calendar value = Calendar.getInstance();
 		value.set(year, month, day, DEFAULT_HOUR, 0, 0);
-		long parsed = DataFormatUtil.formatDateForStorage(value);
+		final long parsed = DataFormatUtil.formatDateForStorage(value);
 		LOG.debug("Setting date to: {}", parsed);
 		mValueHandler.setValue(parsed);
 	}

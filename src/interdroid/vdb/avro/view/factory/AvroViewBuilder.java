@@ -29,12 +29,19 @@ import android.view.ViewGroup;
  * @author nick &lt;palmer@cs.vu.nl&gt;
  *
  */
-abstract class AvroViewBuilder {
+public final class AvroViewBuilder {
 	/**
 	 * Access to logging interface.
 	 */
-	private static Logger logger =
+	private static final Logger LOG =
 			LoggerFactory.getLogger(AvroViewBuilder.class);
+
+	/**
+	 * No construction.
+	 */
+	private AvroViewBuilder() {
+		// No construction
+	}
 
 	// =-=-=-=- Static Interface -=-=-=-=
 
@@ -82,15 +89,15 @@ abstract class AvroViewBuilder {
 	public static void bindListView(final View view, final Cursor cursor,
 			final Field field) {
 		// Find the builder for this type
-		logger.debug("Getting builder for: {}", field);
+		LOG.debug("Getting builder for: {}", field);
 		AvroTypedViewBuilder builder = sBuilders.get(new AvroViewType(field));
 
 
 		if (builder != null) {
-			logger.debug("Binding with: {} {}", builder, field.name());
+			LOG.debug("Binding with: {} {}", builder, field.name());
 			builder.bindListView(view, cursor, field);
 		} else {
-			logger.error("No builder for field: {}", field);
+			LOG.error("No builder for field: {}", field);
 		}
 
 	}
@@ -105,7 +112,7 @@ abstract class AvroViewBuilder {
 			final Field field) {
 		if (field.getProp(AvroSchemaProperties.UI_RESOURCE) != null) {
 
-			logger.debug("Inflating custom resource: {}",
+			LOG.debug("Inflating custom resource: {}",
 					field.getProp(AvroSchemaProperties.UI_LIST_RESOURCE));
 			try {
 
@@ -117,9 +124,10 @@ abstract class AvroViewBuilder {
 				return view;
 
 			} catch (Exception e) {
-				logger.error("Unable to inflate resource: {}",
+				LOG.error("Unable to inflate resource: {}",
 						field.getProp(AvroSchemaProperties.UI_LIST_RESOURCE));
-				throw new RuntimeException("Unable to inflate UI resource: "
+				throw new IllegalArgumentException(
+						"Unable to inflate UI resource: "
 						+ field.getProp(
 								AvroSchemaProperties.UI_LIST_RESOURCE), e);
 			}
@@ -127,14 +135,14 @@ abstract class AvroViewBuilder {
 		} else {
 
 			// Find the builder for this type
-			logger.debug("Getting builder for: {}", field);
+			LOG.debug("Getting builder for: {}", field);
 			AvroTypedViewBuilder builder =
 					sBuilders.get(new AvroViewType(field));
 
-			logger.debug("Building with: {} {}", builder, field.name());
+			LOG.debug("Building with: {} {}", builder, field.name());
 
 			if (builder == null) {
-				logger.error("No builder for field: {}", field);
+				LOG.error("No builder for field: {}", field);
 				return null;
 			}
 
@@ -163,7 +171,7 @@ abstract class AvroViewBuilder {
 		if (field != null
 				&& field.getProp(AvroSchemaProperties.UI_RESOURCE) != null) {
 
-			logger.debug("Inflating custom resource: {}",
+			LOG.debug("Inflating custom resource: {}",
 					field.getProp(AvroSchemaProperties.UI_RESOURCE));
 			try {
 
@@ -175,9 +183,10 @@ abstract class AvroViewBuilder {
 				return view;
 
 			} catch (Exception e) {
-				logger.error("Unable to inflate resource: {}",
+				LOG.error("Unable to inflate resource: {}",
 						field.getProp(AvroSchemaProperties.UI_RESOURCE));
-				throw new RuntimeException("Unable to inflate UI resource: "
+				throw new IllegalArgumentException(
+						"Unable to inflate UI resource: "
 						+ field.getProp(AvroSchemaProperties.UI_RESOURCE), e);
 			}
 
@@ -187,16 +196,16 @@ abstract class AvroViewBuilder {
 			AvroTypedViewBuilder builder = null;
 
 			AvroViewType type = new AvroViewType(schema);
-			logger.debug("Getting builder for: {}", type);
+			LOG.debug("Getting builder for: {}", type);
 			builder = sBuilders.get(type);
 
 			if (builder == null) {
-				logger.error("No builder for schema: {}", schema);
-				throw new RuntimeException(
+				LOG.error("No builder for schema: {}", schema);
+				throw new IllegalArgumentException(
 						"Don't know how to build a view for: " + schema);
 			}
 
-			logger.debug("Building with: {} {}", builder, schema.getName());
+			LOG.debug("Building with: {} {}", builder, schema.getName());
 
 
 			return builder.buildEditView(activity, dataModel, viewGroup,
@@ -210,12 +219,12 @@ abstract class AvroViewBuilder {
 	 */
 	public static List<String> getProjectionFields(final Field field) {
 		// Find the builder for this type
-		logger.debug("Getting builder for projection: {}", field);
+		LOG.debug("Getting builder for projection: {}", field);
 		AvroTypedViewBuilder builder = sBuilders.get(new AvroViewType(field));
 		if (builder != null) {
 			return builder.getProjectionFields(field);
 		} else {
-			logger.debug("No builder for that type.");
+			LOG.debug("No builder for that type.");
 			return null;
 		}
 	}

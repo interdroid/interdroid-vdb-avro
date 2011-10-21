@@ -173,7 +173,6 @@ public class LocationPicker extends MapActivity {
 					ByteArrayOutputStream bos = new ByteArrayOutputStream();
 					mMapView.getDrawingCache().compress(
 							CompressFormat.JPEG, MAP_IMAGE_QUALITY, bos);
-					System.gc();
 					intent.putExtra(MAP_IMAGE, bos.toByteArray());
 					bos = null;
 					if (mRadiusMode) {

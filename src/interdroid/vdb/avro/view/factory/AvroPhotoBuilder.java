@@ -64,8 +64,8 @@ class AvroPhotoBuilder extends AvroTypedViewBuilder {
 		ViewUtil.addView(activity, viewGroup, layout);
 
 		// Build the handler
-		new CameraHandler(dataModel, activity, schema, valueHandler,
-						cameraButton, image);
+		new CameraHandler(dataModel, activity, valueHandler, cameraButton,
+						image);
 
 		return layout;
 	}

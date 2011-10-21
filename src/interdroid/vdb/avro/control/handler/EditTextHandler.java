@@ -44,41 +44,42 @@ public class EditTextHandler implements TextWatcher {
 	}
 
 	@Override
-	public final void afterTextChanged(final Editable s) {
-		if (s.length() == 0) {
+	public final void afterTextChanged(final Editable text) {
+		if (text.length() == 0) {
 			mValueHandler.setValue(null);
 		} else {
 			switch (mType) {
 			case FLOAT:
-				mValueHandler.setValue(Float.valueOf(s.toString()));
+				mValueHandler.setValue(Float.valueOf(text.toString()));
 				break;
 			case INT:
-				mValueHandler.setValue(Integer.valueOf(s.toString()));
+				mValueHandler.setValue(Integer.valueOf(text.toString()));
 				break;
 			case LONG:
-				mValueHandler.setValue(Long.valueOf(s.toString()));
+				mValueHandler.setValue(Long.valueOf(text.toString()));
 				break;
 			case NULL:
 				mValueHandler.setValue(null);
 				break;
 			case STRING:
-				mValueHandler.setValue(s.toString());
+				mValueHandler.setValue(text.toString());
 				break;
 			default:
-				throw new RuntimeException("Unsupported type: " + mType);
+				throw new IllegalArgumentException(
+						"Unsupported type: " + mType);
 			}
 		}
 		mDataModel.onChanged();
 	}
 
 	@Override
-	public void beforeTextChanged(final CharSequence s,
+	public void beforeTextChanged(final CharSequence text,
 			final int start, final int count, final int after) {
 		// Do Nothing
 	}
 
 	@Override
-	public void onTextChanged(final CharSequence s, final int start,
+	public void onTextChanged(final CharSequence text, final int start,
 			final int before, final int count) {
 		// Do Nothing
 	}
@@ -94,21 +95,23 @@ public class EditTextHandler implements TextWatcher {
 	 */
 	private void setWatched(final EditText text) {
 
-		if (mValueHandler.getValue() != null) {
+		if (mValueHandler.getValue() == null) {
+			LOG.debug("Text watcher has null value: {}", this);
+			mDataModel.runOnUI(new Runnable()
+			{
+				@Override
+				public void run() {
+					text.setText("");
+				}
+			});
+		} else {
 			LOG.debug("Setting value: {} for: {}",
 					mValueHandler.getValue(), this);
 			mDataModel.runOnUI(new Runnable()
 			{
+				@Override
 				public void run() {
 					text.setText(String.valueOf(mValueHandler.getValue()));
-				}
-			});
-		} else {
-			LOG.debug("Text watcher has null value: {}", this);
-			mDataModel.runOnUI(new Runnable()
-			{
-				public void run() {
-					text.setText("");
 				}
 			});
 		}

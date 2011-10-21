@@ -41,10 +41,10 @@ implements UriBound<UriMap<V>> {
     }
 
     /** The binder adapterused to bind this to a uri. */
-    private UriBoundAdapter<UriMap<V>> mUriBinder;
+    private final UriBoundAdapter<UriMap<V>> mUriBinder;
 
     /** The implementation we use for the uri binder. */
-    private UriBoundAdapterImpl<UriMap<V>> mBinderImpl =
+    private final UriBoundAdapterImpl<UriMap<V>> mBinderImpl =
             new UriBoundAdapterImpl<UriMap<V>>() {
 
         @SuppressWarnings("unchecked")
@@ -68,17 +68,19 @@ implements UriBound<UriMap<V>> {
         @Override
         public void saveImpl(final Bundle outState, final String fieldFullName)
         		throws NotBoundException {
-            String keyName = NameHelper.getMapKeyName(fieldFullName);
-            String valueName = NameHelper.getMapValueName(fieldFullName);
+            final String keyName = NameHelper.getMapKeyName(fieldFullName);
+            final String valueName = NameHelper.getMapValueName(fieldFullName);
             outState.putParcelable(
             		NameHelper.getTypeNameUri(fieldFullName), getInstanceUri());
             outState.putInt(NameHelper.getCountName(fieldFullName), size());
-            int i = 0;
+            int index = 0;
             for (String key : keySet()) {
-                String keyId = NameHelper.getIndexedFieldName(keyName, i);
-                String valueId = NameHelper.getIndexedFieldName(valueName, i++);
+                final String keyId =
+                		NameHelper.getIndexedFieldName(keyName, index);
+                final String valueId =
+                		NameHelper.getIndexedFieldName(valueName, index++);
 
-                outState.putString(keyId, (String) key);
+                outState.putString(keyId, key);
                 BundleDataManager.storeDataToBundle(
                 		outState, valueId, getSchema().getValueType(),
                 		get(key));
@@ -117,7 +119,7 @@ implements UriBound<UriMap<V>> {
 
             deleteImpl(resolver, false);
 
-            ContentValues values = new ContentValues();
+            final ContentValues values = new ContentValues();
 
             for (String key : UriMap.this.keySet()) {
                 values.clear();
@@ -125,15 +127,15 @@ implements UriBound<UriMap<V>> {
                 // First insert a row with just the key so we can get
                 // the ID of the row in
                 // case the row is really an array or some other table based row
-                Uri idUri = UriDataManager.insertUri(resolver,
+                final Uri idUri = UriDataManager.insertUri(resolver,
                 		getInstanceUri(), values);
                 LOG.debug("Got id uri for map row: " + idUri);
 
-                Uri dataUri = UriDataManager.storeDataToUri(resolver,
+                final Uri dataUri = UriDataManager.storeDataToUri(resolver,
                 		idUri, values, fieldName,
                         getSchema().getValueType(), get(key));
                 if (dataUri != null) {
-                    UriMatch match = EntityUriMatcher.getMatch(dataUri);
+                    final UriMatch match = EntityUriMatcher.getMatch(dataUri);
                     values.put(fieldName, match.entityIdentifier);
                 }
                 UriDataManager.updateUriOrThrow(resolver, idUri, values);
@@ -147,14 +149,14 @@ implements UriBound<UriMap<V>> {
 
             LOG.debug("Loading map from: " + getInstanceUri() + " : {} : {}",
             		fieldName, getSchema());
-            Cursor cursor = resolver.query(getInstanceUri(),
+            final Cursor cursor = resolver.query(getInstanceUri(),
             		null, null, null, null);
             try {
                 if (cursor != null) {
-                    int keyIndex = cursor
+                    final int keyIndex = cursor
                             .getColumnIndex(
                             		NameHelper.getMapKeyName(fieldName));
-                    int valueIndex = cursor
+                    final int valueIndex = cursor
                             .getColumnIndex(fieldName);
                     while (cursor.moveToNext()) {
                         Uri dataUri = Uri.withAppendedPath(getInstanceUri(),
@@ -163,7 +165,7 @@ implements UriBound<UriMap<V>> {
                         try {
                             if (UriBoundAdapter.isBoundType(
                             		getSchema().getValueType().getType())) {
-                                int recordId = cursor.getInt(valueIndex);
+                                final int recordId = cursor.getInt(valueIndex);
                                 if (recordId > 0) {
                                     dataUri = Uri.withAppendedPath(
                                             UriDataManager.getRecordUri(
@@ -189,7 +191,7 @@ implements UriBound<UriMap<V>> {
                         }
                     }
                 } else {
-                    throw new RuntimeException("Unable to load: {}"
+                    throw new IllegalArgumentException("Unable to load: "
                     		+ getInstanceUri());
                 }
             } finally {
@@ -207,6 +209,7 @@ implements UriBound<UriMap<V>> {
      * @param saved the bundle with saved data
      */
     public UriMap(final Schema schema, final Bundle saved) {
+    	super();
         mSchema = schema;
         mUriBinder = new UriBoundAdapter<UriMap<V>>(saved, mBinderImpl);
     }
@@ -217,6 +220,7 @@ implements UriBound<UriMap<V>> {
      * @param schema the schema for the map
      */
     public UriMap(final Uri uri, final Schema schema) {
+    	super();
         mSchema = schema;
         mUriBinder = new UriBoundAdapter<UriMap<V>>(uri, mBinderImpl);
     }
@@ -239,9 +243,9 @@ implements UriBound<UriMap<V>> {
     }
 
     @Override
-    public final UriMap<V> load(final Bundle b, final String prefix)
+    public final UriMap<V> load(final Bundle saved, final String prefix)
     		throws NotBoundException {
-        return mUriBinder.load(b, prefix);
+        return mUriBinder.load(saved, prefix);
     }
 
     @Override

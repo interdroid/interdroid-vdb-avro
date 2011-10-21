@@ -10,6 +10,21 @@ package interdroid.vdb.avro.model;
 public class NotBoundException extends Exception {
 
 	/**
+	 * Construct a new NotBoundException.
+	 */
+	public NotBoundException() {
+		super();
+	}
+
+	/**
+	 * Construct a new NotBoundException.
+	 * @param message the message for the exception
+	 */
+	public NotBoundException(final String message) {
+		super(message);
+	}
+
+	/**
 	 * the version id for serialization.
 	 */
 	private static final long	serialVersionUID	= 1L;

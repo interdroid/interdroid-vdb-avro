@@ -30,7 +30,7 @@ public class ArrayHandler implements DraggableAdapter, AddListener  {
 			LoggerFactory.getLogger(ArrayHandler.class);
 
 	/** The observable data sets. */
-	private DataSetObservable mObservables = new DataSetObservable();
+	private final DataSetObservable mObservables = new DataSetObservable();
 
 	/** The activity we work for. */
 	private final Activity mActivity;
@@ -116,12 +116,13 @@ public class ArrayHandler implements DraggableAdapter, AddListener  {
 	@Override
 	public final View getView(final int position, final View convertView,
 			final ViewGroup parent) {
+		View ret = null;
 		try {
-			return getSubView(position);
+			ret = getSubView(position);
 		} catch (NotBoundException e) {
 			LOG.error("Shouldn't happen: {}", e);
-			return null;
 		}
+		return ret;
 	}
 
 	@Override
@@ -147,11 +148,11 @@ public class ArrayHandler implements DraggableAdapter, AddListener  {
 	}
 
 	@Override
-	public final void onDrop(final int from, final int to) {
-		if (from < to) {
-			mArray.add(to - 1, mArray.remove(from));
+	public final void onDrop(final int origin, final int destination) {
+		if (origin < destination) {
+			mArray.add(destination - 1, mArray.remove(origin));
 		} else {
-			mArray.add(to, mArray.remove(from));
+			mArray.add(destination, mArray.remove(origin));
 		}
 		mObservables.notifyChanged();
 		mViewGroup.postInvalidate();

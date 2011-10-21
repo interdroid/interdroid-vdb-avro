@@ -11,7 +11,7 @@ import android.os.Bundle;
  * @author nick &lt;palmer@cs.vu.nl&gt;
  *
  */
-public final class BundleDataManager {
+public final class BundleDataManager { // NOPMD by nick
 	/** Access to logger. */
     private static final Logger LOG = LoggerFactory
             .getLogger(BundleDataManager.class);
@@ -31,8 +31,8 @@ public final class BundleDataManager {
      * @return the data
      * @throws NotBoundException if the record model is not bound
      */
-    @SuppressWarnings("rawtypes")
-    static Object loadDataFromBundle(final Bundle saved,
+    @SuppressWarnings("rawtypes") // NOPMD by nick
+    static Object loadDataFromBundle(final Bundle saved, // NOPMD by nick
     		final String fieldFullName, final Schema fieldSchema)
     				throws NotBoundException {
         LOG.debug("Loading data from bundle: " + fieldFullName);
@@ -69,7 +69,7 @@ public final class BundleDataManager {
             value = new UriMap(fieldSchema, saved).load(saved, fieldFullName);
             break;
         case NULL:
-            value = null;
+            value = null; // NOPMD by nick
             break;
         case RECORD:
             value = new UriRecord(fieldSchema, saved).load(
@@ -82,7 +82,8 @@ public final class BundleDataManager {
             value = new UriUnion(fieldSchema).load(saved, fieldFullName);
             break;
         default:
-            throw new RuntimeException("Unsupported type: " + fieldSchema);
+            throw new IllegalArgumentException(
+            		"Unsupported type: " + fieldSchema);
         }
         return value;
     }
@@ -95,14 +96,14 @@ public final class BundleDataManager {
      * @param data the data to store
      * @throws NotBoundException if the data is not bound properly
      */
-    @SuppressWarnings("rawtypes")
-    static void storeDataToBundle(final Bundle outState,
+    @SuppressWarnings("rawtypes") // NOPMD by nick
+    static void storeDataToBundle(final Bundle outState, // NOPMD by nick
     		final String fieldFullName, final Schema fieldSchema,
     		final Object data) throws NotBoundException {
         if (data != null) {
             switch (fieldSchema.getType()) {
             case ARRAY:
-                UriArray array = (UriArray) data;
+                final UriArray array = (UriArray) data;
                 array.save(outState, fieldFullName);
                 break;
             case BOOLEAN:
@@ -130,25 +131,26 @@ public final class BundleDataManager {
                 outState.putLong(fieldFullName, (Long) data);
                 break;
             case MAP:
-                UriMap<?> map = (UriMap<?>) data;
+                final UriMap<?> map = (UriMap<?>) data;
                 map.save(outState, fieldFullName);
                 break;
             case NULL:
                 // No need to do anything.
                 break;
             case RECORD:
-                UriRecord record = (UriRecord) data;
+                final UriRecord record = (UriRecord) data;
                 record.save(outState, fieldFullName);
                 break;
             case STRING:
                 outState.putString(fieldFullName, (String) data);
                 break;
             case UNION:
-                UriUnion union = (UriUnion) data;
+                final UriUnion union = (UriUnion) data;
                 union.save(outState, fieldFullName);
                 break;
             default:
-                throw new RuntimeException("Unsupported type: " + fieldSchema);
+                throw new IllegalArgumentException(
+                		"Unsupported type: " + fieldSchema);
             }
         }
     }

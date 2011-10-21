@@ -43,7 +43,7 @@ public class CheckboxHandler implements OnCheckedChangeListener {
 	 * @param text the checkbox to listen to
 	 */
 	private void setWatched(final CheckBox text) {
-		Object value = mValueHandler.getValue();
+		final Object value = mValueHandler.getValue();
 		if (Boolean.TRUE.equals(value)) {
 			text.setChecked(true);
 		} else {

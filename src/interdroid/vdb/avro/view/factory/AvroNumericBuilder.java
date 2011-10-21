@@ -67,7 +67,7 @@ class AvroNumericBuilder extends AvroTypedTextViewBuilder {
 			| InputType.TYPE_NUMBER_FLAG_SIGNED;
 			break;
 		default:
-			throw new RuntimeException("Unsupported type: " + schema);
+			throw new IllegalArgumentException("Unsupported type: " + schema);
 		}
 
 		EditText view = buildEditText(activity, viewGroup, schema, flags);
@@ -93,7 +93,7 @@ class AvroNumericBuilder extends AvroTypedTextViewBuilder {
 		case FLOAT:
 			text.setText(String.valueOf(cursor.getFloat(index)));
 		default:
-			throw new RuntimeException("Unsupported type: " + field);
+			throw new IllegalArgumentException("Unsupported type: " + field);
 		}
 
 	}

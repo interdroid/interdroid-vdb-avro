@@ -120,7 +120,8 @@ public final class UriDataManager {
             		fieldName);
             break;
         default:
-            throw new RuntimeException("Unsupported type: " + fieldSchema);
+            throw new IllegalArgumentException(
+            		"Unsupported type: " + fieldSchema);
         }
         return value;
     }
@@ -222,7 +223,8 @@ public final class UriDataManager {
             }
             break;
         default:
-            throw new RuntimeException("Unsupported type: " + fieldSchema);
+            throw new IllegalArgumentException(
+            		"Unsupported type: " + fieldSchema);
         }
 
         return dataUri;
