@@ -15,8 +15,6 @@
 	<classpathentry kind="lib" path="/vdb/external/ibis-util-2.2.jar"/>
 	<classpathentry kind="lib" path="/vdb/external/jsch-0.1.44-1.jar"/>
 	<classpathentry kind="lib" path="/slf4android/external/slf4j-1.6.2/slf4j-api-1.6.2.jar" sourcepath="/slf4android/external/slf4j-1.6.2"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/org.eclipse.jgit"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/smartsockets"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
