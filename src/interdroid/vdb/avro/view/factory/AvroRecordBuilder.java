@@ -3,7 +3,7 @@ package interdroid.vdb.avro.view.factory;
 import java.util.List;
 
 import interdroid.util.view.ViewUtil;
-import interdroid.vdb.R;
+import interdroid.vdb.avro.R;
 import interdroid.vdb.avro.control.handler.RecordTypeSelectHandler;
 import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;

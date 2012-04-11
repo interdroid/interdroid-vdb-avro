@@ -1,7 +1,7 @@
 package interdroid.vdb.avro.view;
 
 import interdroid.util.view.AsyncTaskWithProgressDialog;
-import interdroid.vdb.R;
+import interdroid.vdb.avro.R;
 import interdroid.vdb.avro.control.AvroController;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.view.factory.AvroViewFactory;

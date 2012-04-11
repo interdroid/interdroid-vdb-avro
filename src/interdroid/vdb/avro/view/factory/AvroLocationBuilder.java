@@ -2,7 +2,7 @@ package interdroid.vdb.avro.view.factory;
 
 import interdroid.util.view.LayoutUtil.LayoutParameters;
 import interdroid.util.view.ViewUtil;
-import interdroid.vdb.R;
+import interdroid.vdb.avro.R;
 import interdroid.vdb.avro.control.handler.LocationHandler;
 import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;

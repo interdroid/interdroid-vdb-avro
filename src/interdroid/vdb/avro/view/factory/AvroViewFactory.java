@@ -6,7 +6,7 @@ import java.util.List;
 import interdroid.util.view.LayoutUtil.LayoutParameters;
 import interdroid.util.view.LayoutUtil.LayoutWeight;
 import interdroid.util.view.ViewUtil;
-import interdroid.vdb.R;
+import interdroid.vdb.avro.R;
 import interdroid.vdb.avro.AvroSchemaProperties;
 import interdroid.vdb.avro.control.handler.ArrayHandler;
 import interdroid.vdb.avro.control.handler.value.ArrayValueHandler;

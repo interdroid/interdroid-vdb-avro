@@ -1,7 +1,7 @@
 package interdroid.vdb.avro.control.handler;
 
 import interdroid.util.ToastOnUI;
-import interdroid.vdb.R;
+import interdroid.vdb.avro.R;
 import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriRecord;
