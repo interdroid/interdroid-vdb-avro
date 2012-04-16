@@ -19,9 +19,9 @@ import android.os.Bundle;
  * values.
  */
 public class AvroRecordModel extends DataSetObserver {
-	/** Access to logger. */
+    /** Access to logger. */
     private static final Logger LOG =
-    		LoggerFactory.getLogger(AvroRecordModel.class);
+            LoggerFactory.getLogger(AvroRecordModel.class);
 
     /* =-=-=-= Model State =-=-=-= */
     /** The schema we are modeling. */
@@ -44,17 +44,22 @@ public class AvroRecordModel extends DataSetObserver {
     // grained dirty flags at all levels.
 
 
+    public void onChanged() {
+        super.onChanged();
+        mDirty = true;
+    }
+
     /**
      * Constructs a Model for the given Schema. The Schema must be of type
      * RECORD.
-	 *
+     *
      * @param activity the activity to work for
      * @param rootUri the uri to model
      * @param schema the schema for the given uri
      */
     public AvroRecordModel(final Activity activity, final Uri rootUri,
-    		final Schema schema) {
-    	super();
+            final Schema schema) {
+        super();
         if (schema.getType() != Type.RECORD) {
             throw new IllegalArgumentException("Not a record!");
         }
@@ -73,14 +78,14 @@ public class AvroRecordModel extends DataSetObserver {
      * @throws NotBoundException if the record model is not bound
      */
     public final void loadOriginals(final Bundle saved)
-    		throws NotBoundException {
+            throws NotBoundException {
         if (saved != null) {
             LOG.debug("Loading from bundle.");
             mCurrentModel =
-            		new UriRecord(mUri, mSchema).load(saved);
+                    new UriRecord(mUri, mSchema).load(saved);
             if (mOriginalModel == null) {
                 mOriginalModel =
-                		new UriRecord(mUri, mSchema).load(saved);
+                        new UriRecord(mUri, mSchema).load(saved);
             }
         }
     }
@@ -90,9 +95,12 @@ public class AvroRecordModel extends DataSetObserver {
      * @throws NotBoundException if the record model is not bound
      */
     public final void storeOriginalValue() throws NotBoundException {
-        LOG.debug("Storing original values.");
         if (mDirty && mOriginalModel != null) {
+            LOG.debug("Storing original values.");
             mOriginalModel.save(mResolver);
+        }
+        else {
+            LOG.debug("Not storing original: {} {}", mDirty, mOriginalModel != null);
         }
     }
 
@@ -101,9 +109,11 @@ public class AvroRecordModel extends DataSetObserver {
      * @throws NotBoundException ifthe record model is not bound
      */
     public final void storeCurrentValue() throws NotBoundException {
-        LOG.debug("Storing current state to uri: " + mUri);
         if (mDirty && mCurrentModel != null) {
-           mCurrentModel.save(mResolver);
+            LOG.debug("Storing current state to uri: " + mUri);
+            mCurrentModel.save(mResolver);
+        } else {
+            LOG.debug("Not storing: {} {}", mDirty, mCurrentModel != null);
         }
     }
 
@@ -130,10 +140,13 @@ public class AvroRecordModel extends DataSetObserver {
      * @throws NotBoundException if the record model is not bound
      */
     public final void saveState(final Bundle outState)
-    		throws NotBoundException {
+            throws NotBoundException {
         if (mDirty && mCurrentModel != null) {
             LOG.debug("Saving current state to bundle.");
             mCurrentModel.save(outState);
+        } else {
+            LOG.debug("Not saving to bundle: {} {}",
+                    mDirty, mCurrentModel != null);
         }
     }
 
