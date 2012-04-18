@@ -50,6 +50,13 @@ public class AvroListAdapter extends CursorAdapter {
 	private String	mThis;
 
 	/**
+	 * A field for when there is nothing in the list view.
+	 */
+	private static final Field sIdField =
+			new Field("_id", Schema.create(Type.INT), null, null);
+
+
+	/**
 	 * Build a list adapter to work for the given AvroBaseList.
 	 *
 	 * @param context the base list this will work for
@@ -72,10 +79,16 @@ public class AvroListAdapter extends CursorAdapter {
 	private Field[] getTitleFields(final Schema schema) {
 		ArrayList<Field> title = new ArrayList<Field>();
 
+		boolean foundOne = false;
 		for (Field field : schema.getFields()) {
 			if (propertyIsSet(field, "ui.title")) {
 				title.add(field);
+				foundOne = true;
 			}
+		}
+		// Add the _id field if we found none.
+		if (!foundOne) {
+			title.add(sIdField);
 		}
 
 		return title.toArray(new Field[title.size()]);
@@ -128,6 +141,11 @@ public class AvroListAdapter extends CursorAdapter {
 			} else {
 				LOG.debug("Skipping field {} from list view.", field.name());
 			}
+		}
+		if (listFields.isEmpty()) {
+			LOG.debug("No list fields. Adding _id.");
+			// No list fields. Add the _id field.
+			listFields.add("_id");
 		}
 
 		return listFields.toArray(new String[listFields.size()]);
@@ -240,13 +258,20 @@ public class AvroListAdapter extends CursorAdapter {
 		TableLayout layout = new TableLayout(context);
 		layout.setOrientation(LinearLayout.VERTICAL);
 
+		boolean builtOne = false;
 		for (Field field : mSchema.getFields()) {
 			if (isListField(field)) {
 				buildView(context, layout, field);
+				builtOne = true;
 			}
 		}
 
-		// Do we need to call this?
+		// There were no list fields so bind the _id field
+		if (!builtOne) {
+			buildView(context, layout, sIdField);
+		}
+
+		// Bind the data in the cursor.
 		bindView(layout, context, cursor);
 
 		return layout;
@@ -275,10 +300,17 @@ public class AvroListAdapter extends CursorAdapter {
 			view = newView(context, cursor, null);
 		}
 
+		boolean boundOne = false;
 		for (Field field : mSchema.getFields()) {
 			if (isListField(field)) {
 				bindView(view, cursor, field);
+				boundOne = true;
 			}
+		}
+
+		// We didn't bind one, so bind the _id field
+		if (!boundOne) {
+			bindView(view, cursor, sIdField);
 		}
 	}
 
