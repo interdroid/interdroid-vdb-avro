@@ -1,9 +1,13 @@
 package interdroid.vdb.avro.control.handler.value;
 
+import java.io.IOException;
+
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.model.UriRecord;
 
+import org.apache.avro.Schema.Field;
+import org.codehaus.jackson.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +46,20 @@ public class RecordValueHandler implements ValueHandler {
 
 	@Override
 	public final Object getValue() {
+		if (mRecord.get(mFieldName) == null) {
+			Field field = mRecord.getSchema().getField(mFieldName);
+			if (field.defaultValue() != null) {
+				try {
+					LOG.debug("Field {} has default.", mFieldName);
+					Object defaultObject = AvroRecordModel.parseDefault(field);
+					LOG.debug("Setting default value for: {} to: {}", mFieldName,
+							defaultObject);
+					setValue(defaultObject);
+				} catch (IOException e) {
+					LOG.warn("Error parsing default value. Ignored.", e);
+				}
+			}
+		}
 		return mRecord.get(mFieldName);
 	}
 

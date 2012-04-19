@@ -226,10 +226,21 @@ public class AvroDBMaker extends Activity {
 	/**
 	 * @param data the uri to check
 	 * @return true if the uri is a valid schema uri
+	 * @throws InvalidSchemaException if the uri is not valid
 	 */
-	private boolean isValidSchemaUri(final Uri data) {
-		// TODO: What does a valid URI look like?
-		return true;
+	private boolean isValidSchemaUri(final Uri data) throws InvalidSchemaException {
+		List<String>segments = data.getPathSegments();
+		try {
+			Integer.parseInt(segments.get(segments.size()-1));
+			String type = segments.get(segments.size()-2);
+			if (type.equals(AvroSchema.RECORD_DEFINITION)) {
+				return true;
+			}
+		} catch (Exception e) {
+			throw new InvalidSchemaException();
+		}
+
+		return false;
 	}
 
 	/**
@@ -242,10 +253,21 @@ public class AvroDBMaker extends Activity {
 	private Schema convertRecordToSchema(final UriRecord record)
 			throws InvalidSchemaException {
 
-		NamedType typeInfo = getNamedTypeInfo(record, true);
+		boolean nsRequired = ! record.getSchema().getName().equals(
+				AvroSchema.SIMPLE_RECORD_DEFINITION);
+		LOG.debug("Converting record: {} {}", record.getSchema().getName(),
+				nsRequired);
+
+		NamedType typeInfo = getNamedTypeInfo(record, nsRequired);
+
+		if (!nsRequired) {
+			typeInfo.namespace = typeInfo.name;
+		}
+
 		Schema schema = Schema.createRecord(typeInfo.name,
 				typeInfo.doc, typeInfo.namespace, false);
 		addAliases(typeInfo, schema);
+
 		LOG.debug("Processing schema fields.");
 		List<UriRecord> fields = (List<UriRecord>) record.get("fields");
 		List<Schema.Field> schemaFields = new ArrayList<Schema.Field>();
@@ -260,6 +282,8 @@ public class AvroDBMaker extends Activity {
 					+ " " + typeInfo.name, Toast.LENGTH_LONG);
 			throw new InvalidSchemaException();
 		}
+
+		LOG.debug("Built schema: {}", schema);
 
 		// Now we need to make sure that what we built is really valid.
 		// I.E. No Namespace problems...
@@ -286,7 +310,7 @@ public class AvroDBMaker extends Activity {
 	 * @param record the record to get data from
 	 * @param namespaceRequired true if a namespace is required
 	 * @return the NamedType info
-	 * @throws InvalidSchemaException if the schema isinvlid
+	 * @throws InvalidSchemaException if the schema is invalid
 	 */
 	private NamedType getNamedTypeInfo(final UriRecord record,
 			final boolean namespaceRequired) throws InvalidSchemaException {
@@ -396,8 +420,13 @@ public class AvroDBMaker extends Activity {
 
 		// TODO: Fix the way we load Enumerations...
 		//        String order = (String)field.get("order");
-
-		Schema fieldSchema = convertTypeToSchema((UriRecord) field.get("type"));
+		Object type = field.get("type");
+		Schema fieldSchema;
+		if (type instanceof Integer) {
+			fieldSchema = convertTypeToSchema(typeInfo, (Integer) type);
+		} else {
+			fieldSchema = convertTypeToSchema(typeInfo, (UriRecord) type);
+		}
 		Schema.Field f = new Schema.Field(typeInfo.name, fieldSchema,
 				typeInfo.doc, null);
 		// ,  Schema.Field.Order.valueOf(String.valueOf(order)));
@@ -413,13 +442,63 @@ public class AvroDBMaker extends Activity {
 
 	/**
 	 * Converts a Type record to a schema.
-	 * @param fieldType the type field to convert
+	 * @param typeInfo
+	 * @param type the type field to convert
 	 * @return the converted schema
 	 * @throws InvalidSchemaException if the schema is invalid
 	 */
-	private Schema convertTypeToSchema(final UriRecord fieldType)
+	private Schema convertTypeToSchema(NamedType typeInfo, final Integer type)
 			throws InvalidSchemaException {
-		LOG.debug("Converting field type: {}", fieldType);
+		LOG.debug("Converting SimpleRecord Field: {}", type);
+
+		Schema schema = null;
+		switch (type) {
+		// String
+		case 0:
+			schema = Schema.create(Type.STRING);
+			break;
+		// Number
+		case 1:
+			schema = Schema.create(Type.DOUBLE);
+			break;
+		// Checkbox
+		case 2:
+			schema = Schema.create(Type.BOOLEAN);
+			break;
+		// Date
+		case 3:
+			schema = getDateSchema();
+			break;
+		// Time
+		case 4:
+			schema = getTimeSchema();
+			break;
+		// Photo
+		case 5:
+			schema = getPhotoSchema();
+			break;
+		// Location
+		case 6:
+			schema = getLocationSchema(typeInfo.name,
+					typeInfo.doc, typeInfo.namespace);
+			break;
+		default:
+			throw new InvalidSchemaException();
+		}
+		return schema;
+	}
+
+	/**
+	 * Converts a Record Type field to a schema
+	 * @param fieldType the union for the field to convert
+	 * @return the schema for the field
+	 * @throws InvalidSchemaException if the schema is invalid
+	 */
+	private Schema convertTypeToSchema(final NamedType typeInfo,
+			final UriRecord fieldType)
+			throws InvalidSchemaException {
+		LOG.debug("Converting schema field: {}", fieldType);
+
 		UriUnion type = (UriUnion) fieldType.get("type");
 		UriRecord typeRecord = (UriRecord) type.getValue();
 		String typeName = typeRecord.getSchema().getName();
@@ -440,7 +519,7 @@ public class AvroDBMaker extends Activity {
 		} else if ("Primitive".equals(typeName)) {
 			schema = convertPrimitiveToSchema(typeRecord);
 		} else if ("Complex".equals(typeName)) {
-			schema = convertComplexToSchema(typeRecord);
+			schema = convertComplexToSchema(typeInfo, typeRecord);
 		} else {
 			throw new IllegalArgumentException(
 					"Unknown type record: " + typeName);
@@ -451,11 +530,13 @@ public class AvroDBMaker extends Activity {
 
 	/**
 	 * Converts a complex type to a schema.
+	 * @param info the type info for this field
 	 * @param typeRecord the field to convert
 	 * @return the resulting schema
 	 * @throws InvalidSchemaException if the schema is invalid
 	 */
-	private Schema convertComplexToSchema(final UriRecord typeRecord)
+	private Schema convertComplexToSchema(final NamedType info,
+			final UriRecord typeRecord)
 			throws InvalidSchemaException {
 		LOG.debug("Converting complex type: {}", typeRecord);
 		Integer offset = (Integer) typeRecord.get("ComplexType");
@@ -465,63 +546,16 @@ public class AvroDBMaker extends Activity {
 		// I know the constants here suck but what to do?
 		// CHECKSTYLE:OFF
 		case 0: // Date
-			schema = Schema.create(Type.LONG);
-			schema.addProp("ui.widget", "date");
+			schema = getDateSchema();
 			break;
 		case 1: // Time
-			schema = Schema.create(Type.LONG);
-			schema.addProp("ui.widget", "time");
+			schema = getTimeSchema();
 			break;
 		case 2: // Photo
-			schema = Schema.create(Type.BYTES);
-			schema.addProp("ui.widget", "photo");
+			schema = getPhotoSchema();
 			break;
 		case 3: // Location
-			List<Field> fields = new ArrayList<Field>();
-
-			Field f = new Field("Latitude",
-					Schema.create(Type.INT), "latitude", null);
-			f.addProp("ui.label", "Latitude");
-			fields.add(f);
-
-			f = new Field("Longitude",
-					Schema.create(Type.INT), "longitude", null);
-			f.addProp("ui.label", "Longitude");
-			fields.add(f);
-
-			f = new Field("RadiusLatitude",
-					Schema.create(Type.INT), "radius latitude", null);
-			f.addProp("ui.label", "Radius Latitude");
-			fields.add(f);
-
-			f = new Field("RadiusLongitude",
-					Schema.create(Type.INT), "radius longitude", null);
-			f.addProp("ui.label", "Radius Longitude");
-			fields.add(f);
-
-			f = new Field("RadiusInMeters",
-					Schema.create(Type.LONG), "radius in meters", null);
-			f.addProp("ui.label", "Radius In Meters");
-			fields.add(f);
-
-			f = new Field("MapImage",
-					Schema.create(Type.BYTES), "map image", null);
-			f.addProp("ui.label", "Map Image");
-			fields.add(f);
-
-			f = new Field("Altitude",
-					Schema.create(Type.LONG), "altitude", null);
-			f.addProp("ui.label", "Altitude");
-			fields.add(f);
-
-			f = new Field("Accuracy",
-					Schema.create(Type.LONG), "accuracy", null);
-			f.addProp("ui.label", "Accuracy");
-			fields.add(f);
-
-			schema = Schema.createRecord("Location", "A Location", null, false);
-			schema.setFields(fields);
-			schema.addProp("ui.widget", "location");
+			schema = getLocationSchema(info.name, info.doc, info.namespace);
 			break;
 		default:
 			ToastOnUI.show(this, R.string.error_unknown_complex_type,
@@ -529,6 +563,77 @@ public class AvroDBMaker extends Activity {
 			throw new InvalidSchemaException();
 		}
 		// CHECKSTYLE:ON
+		return schema;
+	}
+
+	private Schema getLocationSchema(String name, String doc, String namespace) {
+		Schema schema;
+		List<Field> fields = new ArrayList<Field>();
+
+		Field f = new Field("Latitude",
+				Schema.create(Type.INT), "latitude", null);
+		f.addProp("ui.label", "Latitude");
+		fields.add(f);
+
+		f = new Field("Longitude",
+				Schema.create(Type.INT), "longitude", null);
+		f.addProp("ui.label", "Longitude");
+		fields.add(f);
+
+		f = new Field("RadiusLatitude",
+				Schema.create(Type.INT), "radius latitude", null);
+		f.addProp("ui.label", "Radius Latitude");
+		fields.add(f);
+
+		f = new Field("RadiusLongitude",
+				Schema.create(Type.INT), "radius longitude", null);
+		f.addProp("ui.label", "Radius Longitude");
+		fields.add(f);
+
+		f = new Field("RadiusInMeters",
+				Schema.create(Type.LONG), "radius in meters", null);
+		f.addProp("ui.label", "Radius In Meters");
+		fields.add(f);
+
+		f = new Field("MapImage",
+				Schema.create(Type.BYTES), "map image", null);
+		f.addProp("ui.label", "Map Image");
+		fields.add(f);
+
+		f = new Field("Altitude",
+				Schema.create(Type.LONG), "altitude", null);
+		f.addProp("ui.label", "Altitude");
+		fields.add(f);
+
+		f = new Field("Accuracy",
+				Schema.create(Type.LONG), "accuracy", null);
+		f.addProp("ui.label", "Accuracy");
+		fields.add(f);
+
+		schema = Schema.createRecord(name, doc, namespace, false);
+		schema.setFields(fields);
+		schema.addProp("ui.widget", "location");
+		return schema;
+	}
+
+	private Schema getPhotoSchema() {
+		Schema schema;
+		schema = Schema.create(Type.BYTES);
+		schema.addProp("ui.widget", "photo");
+		return schema;
+	}
+
+	private Schema getTimeSchema() {
+		Schema schema;
+		schema = Schema.create(Type.LONG);
+		schema.addProp("ui.widget", "time");
+		return schema;
+	}
+
+	private Schema getDateSchema() {
+		Schema schema;
+		schema = Schema.create(Type.LONG);
+		schema.addProp("ui.widget", "date");
 		return schema;
 	}
 
@@ -593,7 +698,7 @@ public class AvroDBMaker extends Activity {
 		List<UriRecord> branches = (List<UriRecord>) typeRecord.get("branches");
 		List<Schema> branchSchemas = new ArrayList<Schema>();
 		for (UriRecord type : branches) {
-			branchSchemas.add(convertTypeToSchema(type));
+			branchSchemas.add(convertTypeToSchema(null, type));
 		}
 		return Schema.createUnion(branchSchemas);
 	}
@@ -625,7 +730,7 @@ public class AvroDBMaker extends Activity {
 	private Schema convertMapToSchema(final UriRecord typeRecord)
 			throws InvalidSchemaException {
 		LOG.debug("Converting map: {}", typeRecord);
-		Schema valueType = convertTypeToSchema(
+		Schema valueType = convertTypeToSchema(null,
 				(UriRecord) typeRecord.get("values"));
 		return Schema.createMap(valueType);
 	}
@@ -639,7 +744,7 @@ public class AvroDBMaker extends Activity {
 	private Schema convertArrayToSchema(final UriRecord typeRecord)
 			throws InvalidSchemaException {
 		LOG.debug("Converting array: {}", typeRecord);
-		Schema elementType = convertTypeToSchema(
+		Schema elementType = convertTypeToSchema(null,
 				(UriRecord) typeRecord.get("elements"));
 		return Schema.createArray(elementType);
 	}
