@@ -46,6 +46,13 @@ public abstract class AvroTypedViewBuilder {
 	 */
 	private final AvroViewType[] mTypes;
 
+	/**
+	 * Return a string version of this builder.
+	 */
+	public String toString() {
+		return "Builder for: " + mTypes[0];
+	}
+
 	// =-=-=-=- Constructors used by subclasses -=-=-=-=
 
 	/**
