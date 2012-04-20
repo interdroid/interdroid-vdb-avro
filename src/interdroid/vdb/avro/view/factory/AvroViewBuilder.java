@@ -91,7 +91,7 @@ public final class AvroViewBuilder {
 		// Find the builder for this type
 		LOG.debug("Getting builder for: {}", field);
 		AvroTypedViewBuilder builder = sBuilders.get(new AvroViewType(field));
-
+		LOG.debug("Builder is: {}", builder);
 
 		if (builder != null) {
 			LOG.debug("Binding with: {} {}", builder, field.name());
@@ -219,8 +219,9 @@ public final class AvroViewBuilder {
 	 */
 	public static List<String> getProjectionFields(final Field field) {
 		// Find the builder for this type
-		LOG.debug("Getting builder for projection: {}", field);
-		AvroTypedViewBuilder builder = sBuilders.get(new AvroViewType(field));
+		AvroViewType type = new AvroViewType(field);
+		LOG.debug("Getting builder for projection: {}", type);
+		AvroTypedViewBuilder builder = sBuilders.get(type);
 		if (builder != null) {
 			return builder.getProjectionFields(field);
 		} else {

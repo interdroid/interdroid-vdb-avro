@@ -5,6 +5,8 @@ import interdroid.vdb.avro.AvroSchemaProperties;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Represents the type of a given view.
@@ -12,6 +14,11 @@ import org.apache.avro.Schema.Type;
  *
  */
 class AvroViewType {
+	/**
+	 * Access to LOG.
+	 */
+	private static final Logger LOG =
+			LoggerFactory.getLogger(AvroViewType.class);
 
 	/**
 	 * A prime we use in hashing.
@@ -33,8 +40,10 @@ class AvroViewType {
 	 * @param field the field to represent
 	 */
 	public AvroViewType(final Field field) {
+		LOG.debug("View Type: {} {}", field.schema().getType(),
+				field.schema().getProp(AvroSchemaProperties.UI_WIDGET));
 		mType = field.schema().getType();
-		mWidget = field.getProp(AvroSchemaProperties.UI_WIDGET);
+		mWidget = field.schema().getProp(AvroSchemaProperties.UI_WIDGET);
 	}
 
 	/**
@@ -97,6 +106,7 @@ class AvroViewType {
 					return true;
 				}
 		} catch (Exception e) {
+			LOG.warn("Exception while checking equality", e);
 			return false;
 		}
 		return false;
@@ -117,6 +127,6 @@ class AvroViewType {
 
 	@Override
 	public final String toString() {
-		return "Type: " + mType + " : " + mWidget;
+		return "Type: " + mType + " Widget: " + mWidget;
 	}
 }
