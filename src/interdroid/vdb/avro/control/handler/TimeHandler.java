@@ -45,6 +45,7 @@ public class TimeHandler implements OnTimeChangedListener {
 					date.getHours(), date.getMinutes(), 0);
 		} catch (ParseException e) {
 			LOG.error("Error parsing time! Defaulting to now.", e);
+			mValueHandler.setValue(DataFormatUtil.formatTimeForStorage(value));
 		}
 		LOG.debug("Initializing time to: {} {}",
 				value.get(Calendar.HOUR_OF_DAY), value.get(Calendar.MINUTE));

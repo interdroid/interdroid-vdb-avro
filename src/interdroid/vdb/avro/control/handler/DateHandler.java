@@ -45,6 +45,7 @@ public class DateHandler implements OnDateChangedListener {
 			value.setTime(date);
 		} catch (ParseException e) {
 			LOG.error("Error parsing date! Defaulting to now.", e);
+			mValueHandler.setValue(DataFormatUtil.formatDateForStorage(value));
 		}
 		LOG.debug("Initializing to: {} {} " + value.get(Calendar.YEAR),
 				value.get(Calendar.MONTH), value.get(Calendar.DATE));
