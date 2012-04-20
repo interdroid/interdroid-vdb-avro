@@ -1,5 +1,6 @@
 package interdroid.vdb.avro.view;
 
+import interdroid.vdb.avro.AvroSchemaProperties;
 import interdroid.vdb.avro.R;
 import interdroid.vdb.avro.view.factory.AvroViewFactory;
 
@@ -81,7 +82,7 @@ public class AvroListAdapter extends CursorAdapter {
 
 		boolean foundOne = false;
 		for (Field field : schema.getFields()) {
-			if (propertyIsSet(field, "ui.title")) {
+			if (propertyIsSet(field, AvroSchemaProperties.UI_TITLE)) {
 				title.add(field);
 				foundOne = true;
 			}

@@ -21,6 +21,11 @@ public final class AvroSchemaProperties {
 	public static final String	UI_WIDGET	= "ui.widget";
 
 	/**
+	 * A field which is the title field.
+	 */
+	public static final String UI_TITLE = "ui.title";
+
+	/**
 	 * A custom resource to inflate as the widget.
 	 */
 	public static final String	UI_RESOURCE	= "ui.resource";
