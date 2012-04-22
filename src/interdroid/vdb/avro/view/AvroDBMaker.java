@@ -92,6 +92,7 @@ public class AvroDBMaker extends Activity {
 		@Override
 		protected Uri doInBackground(final Void... params) {
 			Schema schema = getSchema();
+			LOG.debug("Got schema: {}", schema);
 			// Now we need to create the database
 			Uri uri = null;
 			try {
@@ -788,6 +789,9 @@ public class AvroDBMaker extends Activity {
 			return uri;
 		} else {
 			LOG.error("Unable to init. Schema is null.");
+			ToastOnUI.show(this, "Schema is null.", Toast.LENGTH_LONG);
+			setResult(Activity.RESULT_CANCELED);
+			finish();
 		}
 		return null;
 	}
