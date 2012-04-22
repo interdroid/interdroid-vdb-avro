@@ -152,21 +152,29 @@ public final class DataFormatUtil {
 	 * @return a preview bitmap.
 	 */
 	public static Bitmap getBitmap(final byte[] data, final int maxSize) {
-		Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-		if (maxSize > 0) {
-			// 200 x 100 -> 100 / 50
-			// 100 x 200 -> 50 / 100
-			int width, height;
-			float aspect = (float) bitmap.getHeight()
-					/ (float) bitmap.getWidth();
-			if (bitmap.getHeight() > bitmap.getWidth()) {
-				height = maxSize;
-				width = (int) (bitmap.getWidth() / aspect);
-			} else {
-				width = maxSize;
-				height = (int) (bitmap.getHeight() * aspect);
+		// NULL pointer here.
+		Bitmap bitmap = null;
+		if (data != null) {
+			bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+			if (maxSize > 0) {
+				// 200 x 100 -> 100 / 50
+				// 100 x 200 -> 50 / 100
+				int width, height;
+				LOG.debug("Original: {} {}", bitmap.getWidth(), bitmap.getHeight());
+				float aspect = (float) bitmap.getHeight()
+						/ (float) bitmap.getWidth();
+				LOG.debug("Aspect: {}", aspect);
+
+				if (bitmap.getHeight() > bitmap.getWidth()) {
+					height = maxSize;
+					width = (int) (height * aspect);
+				} else {
+					width = maxSize;
+					height = (int) (width * aspect);
+				}
+				LOG.debug("Scaled: {} {}", width, height);
+				bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
 			}
-			bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
 		}
 		return bitmap;
 	}
