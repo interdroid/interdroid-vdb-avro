@@ -37,6 +37,8 @@ public class UseCamera extends Activity {
 
 	@Override
 	protected final void onStart() {
+		ToastOnUI.show(this, "Tap to take a photo!", Toast.LENGTH_LONG);
+
 		mPreview = new CameraSurface(this);
 		mPreview.setOnClickListener(new OnClickListener() {
 
