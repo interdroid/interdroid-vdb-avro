@@ -206,17 +206,24 @@ public class CameraSurface extends SurfaceView implements Callback {
 			final boolean autofocus) {
 
 		LOG.debug("CameraPreview: take picture");
+		bitmapCallback.onPrePictureTaken();
+
 		// TODO Auto-generated method stub
 		if (autofocus) {
-			mCamera.autoFocus(new AutoFocusCallback() {
+			try {
+				mCamera.autoFocus(new AutoFocusCallback() {
 
-				@Override
-				public void onAutoFocus(final boolean success,
-						final Camera camera) {
-					doTakePicture(bitmapCallback);
-				}
+					@Override
+					public void onAutoFocus(final boolean success,
+							final Camera camera) {
+						doTakePicture(bitmapCallback);
+					}
 
-			});
+				});
+			} catch (Exception e) {
+				LOG.warn("Auto focus failed. Taking without.", e);
+				doTakePicture(bitmapCallback);
+			}
 		} else {
 			doTakePicture(bitmapCallback);
 		}
@@ -224,20 +231,15 @@ public class CameraSurface extends SurfaceView implements Callback {
 
 	/**
 	 * Handles the taking of a picture.
-	 * @param bitmapCallback the listner to send a bitmap to
+	 * @param bitmapCallback the listener to send a bitmap to
 	 */
 	private void doTakePicture(final PictureTakenCallback bitmapCallback) {
-		LOG.debug("CameraPreview: picture taken");
-
 		mCamera.takePicture(null, null, new PictureCallback() {
 
 			@Override
 			public void onPictureTaken(final byte[] data, final Camera camera) {
+				LOG.debug("CameraPreview: picture taken");
 				mCamera.stopPreview();
-				LOG.debug("CameraPreview: preview stopped");
-
-				bitmapCallback.onPrePictureTaken();
-				bitmapCallback.onPictureTaken(data);
 
 				try {
 					mCamera.setPreviewDisplay(mHolder);
@@ -245,6 +247,7 @@ public class CameraSurface extends SurfaceView implements Callback {
 					LOG.error("Error resetting display!", e);
 				}
 				mCamera.startPreview();
+				bitmapCallback.onPictureTaken(data);
 				LOG.debug("CameraPreview: preview restarted");
 			}
 		});

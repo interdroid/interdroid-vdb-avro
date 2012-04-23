@@ -55,6 +55,7 @@
 	<string name="label_take_photo">Take A Photo</string>
 	<string name="label_take_video">Take A Video</string>
 	<string name="label_pick_location">Choose A Location</string>
+	<string name="label_empty_array">Press the plus to add to this array.</string>
 
 	<string name="none">- none -</string>
 	<string name="create_copy">Create copy</string>

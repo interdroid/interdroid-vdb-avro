@@ -68,12 +68,15 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.CursorAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 /**
@@ -245,15 +248,22 @@ public class AvroBaseList extends ListActivity {
 		@Override
 		protected Void doInBackground(final Object... params) {
 
-			AvroBaseList.this.runOnUiThread(new Runnable() { @Override
-			public void run() {
-				final CursorAdapter adapter =
-						new AvroListAdapter(AvroBaseList.this,
-								mSchema, getIntent().getData());
-				setListAdapter(adapter);
-			}
-			}
-					);
+			AvroBaseList.this.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					final CursorAdapter adapter =
+							new AvroListAdapter(AvroBaseList.this,
+									mSchema, getIntent().getData());
+					setListAdapter(adapter);
+					TextView empty = new TextView(AvroBaseList.this);
+					empty.setText("Press Menu -> Insert to add to the list.");
+					empty.setGravity(Gravity.CENTER);
+					empty.setId(android.R.id.empty);
+					getListView().setEmptyView(empty);
+					((ViewGroup) getListView().getParent()).addView(empty);
+
+				}
+			});
 			return null;
 		}
 
