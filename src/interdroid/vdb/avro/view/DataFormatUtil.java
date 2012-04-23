@@ -30,6 +30,7 @@
  */
 package interdroid.vdb.avro.view;
 
+import java.io.ByteArrayOutputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -41,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 
 /**
@@ -186,26 +188,35 @@ public final class DataFormatUtil {
 		Bitmap bitmap = null;
 		if (data != null) {
 			bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-			if (maxSize > 0) {
-				// 200 x 100 -> 100 / 50
-				// 100 x 200 -> 50 / 100
-				int width, height;
-				LOG.debug("Original: {} {}", bitmap.getWidth(), bitmap.getHeight());
-				float aspect = (float) bitmap.getHeight()
-						/ (float) bitmap.getWidth();
-				LOG.debug("Aspect: {}", aspect);
+			if (bitmap != null) {
+				if (maxSize > 0) {
+					// 200 x 100 -> 100 / 50
+					// 100 x 200 -> 50 / 100
+					int width, height;
+					LOG.debug("Original: {} {}", bitmap.getWidth(), bitmap.getHeight());
+					float aspect = (float) bitmap.getHeight()
+							/ (float) bitmap.getWidth();
+					LOG.debug("Aspect: {}", aspect);
 
-				if (bitmap.getHeight() > bitmap.getWidth()) {
-					height = maxSize;
-					width = (int) (height * aspect);
-				} else {
-					width = maxSize;
-					height = (int) (width * aspect);
+					if (bitmap.getHeight() > bitmap.getWidth()) {
+						height = maxSize;
+						width = (int) (height * aspect);
+					} else {
+						width = maxSize;
+						height = (int) (width * aspect);
+					}
+					LOG.debug("Scaled: {} {}", width, height);
+					bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
 				}
-				LOG.debug("Scaled: {} {}", width, height);
-				bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
 			}
 		}
 		return bitmap;
+	}
+
+	public static byte[] fromatBitmapForStorage(byte[] data) {
+		Bitmap bitmap = getBitmap(data, 500);
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		bitmap.compress(CompressFormat.JPEG, 9, out);
+		return out.toByteArray();
 	}
 }
