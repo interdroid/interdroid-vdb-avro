@@ -123,12 +123,17 @@ public class AvroDBMaker extends Activity {
 		protected Uri doInBackground(final Void... params) {
 			Schema schema = getSchema();
 			LOG.debug("Got schema: {}", schema);
-			// Now we need to create the database
 			Uri uri = null;
-			try {
-				uri = createDb(schema);
-			} catch (IOException e) {
-				LOG.error("Error registering schema!", e);
+
+			if (schema != null) {
+				// Now we need to create the database
+				try {
+					uri = createDb(schema);
+				} catch (IOException e) {
+					LOG.error("Error registering schema!", e);
+				}
+			} else {
+				LOG.warn("Schema is null.");
 			}
 			return uri;
 		}
@@ -137,7 +142,13 @@ public class AvroDBMaker extends Activity {
 	@Override
 	protected final void onStart() {
 		super.onStart();
-		processSchema();
+		try {
+			processSchema();
+		} catch (Exception e) {
+			ToastOnUI.show(this, "Schema is invalid.", Toast.LENGTH_LONG);
+			setResult(Activity.RESULT_CANCELED);
+			finish();
+		}
 	}
 
 	/**
@@ -350,7 +361,12 @@ public class AvroDBMaker extends Activity {
 		typeInfo.doc = (String) record.get("doc");
 		typeInfo.namespace = sanitizeNamespace(
 				(String) record.get("namespace"), namespaceRequired);
-		typeInfo.label = (String) record.get("label");
+		if (record.get("label") != null) {
+			typeInfo.label = ((String) record.get("label")).replace("\"", "\"\\\"");
+		} else {
+			typeInfo.label = ((String) record.get("name"))
+					.replace("\"", "\"\\\"");
+		}
 		return typeInfo;
 	}
 
@@ -372,7 +388,7 @@ public class AvroDBMaker extends Activity {
 			}
 		} else {
 			clean = clean.replace(' ', '.');
-			clean = clean.replaceAll("/[^A-Za-z0-9_\\.]/", "");
+			clean = clean.replaceAll("[^A-Za-z0-9_\\.]", "");
 		}
 		return clean;
 	}
@@ -380,7 +396,7 @@ public class AvroDBMaker extends Activity {
 	/**
 	 * @param string the name to clean
 	 * @return a clean version of the name
-	 * @throws InvalidSchemaException if thenameis invalid
+	 * @throws InvalidSchemaException if the name is invalid
 	 */
 	private String sanitizeName(final String string)
 			throws InvalidSchemaException {
@@ -390,8 +406,7 @@ public class AvroDBMaker extends Activity {
 					Toast.LENGTH_LONG);
 			throw new InvalidSchemaException();
 		}
-		clean = clean.replace(' ', '_');
-		clean = clean.replaceAll("/[^A-Za-z0-9_]/", "");
+		clean = clean.replaceAll("[^A-Za-z0-9_]", "_");
 		return clean;
 	}
 

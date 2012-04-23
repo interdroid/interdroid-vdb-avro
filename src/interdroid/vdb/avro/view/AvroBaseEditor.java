@@ -219,7 +219,7 @@ public class AvroBaseEditor extends Activity {
 		protected Void doInBackground(final Object... params) {
 			try {
 				mController.loadData();
-			} catch (NotBoundException e) {
+			} catch (Exception e) {
 				LOG.error("Error loading the data.", e);
 			}
 			return null;
