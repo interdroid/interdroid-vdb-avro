@@ -30,6 +30,7 @@
  */
 package interdroid.vdb.avro.model;
 
+import interdroid.util.DbUtil;
 import interdroid.vdb.content.EntityUriMatcher;
 import interdroid.vdb.content.EntityUriMatcher.UriMatch;
 
@@ -195,14 +196,14 @@ public class UriUnion {
 					throws NotBoundException {
 		final String name = NameHelper.getTypeName(fieldName);
 		LOG.debug("Looking for column: {}", name);
-		final int index = cursor.getColumnIndex(name);
+		final int index =  DbUtil.getFieldIndex(cursor, name);
 		LOG.debug("Got column: {}", index);
 		if (index >= 0) {
 			final String typeName = cursor.getString(index);
 
 			if (typeName != null) {
 				mType = Type.valueOf(typeName);
-				mName = cursor.getString(cursor.getColumnIndex(
+				mName = cursor.getString( DbUtil.getFieldIndex(cursor,
 						NameHelper.getTypeNameName(fieldName)));
 				mValue = UriDataManager.loadDataFromUri(resolver, rootUri,
 						cursor, fieldName, getTypeSchema());

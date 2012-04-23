@@ -34,6 +34,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import interdroid.util.DbUtil;
 import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
@@ -83,7 +84,7 @@ public class AvroTimestampBuilder extends AvroTypedTextViewBuilder {
 	final void bindListView(final View view, final Cursor cursor,
 			final Field field) {
 		TextView text = (TextView) view.findViewWithTag(field.name());
-		int index = cursor.getColumnIndex(field.name());
+		int index = DbUtil.getFieldIndex(cursor, field.name());
 		text.setText(
 				DataFormatUtil.formatTimestampForDisplay(
 						cursor.getLong(index)));

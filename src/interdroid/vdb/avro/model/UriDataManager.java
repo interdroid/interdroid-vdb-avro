@@ -30,6 +30,7 @@
  */
 package interdroid.vdb.avro.model;
 
+import interdroid.util.DbUtil;
 import interdroid.vdb.content.EntityUriMatcher;
 
 import interdroid.vdb.content.EntityUriMatcher.UriMatch;
@@ -97,30 +98,38 @@ public final class UriDataManager {
 					fieldSchema).load(resolver, fieldName);
 			break;
 		case BOOLEAN:
-			value = (cursor.getInt(cursor.getColumnIndex(fieldName)) == 1);
+			value = (cursor.getInt(
+					DbUtil.getFieldIndex(cursor, fieldName)) == 1);
 			break;
 		case BYTES:
 			// TODO: Should these be handled using streams?
-			value = cursor.getBlob(cursor.getColumnIndex(fieldName));
+			value = cursor.getBlob(
+					DbUtil.getFieldIndex(cursor, fieldName));
 			break;
 		case DOUBLE:
-			value = cursor.getDouble(cursor.getColumnIndex(fieldName));
+			value = cursor.getDouble(
+					DbUtil.getFieldIndex(cursor, fieldName));
 			break;
 		case ENUM:
-			value = cursor.getInt(cursor.getColumnIndex(fieldName));
+			value = cursor.getInt(
+					DbUtil.getFieldIndex(cursor, fieldName));
 			break;
 		case FIXED:
 			// TODO: Should these be handled using streams?
-			value = cursor.getBlob(cursor.getColumnIndex(fieldName));
+			value = cursor.getBlob(
+					DbUtil.getFieldIndex(cursor, fieldName));
 			break;
 		case FLOAT:
-			value = cursor.getFloat(cursor.getColumnIndex(fieldName));
+			value = cursor.getFloat(
+					DbUtil.getFieldIndex(cursor, fieldName));
 			break;
 		case INT:
-			value = cursor.getInt(cursor.getColumnIndex(fieldName));
+			value = cursor.getInt(
+					DbUtil.getFieldIndex(cursor, fieldName));
 			break;
 		case LONG:
-			value = cursor.getLong(cursor.getColumnIndex(fieldName));
+			value = cursor.getLong(
+					DbUtil.getFieldIndex(cursor, fieldName));
 			break;
 		case MAP:
 			value = new UriMap(Uri.withAppendedPath(rootUri, fieldName),
@@ -130,7 +139,8 @@ public final class UriDataManager {
 			value = null;
 			break;
 		case RECORD:
-			int recordId = cursor.getInt(cursor.getColumnIndex(fieldName));
+			int recordId = cursor.getInt(
+					DbUtil.getFieldIndex(cursor, fieldName));
 			if (recordId > 0) {
 				Uri recordUri = getRecordUri(rootUri, fieldSchema);
 				value = new UriRecord(Uri.withAppendedPath(recordUri,
@@ -142,7 +152,7 @@ public final class UriDataManager {
 		case STRING:
 			LOG.debug("Loading {} : columns: {}", fieldName,
 					cursor.getColumnNames());
-			value = cursor.getString(cursor.getColumnIndex(fieldName));
+			value = cursor.getString(DbUtil.getFieldIndex(cursor, fieldName));
 			LOG.debug("Loaded value: " + value);
 			break;
 		case UNION:

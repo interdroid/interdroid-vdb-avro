@@ -30,6 +30,7 @@
  */
 package interdroid.vdb.avro.view.factory;
 
+import interdroid.util.DbUtil;
 import interdroid.vdb.avro.control.handler.TimeHandler;
 import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
@@ -133,7 +134,7 @@ class AvroTimeBuilder extends AvroTypedTextViewBuilder {
 	final void bindListView(final View view, final Cursor cursor,
 			final Field field) {
 		TextView text = (TextView) view.findViewWithTag(field.name());
-		int index = cursor.getColumnIndex(field.name());
+		int index =  DbUtil.getFieldIndex(cursor, field.name());
 		text.setText(
 				DataFormatUtil.formatTimeForDisplay(cursor.getLong(index)));
 	}

@@ -30,6 +30,7 @@
  */
 package interdroid.vdb.avro.view.factory;
 
+import interdroid.util.DbUtil;
 import interdroid.util.view.ViewUtil;
 import interdroid.vdb.avro.control.handler.EnumHandler;
 import interdroid.vdb.avro.control.handler.value.ValueHandler;
@@ -96,7 +97,7 @@ class AvroEnumBuilder extends AvroTypedViewBuilder {
 	final void bindListView(final View view, final Cursor cursor,
 			final Field field) {
 		TextView text = (TextView) view.findViewWithTag(field.name());
-		int index = cursor.getColumnIndex(field.name());
+		int index = DbUtil.getFieldIndex(cursor, field.name());
 		int value = cursor.getInt(index);
 		String symbol =  field.schema().getEnumSymbols().get(value);
 		text.setText(symbol);

@@ -30,6 +30,7 @@
  */
 package interdroid.vdb.avro.view.factory;
 
+import interdroid.util.DbUtil;
 import interdroid.util.view.LayoutUtil.LayoutParameters;
 import interdroid.util.view.ViewUtil;
 import interdroid.vdb.avro.control.handler.CheckboxHandler;
@@ -100,7 +101,7 @@ class AvroBooleanBuilder extends AvroTypedViewBuilder {
 	final void bindListView(final View view, final Cursor cursor,
 			final Field field) {
 		CheckBox box = (CheckBox) view.findViewWithTag(field.name());
-		int index = cursor.getColumnIndex(field.name());
+		int index = DbUtil.getFieldIndex(cursor, field.name());
 		boolean value = Boolean.valueOf(cursor.getString(index));
 		box.setChecked(value);
 	}

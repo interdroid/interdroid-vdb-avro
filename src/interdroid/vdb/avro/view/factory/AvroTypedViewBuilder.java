@@ -51,6 +51,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.view.Gravity;
 import android.view.View;
+import android.view.View.OnFocusChangeListener;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -131,13 +132,25 @@ public abstract class AvroTypedViewBuilder {
 			final ViewGroup viewGroup, final Schema schema,
 			final int inputType) {
 		LOG.debug("Building edit text for: " + schema);
-		EditText text = null;
-
-		text = new EditText(activity);
+		final EditText text = new EditText(activity);
 		LayoutParameters.setViewGroupLayoutParams(
 				LayoutParameters.W_FILL_H_WRAP, text);
 		text.setGravity(Gravity.FILL_HORIZONTAL);
 		text.setInputType(inputType);
+		// Select all when the text is untitled.
+		text.setOnFocusChangeListener(new OnFocusChangeListener() {
+
+			@Override
+			public void onFocusChange(View v, boolean hasFocus) {
+				if (hasFocus) {
+					if (activity.getString(android.R.string.untitled)
+							.equals(text.getText().toString())) {
+						text.setSelection(0, text.getText().length());
+					}
+				}
+			}
+
+		});
 
 		ViewUtil.addView(activity, viewGroup, text);
 		return text;

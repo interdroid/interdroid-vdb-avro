@@ -174,20 +174,31 @@ public final class AvroViewFactory {
 			final Schema schema, final Field field,
 			final Uri uri, final ValueHandler valueHandler)
 					throws NotBoundException {
+		LOG.debug("Building view: {} for field: {}", schema, field);
 
-		View view = AvroViewBuilder.getEditView(activity, dataModel,
+		final View view = AvroViewBuilder.getEditView(activity, dataModel,
 				viewGroup, schema, field, uri, valueHandler);
 
 		if (field != null) {
-			if (field.schema().getProp(
+			if (field.getProp(
 					AvroSchemaProperties.UI_VISIBLE) != null) {
-				LOG.debug("Hiding view.");
-				view.setVisibility(View.GONE);
+				LOG.debug("Hiding view: {}", field.name());
+				activity.runOnUiThread(
+						new Runnable() {
+							public void run() {
+								view.setVisibility(View.GONE);
+							}
+						});
 			}
-			if (field.schema().getProp(
+			if (field.getProp(
 					AvroSchemaProperties.UI_ENABLED) != null) {
 				LOG.debug("Disabling view.");
-				view.setEnabled(false);
+				activity.runOnUiThread(
+						new Runnable() {
+							public void run() {
+								view.setEnabled(false);
+							}
+						});
 			}
 		}
 

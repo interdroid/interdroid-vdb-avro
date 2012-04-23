@@ -33,6 +33,7 @@ package interdroid.vdb.avro.view.factory;
 import interdroid.util.view.DraggableListView;
 import interdroid.util.view.LayoutUtil.LayoutParameters;
 import interdroid.util.view.ViewUtil;
+import interdroid.vdb.avro.R;
 import interdroid.vdb.avro.control.handler.ArrayHandler;
 import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
@@ -49,8 +50,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 /**
  * A builder which knows how to build array views.
@@ -79,6 +82,7 @@ class AvroArrayBuilder extends AvroTypedViewBuilder {
 			final ValueHandler valueHandler) throws NotBoundException {
 
 		DraggableListView layout = new DraggableListView(activity);
+
 		LayoutParameters.setViewGroupLayoutParams(
 				LayoutParameters.W_FILL_H_WRAP, layout);
 		layout.setPadding(LEFT_INDENT, 0, 0, 0);
@@ -87,6 +91,10 @@ class AvroArrayBuilder extends AvroTypedViewBuilder {
 				getArray(uri, valueHandler, schema), field);
 		layout.setAdapter(adapter);
 		layout.setAddListener(adapter);
+
+		TextView empty = (TextView) layout.findViewById(R.id.empty_text);
+		empty.setGravity(Gravity.CENTER);
+		empty.setText("Press the plus button to add to the list.");
 
 		ViewUtil.addView(activity, viewGroup, layout);
 

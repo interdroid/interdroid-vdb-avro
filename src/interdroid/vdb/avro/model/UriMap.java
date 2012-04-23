@@ -30,6 +30,7 @@
  */
 package interdroid.vdb.avro.model;
 
+import interdroid.util.DbUtil;
 import interdroid.vdb.avro.model.UriBoundAdapter.UriBoundAdapterImpl;
 import interdroid.vdb.content.EntityUriMatcher;
 import interdroid.vdb.content.EntityUriMatcher.UriMatch;
@@ -183,11 +184,10 @@ implements UriBound<UriMap<V>> {
 					null, null, null, null);
 			try {
 				if (cursor != null) {
-					final int keyIndex = cursor
-							.getColumnIndex(
-									NameHelper.getMapKeyName(fieldName));
-					final int valueIndex = cursor
-							.getColumnIndex(fieldName);
+					final int keyIndex = DbUtil.getFieldIndex(cursor,
+							NameHelper.getMapKeyName(fieldName));
+					final int valueIndex = DbUtil.getFieldIndex(cursor,
+							fieldName);
 					while (cursor.moveToNext()) {
 						Uri dataUri = Uri.withAppendedPath(getInstanceUri(),
 								cursor.getString(keyIndex));

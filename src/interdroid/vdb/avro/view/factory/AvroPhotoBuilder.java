@@ -30,6 +30,7 @@
  */
 package interdroid.vdb.avro.view.factory;
 
+import interdroid.util.DbUtil;
 import interdroid.util.view.LayoutUtil.LayoutParameters;
 import interdroid.util.view.ViewUtil;
 import interdroid.vdb.avro.R;
@@ -44,6 +45,8 @@ import java.util.List;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import android.app.Activity;
 import android.content.Context;
@@ -63,6 +66,11 @@ import android.widget.LinearLayout;
  *
  */
 class AvroPhotoBuilder extends AvroTypedViewBuilder {
+	/**
+	 * Access to Logger.
+	 */
+	public static final Logger LOG =
+			LoggerFactory.getLogger(AvroPhotoBuilder.class);
 
 	/**
 	 * Construct a builder for photos.
@@ -110,8 +118,10 @@ class AvroPhotoBuilder extends AvroTypedViewBuilder {
 	@Override
 	final void bindListView(final View view, final Cursor cursor,
 			final Field field) {
+		LOG.debug("Binding view: {}", field.name());
 		ImageView image = (ImageView) view.findViewWithTag(field.name());
-		int index = cursor.getColumnIndex(field.name());
+		LOG.debug("Columns are: {} {}", cursor.getColumnNames(), cursor.getColumnCount());
+		int index = DbUtil.getFieldIndex(cursor, field.name());
 		Bitmap bitmap = DataFormatUtil.getBitmap(cursor.getBlob(index),
 				AvroViewFactory.MAX_LIST_IMAGE_SIZE);
 		image.setImageBitmap(bitmap);
