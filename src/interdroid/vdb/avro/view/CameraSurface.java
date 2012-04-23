@@ -1,3 +1,33 @@
+/*
+ * Copyright (c) 2008-2012 Vrije Universiteit, The Netherlands All rights
+ * reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ *
+ * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * Neither the name of the Vrije Universiteit nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 package interdroid.vdb.avro.view;
 
 import java.io.File;
@@ -60,21 +90,22 @@ public class CameraSurface extends SurfaceView implements Callback {
 		// The Surface has been created, acquire the camera and tell it where
 		// to draw.
 		mCamera = Camera.open();
-		Camera.Parameters params = mCamera.getParameters();
-		List<Camera.Size> supportedSizes = params.getSupportedPictureSizes();
-
-		if (supportedSizes != null && supportedSizes.size() > 0) {
-			Camera.Size chosenSize = supportedSizes.get(0);
-			for (Camera.Size supportedSize : supportedSizes) {
-				if (supportedSize.width > supportedSize.height
-						&& supportedSize.width < chosenSize.width
-						&& supportedSize.width >= MINIMUM_SIZE) {
-					chosenSize = supportedSize;
-				}
-			}
-			params.setPictureSize(chosenSize.width, chosenSize.height);
-			mCamera.setParameters(params);
-		}
+// TODO: What to do on 1.5?
+//		Camera.Parameters params = mCamera.getParameters();
+//		List<Camera.Size> supportedSizes = params.getSupportedPictureSizes();
+//
+//		if (supportedSizes != null && supportedSizes.size() > 0) {
+//			Camera.Size chosenSize = supportedSizes.get(0);
+//			for (Camera.Size supportedSize : supportedSizes) {
+//				if (supportedSize.width > supportedSize.height
+//						&& supportedSize.width < chosenSize.width
+//						&& supportedSize.width >= MINIMUM_SIZE) {
+//					chosenSize = supportedSize;
+//				}
+//			}
+//			params.setPictureSize(chosenSize.width, chosenSize.height);
+//			mCamera.setParameters(params);
+//		}
 
 		try {
 			mCamera.setPreviewDisplay(holder);
@@ -148,13 +179,15 @@ public class CameraSurface extends SurfaceView implements Callback {
 		LOG.debug("CameraPreview: surface changed");
 		// Now that the size is known, set up the camera parameters and begin
 		// the preview.
-		Camera.Parameters parameters = mCamera.getParameters();
+// TODO: What to do on 1.5?
+//		Camera.Parameters parameters = mCamera.getParameters();
+//
+//		List<Size> sizes = parameters.getSupportedPreviewSizes();
+//		Size optimalSize = getOptimalPreviewSize(sizes, w, h);
+//		parameters.setPreviewSize(optimalSize.width, optimalSize.height);
+//
+//		mCamera.setParameters(parameters);
 
-		List<Size> sizes = parameters.getSupportedPreviewSizes();
-		Size optimalSize = getOptimalPreviewSize(sizes, w, h);
-		parameters.setPreviewSize(optimalSize.width, optimalSize.height);
-
-		mCamera.setParameters(parameters);
 		mCamera.startPreview();
 	}
 
