@@ -146,7 +146,6 @@ public class AvroDBMaker extends Activity {
 		try {
 			processSchema();
 		} catch (Exception e) {
-			ToastOnUI.show(this, "Schema is invalid.", Toast.LENGTH_LONG);
 			setResult(Activity.RESULT_CANCELED);
 			finish();
 		}
@@ -169,11 +168,7 @@ public class AvroDBMaker extends Activity {
 				throw new InvalidSchemaException();
 			}
 		} catch (Throwable e) {
-			LOG.error("Unknown error.", e);
-			ToastOnUI.show(this, R.string.error_unknown_loading_and_creating,
-					Toast.LENGTH_LONG);
 			LOG.error("Schema was invalid. Launching Edit.");
-			ToastOnUI.show(this, e.getMessage(), Toast.LENGTH_LONG);
 			startActivityForResult(getEditIntent(), 0);
 		}
 	}
