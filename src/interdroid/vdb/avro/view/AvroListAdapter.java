@@ -231,6 +231,8 @@ public class AvroListAdapter extends CursorAdapter {
 	 * @return true if the field is a basic type
 	 */
 	private static boolean isBasicType(final Schema schema) {
+		// TODO: This should come from the factory...
+		LOG.debug("Is basic type: {} {}", schema.getType(), schema.getProp("ui.widget"));
 		switch (schema.getType()) {
 		case BOOLEAN:
 		case DOUBLE:
@@ -243,6 +245,7 @@ public class AvroListAdapter extends CursorAdapter {
 		case BYTES:
 			if (schema.getProp("ui.widget") != null
 					&& (schema.getProp("ui.widget").equals("photo")
+					|| schema.getProp("ui.widget").equals("location")
 					|| schema.getProp("ui.widget").equals("video"))) {
 				return true;
 			}
