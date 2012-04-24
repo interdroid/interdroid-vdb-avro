@@ -88,6 +88,9 @@ public class EditTextHandler implements TextWatcher {
 			case LONG:
 				mValueHandler.setValue(Long.valueOf(text.toString()));
 				break;
+			case DOUBLE:
+				mValueHandler.setValue(Double.valueOf(text.toString()));
+				break;
 			case NULL:
 				mValueHandler.setValue(null);
 				break;

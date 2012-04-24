@@ -64,7 +64,7 @@ class AvroNullBuilder extends AvroTypedViewBuilder {
 	}
 
 	@Override
-	public final View buildEditView(final Activity activity,
+	public final View buildEditViewImpl(final Activity activity,
 			final AvroRecordModel dataModel,
 			final ViewGroup viewGroup, final Schema schema,
 			final Field field, final Uri uri,

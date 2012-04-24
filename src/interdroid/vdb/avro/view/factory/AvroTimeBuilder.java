@@ -89,7 +89,7 @@ class AvroTimeBuilder extends AvroTypedTextViewBuilder {
 	};
 
 	@Override
-	public final View buildEditView(final Activity activity,
+	public final View buildEditViewImpl(final Activity activity,
 			final AvroRecordModel dataModel,
 			final ViewGroup viewGroup, final Schema schema,
 			final Field field, final Uri uri,
@@ -104,9 +104,6 @@ class AvroTimeBuilder extends AvroTypedTextViewBuilder {
 			public void run() {
 				synchronized (viewHolder) {
 					viewHolder.view = new TimePicker(activity);
-
-					// Add it to the view group
-					viewGroup.addView(viewHolder.view);
 
 					// Build the timeHandler to manage the data
 					new TimeHandler(viewHolder.view, valueHandler);

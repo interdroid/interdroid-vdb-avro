@@ -4,13 +4,8 @@
 	android:layout_height="fill_parent" android:layout_width="fill_parent">
 
 	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-		android:id="@+id/MainLinearLayout" android:layout_width="fill_parent"
+		android:id="@+id/MapContainer" android:layout_width="fill_parent"
 		android:layout_height="fill_parent" android:orientation="vertical">
-		<com.google.android.maps.MapView
-			android:id="@+id/MapView" android:layout_width="fill_parent"
-			android:layout_height="fill_parent"
-			android:apiKey="09tPGkTUONeonzhGFexDLKeEtYWusb3G5t3QppA"
-			android:clickable="true" />
 	</LinearLayout>
 
 	<LinearLayout android:id="@+id/Panel"

@@ -30,6 +30,7 @@
  */
 package interdroid.vdb.avro.view;
 
+import interdroid.vdb.avro.AvroSchemaProperties;
 import interdroid.vdb.avro.R;
 
 import java.io.ByteArrayOutputStream;
@@ -49,6 +50,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.android.maps.GeoPoint;
@@ -71,6 +73,9 @@ public class LocationPicker extends MapActivity {
 	/** Power of six factor for dealing with lat and long values. */
 	private static final double	POWER_OF_SIX	= 1E6;
 
+	private static final String API_KEY =
+			"0OomkHbNcEYGHtSAw6TIIuX6q1a3iJIT0qSEZwA";
+
 	/** The alpha value for the radius circle. */
 	private static final int	RADIUS_ALPHA	= 30;
 
@@ -80,19 +85,6 @@ public class LocationPicker extends MapActivity {
 	/** The action that triggers this activity. */
 	public static final String ACTION_PICK_LOCATION =
 			Intent.ACTION_PICK + "_LOCATION";
-
-	/** The radius given in meters. */
-	public static final String RADIUSINMETERS = "RadiusInMeters";
-	/** The longitude key. */
-	public static final String RADIUS_LONGITUDE = "Longitude";
-	/** The latitude key. */
-	public static final String RADIUS_LATITUDE = "Latitude";
-	/** The radius longitude key. */
-	public static final String LONGITUDE = "RadiusLongitude";
-	/** The radius latitude key. */
-	public static final String LATITUDE = "RadiusLatitude";
-	/** The image of the map picked. */
-	public static final String MAP_IMAGE = "MapImage";
 
 	/** The map view displaying the map. */
 	private MapView mMapView;
@@ -109,31 +101,45 @@ public class LocationPicker extends MapActivity {
 	/** The radius calculated into meters. */
 	private float mRadiusInMeters;
 
+	private String mField;
+
 	@Override
 	public final void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		Intent intent = getIntent();
 
+		mField = intent.getStringExtra("field");
+
+		String latField =
+				getField(AvroSchemaProperties.LATITUDE);
+		String lonField =
+				getField(AvroSchemaProperties.LONGITUDE);
+		String radiusLatField =
+				getField(AvroSchemaProperties.RADIUS_LATITUDE);
+		String radiusLonField =
+				getField(AvroSchemaProperties.RADIUS_LONGITUDE);
+
 		if (intent.getData() == null) {
-			if (intent.hasExtra(LATITUDE) && intent.hasExtra(LONGITUDE)) {
-				int latitudeE6 = intent.getIntExtra(LATITUDE, 0);
-				int longitudeE6 = intent.getIntExtra(LONGITUDE, 0);
+
+
+			if (intent.hasExtra(latField)
+					&& intent.hasExtra(lonField)) {
+				int latitudeE6 = intent.getIntExtra(latField, 0);
+				int longitudeE6 = intent.getIntExtra(lonField, 0);
 				mCenterGeoPoint = new GeoPoint(latitudeE6, longitudeE6);
 			}
-			if (intent.hasExtra(RADIUS_LATITUDE)
-					&& intent.hasExtra(RADIUS_LONGITUDE)) {
-				int latitudeE6 = intent.getIntExtra(RADIUS_LATITUDE, 0);
-				int longitudeE6 = intent.getIntExtra(RADIUS_LONGITUDE, 0);
+			if (intent.hasExtra(radiusLatField)
+					&& intent.hasExtra(radiusLonField)) {
+				int latitudeE6 = intent.getIntExtra(radiusLatField, 0);
+				int longitudeE6 = intent.getIntExtra(radiusLonField, 0);
 				mRadiusGeoPoint = new GeoPoint(latitudeE6, longitudeE6);
 			}
 		} else {
 			Cursor c = null;
 			try {
 				c = getContentResolver().query(intent.getData(),
-						new String[]
-								{LATITUDE, LONGITUDE, RADIUS_LATITUDE,
-					RADIUS_LONGITUDE}, null, null, null);
+						getProjection(mField), null, null, null);
 				if (c != null && c.moveToFirst()) {
 					mCenterGeoPoint = new GeoPoint(c.getInt(0), c.getInt(1));
 					// CHECKSTYLE:OFF 3 is not so magic since it is just an
@@ -155,10 +161,16 @@ public class LocationPicker extends MapActivity {
 		}
 
 		setContentView(R.layout.locationpicker);
-		mMapView = (MapView) findViewById(R.id.MapView);
+		mMapView = new MapView(this, API_KEY);
+
+		LinearLayout container = (LinearLayout) findViewById(R.id.MapContainer);
+		container.addView(mMapView);
+		container.requestLayout();
+
 		mMapView.setBuiltInZoomControls(true);
-		mMapView.displayZoomControls(true);
 		mMapView.setDrawingCacheEnabled(true);
+		mMapView.setClickable(true);
+		mMapView.getController().setZoom(2);
 
 		MapController mapController = mMapView.getController();
 
@@ -174,6 +186,19 @@ public class LocationPicker extends MapActivity {
 		setupButtons();
 
 		updateStatusText();
+	}
+
+	private String getField(String extension) {
+		return mField + extension;
+	}
+
+	private String[] getProjection(String mField) {
+		return new String[]
+				{
+				getField(AvroSchemaProperties.LATITUDE),
+				getField(AvroSchemaProperties.LONGITUDE),
+				getField(AvroSchemaProperties.RADIUS_LATITUDE),
+				getField(AvroSchemaProperties.RADIUS_LONGITUDE)};
 	}
 
 	/**
@@ -195,37 +220,48 @@ public class LocationPicker extends MapActivity {
 		doneButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(final View v) {
+				String latField =
+						getField(AvroSchemaProperties.LATITUDE);
+				String lonField =
+						getField(AvroSchemaProperties.LONGITUDE);
+				String radiusLatField =
+						getField(AvroSchemaProperties.RADIUS_LATITUDE);
+				String radiusLonField =
+						getField(AvroSchemaProperties.RADIUS_LONGITUDE);
+				String radius =
+						getField(AvroSchemaProperties.RADIUS_IN_METERS);
+
 				if (getIntent().getData() == null) {
 					Intent intent = new Intent();
-					intent.putExtra(LONGITUDE,
+					intent.putExtra(latField,
 							mCenterGeoPoint.getLongitudeE6());
-					intent.putExtra(LATITUDE, mCenterGeoPoint.getLatitudeE6());
+					intent.putExtra(latField, mCenterGeoPoint.getLatitudeE6());
 					ByteArrayOutputStream bos = new ByteArrayOutputStream();
 					mMapView.getDrawingCache().compress(
 							CompressFormat.JPEG, MAP_IMAGE_QUALITY, bos);
-					intent.putExtra(MAP_IMAGE, bos.toByteArray());
+					intent.putExtra(mField, bos.toByteArray());
 					bos = null;
 					if (mRadiusMode) {
-						intent.putExtra(RADIUS_LONGITUDE,
+						intent.putExtra(radiusLatField,
 								mRadiusGeoPoint.getLongitudeE6());
-						intent.putExtra(RADIUS_LATITUDE,
+						intent.putExtra(radiusLonField,
 								mRadiusGeoPoint.getLatitudeE6());
-						intent.putExtra(RADIUSINMETERS, mRadiusInMeters);
+						intent.putExtra(radius, mRadiusInMeters);
 					}
 					setResult(RESULT_OK, intent);
 					finish();
 				} else {
 					ContentValues values = new ContentValues();
-					values.put(LONGITUDE, mCenterGeoPoint.getLongitudeE6());
-					values.put(LATITUDE, mCenterGeoPoint.getLatitudeE6());
-					values.put(RADIUS_LONGITUDE,
+					values.put(lonField, mCenterGeoPoint.getLongitudeE6());
+					values.put(latField, mCenterGeoPoint.getLatitudeE6());
+					values.put(radiusLonField,
 							mRadiusGeoPoint.getLongitudeE6());
-					values.put(RADIUS_LATITUDE,
+					values.put(radiusLatField,
 							mRadiusGeoPoint.getLatitudeE6());
 					ByteArrayOutputStream bos = new ByteArrayOutputStream();
 					mMapView.getDrawingCache().compress(
 							CompressFormat.JPEG, MAP_IMAGE_QUALITY, bos);
-					values.put(MAP_IMAGE, bos.toByteArray());
+					values.put(mField, bos.toByteArray());
 					// Let GC collect this since it is kind of big.
 					bos = null;
 					getContentResolver().update(

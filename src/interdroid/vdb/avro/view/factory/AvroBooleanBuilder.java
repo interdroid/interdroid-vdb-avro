@@ -32,7 +32,6 @@ package interdroid.vdb.avro.view.factory;
 
 import interdroid.util.DbUtil;
 import interdroid.util.view.LayoutUtil.LayoutParameters;
-import interdroid.util.view.ViewUtil;
 import interdroid.vdb.avro.control.handler.CheckboxHandler;
 import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
@@ -69,7 +68,7 @@ class AvroBooleanBuilder extends AvroTypedViewBuilder {
 	}
 
 	@Override
-	public final View buildEditView(final Activity activity,
+	public final View buildEditViewImpl(final Activity activity,
 			final AvroRecordModel dataModel,
 			final ViewGroup viewGroup, final Schema schema,
 			final Field field, final Uri uri,
@@ -83,8 +82,6 @@ class AvroBooleanBuilder extends AvroTypedViewBuilder {
 
 		// Build the handler
 		new CheckboxHandler(dataModel, valueHandler, text);
-
-		ViewUtil.addView(activity, viewGroup, text);
 
 		return text;
 	}

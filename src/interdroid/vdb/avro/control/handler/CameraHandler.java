@@ -36,8 +36,6 @@ import org.slf4j.LoggerFactory;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.view.View;
@@ -58,17 +56,10 @@ import interdroid.vdb.avro.view.UseCamera;
  * @author nick &lt;palmer@cs.vu.nl&gt;
  *
  */
-public class CameraHandler implements OnClickListener {
+public class CameraHandler extends ImageHandler implements OnClickListener {
 	/** Access to logger. */
-	private static final Logger LOG = LoggerFactory
+	static final Logger LOG = LoggerFactory
 			.getLogger(CameraHandler.class);
-
-	/** The data model we work in. */
-	private final AvroRecordModel mDataModel;
-	/** The activity we work for. */
-	private final Activity mActivity;
-	/** The value handler for the photo. */
-	private final ValueHandler mValueHandler;
 
 	/**
 	 * Construct a camera handler.
@@ -81,9 +72,7 @@ public class CameraHandler implements OnClickListener {
 	public CameraHandler(final AvroRecordModel dataModel,
 			final Activity activity, final ValueHandler valueHandler,
 			final Button cameraButton, final ImageView image) {
-		mDataModel = dataModel;
-		mValueHandler = valueHandler;
-		mActivity = activity;
+		super(dataModel, activity, valueHandler);
 		setButton(cameraButton);
 		setImageView(image);
 	}
@@ -113,46 +102,6 @@ public class CameraHandler implements OnClickListener {
 			LOG.error("Not bound!");
 			ToastOnUI.show(mActivity, R.string.error_opening_camera,
 					Toast.LENGTH_LONG);
-		}
-	}
-
-	/**
-	 * Sets the image view to display the photo in.
-	 * @param image the image view to use
-	 */
-	private void setImageView(final ImageView image) {
-		if (mValueHandler.getValue() != null) {
-			LOG.debug("Setting bitmap.");
-			try {
-				final byte[] data = (byte[]) mValueHandler.getValue();
-				if (data != null && data.length > 0) {
-					final Bitmap bitmap =
-							BitmapFactory.decodeByteArray(data, 0, data.length);
-					mActivity.runOnUiThread(new Runnable() {
-
-						@Override
-						public void run() {
-							image.setVisibility(View.VISIBLE);
-							image.setImageBitmap(bitmap);
-						}
-
-					});
-				} else {
-					mActivity.runOnUiThread(new Runnable() {
-
-						@Override
-						public void run() {
-							image.setImageBitmap(null);
-							image.setVisibility(View.INVISIBLE);
-						}
-
-					});
-
-				}
-				mDataModel.onChanged();
-			} catch (Exception e) {
-				LOG.error("Unable to set image.", e);
-			}
 		}
 	}
 

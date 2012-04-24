@@ -101,7 +101,7 @@ public final class DataFormatUtil {
 	 */
 	private static final DateFormat TIME_DISPLAY_FORMAT;
 	static {
-		TIME_DISPLAY_FORMAT = SimpleDateFormat.getTimeInstance();
+		TIME_DISPLAY_FORMAT = SimpleDateFormat.getTimeInstance(DateFormat.SHORT);
 	}
 
 	/**
@@ -118,11 +118,15 @@ public final class DataFormatUtil {
 	 */
 	public static CharSequence formatDateForDisplay(final long dateAsLong) {
 		String ret = String.valueOf(dateAsLong);
-		try {
-			Date date = DataFormatUtil.DATE_STORE_FORMAT.parse(ret);
-			ret = DataFormatUtil.DATE_DISPLAY_FORMAT.format(date);
-		} catch (ParseException e) {
-			LOG.error("Error parsing date.", e);
+		if (! "0".equals(ret)) {
+			try {
+				Date date = DataFormatUtil.DATE_STORE_FORMAT.parse(ret);
+				ret = DataFormatUtil.DATE_DISPLAY_FORMAT.format(date);
+			} catch (ParseException e) {
+				LOG.error("Error parsing date.", e);
+			}
+		} else {
+			ret = "";
 		}
 		return ret;
 	}
@@ -133,11 +137,24 @@ public final class DataFormatUtil {
 	 */
 	public static CharSequence formatTimeForDisplay(final long timeAsLong) {
 		String ret = String.valueOf(timeAsLong);
-		try {
-			Date date = DataFormatUtil.TIME_STORE_FORMAT.parse(ret);
-			ret = DataFormatUtil.TIME_DISPLAY_FORMAT.format(date);
-		} catch (ParseException e) {
-			LOG.error("Error parsing time.", e);
+		if (! "0".equals(ret)) {
+			try {
+				if (ret.length() < 6) {
+					StringBuffer zeroPad = new StringBuffer(6);
+					for (int i = ret.length(); i < 6; i++) {
+						zeroPad.append("0");
+					}
+					zeroPad.append(ret);
+					ret = zeroPad.toString();
+				}
+				LOG.debug("Parsing time: {}", ret);
+				Date date = DataFormatUtil.TIME_STORE_FORMAT.parse(ret);
+				ret = DataFormatUtil.TIME_DISPLAY_FORMAT.format(date);
+			} catch (ParseException e) {
+				LOG.error("Error parsing time.", e);
+			}
+		} else {
+			ret = "";
 		}
 		return ret;
 	}

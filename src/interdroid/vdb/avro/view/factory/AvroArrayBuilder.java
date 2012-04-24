@@ -32,7 +32,6 @@ package interdroid.vdb.avro.view.factory;
 
 import interdroid.util.view.DraggableListView;
 import interdroid.util.view.LayoutUtil.LayoutParameters;
-import interdroid.util.view.ViewUtil;
 import interdroid.vdb.avro.R;
 import interdroid.vdb.avro.control.handler.ArrayHandler;
 import interdroid.vdb.avro.control.handler.value.ValueHandler;
@@ -75,7 +74,7 @@ class AvroArrayBuilder extends AvroTypedViewBuilder {
 	}
 
 	@Override
-	public final View buildEditView(final Activity activity,
+	public final View buildEditViewImpl(final Activity activity,
 			final AvroRecordModel dataModel,
 			final ViewGroup viewGroup, final Schema schema,
 			final Field field, final Uri uri,
@@ -95,8 +94,6 @@ class AvroArrayBuilder extends AvroTypedViewBuilder {
 		TextView empty = (TextView) layout.findViewById(R.id.empty_text);
 		empty.setGravity(Gravity.CENTER);
 		empty.setText("Press the plus button to add to the list.");
-
-		ViewUtil.addView(activity, viewGroup, layout);
 
 		return layout;
 	}

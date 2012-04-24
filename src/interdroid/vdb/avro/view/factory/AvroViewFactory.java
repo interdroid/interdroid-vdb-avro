@@ -149,8 +149,11 @@ public final class AvroViewFactory {
 
 		// Construct a view for each field
 		for (Field field : record.getSchema().getFields()) {
-			LOG.debug("Building view for: " + field.name() + " in: "
-					+ record.getSchema() + " schema:" + field.schema());
+			LOG.debug("Building view for: {} {}", field.name(),
+					field.getProp(AvroSchemaProperties.UI_WIDGET));
+			LOG.debug("Building view for: {} {}", field.name(),
+					field.schema().getProp(AvroSchemaProperties.UI_WIDGET));
+
 			buildFieldView(activity, dataModel, record, viewGroup, field);
 		}
 
@@ -178,29 +181,6 @@ public final class AvroViewFactory {
 
 		final View view = AvroViewBuilder.getEditView(activity, dataModel,
 				viewGroup, schema, field, uri, valueHandler);
-
-		if (field != null) {
-			if (field.getProp(
-					AvroSchemaProperties.UI_VISIBLE) != null) {
-				LOG.debug("Hiding view: {}", field.name());
-				activity.runOnUiThread(
-						new Runnable() {
-							public void run() {
-								view.setVisibility(View.GONE);
-							}
-						});
-			}
-			if (field.getProp(
-					AvroSchemaProperties.UI_ENABLED) != null) {
-				LOG.debug("Disabling view.");
-				activity.runOnUiThread(
-						new Runnable() {
-							public void run() {
-								view.setEnabled(false);
-							}
-						});
-			}
-		}
 
 		return view;
 	}
@@ -399,16 +379,7 @@ final int offset)
 					label);
 			row.addView(label);
 
-			if (field.schema().getProp(AvroSchemaProperties.UI_VISIBLE)
-					!= null) {
-				LOG.debug("Hiding view.");
-				row.setVisibility(View.GONE);
-			}
-			if (field.schema().getProp(AvroSchemaProperties.UI_ENABLED)
-					!= null) {
-				LOG.debug("Disabling view.");
-				row.setEnabled(false);
-			}
+			AvroViewBuilder.setViewProperties(field, row);
 
 			LayoutParameters.setTableRowParams(
 					LayoutParameters.W_WRAP_H_WRAP, LayoutWeight.ThreeQuarters,

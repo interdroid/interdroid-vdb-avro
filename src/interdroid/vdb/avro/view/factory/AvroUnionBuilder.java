@@ -33,7 +33,6 @@ package interdroid.vdb.avro.view.factory;
 import java.util.List;
 
 import interdroid.util.view.LayoutUtil.LayoutWeight;
-import interdroid.util.view.ViewUtil;
 import interdroid.util.view.LayoutUtil.LayoutParameters;
 import interdroid.vdb.avro.control.handler.UnionHandler;
 import interdroid.vdb.avro.control.handler.value.ValueHandler;
@@ -71,7 +70,7 @@ class AvroUnionBuilder extends AvroTypedViewBuilder {
 	}
 
 	@Override
-	public final View buildEditView(final Activity activity,
+	public final View buildEditViewImpl(final Activity activity,
 			final AvroRecordModel dataModel, final ViewGroup viewGroup,
 			final Schema schema, final Field field, final Uri uri,
 			final ValueHandler valueHandler) throws NotBoundException {
@@ -125,7 +124,7 @@ class AvroUnionBuilder extends AvroTypedViewBuilder {
 
 			layout.addView(row);
 		}
-		ViewUtil.addView(activity, viewGroup, layout);
+
 		return layout;
 	}
 

@@ -28,60 +28,84 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package interdroid.vdb.avro.view.factory;
+package interdroid.vdb.avro.control.handler;
 
-import interdroid.util.DbUtil;
-import interdroid.vdb.avro.control.handler.EditTextHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
-import interdroid.vdb.avro.model.NotBoundException;
-
-import org.apache.avro.Schema;
-import org.apache.avro.Schema.Field;
-import org.apache.avro.Schema.Type;
-
 import android.app.Activity;
-import android.database.Cursor;
-import android.net.Uri;
-import android.text.InputType;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.TextView;
+import android.widget.ImageView;
 
 /**
- * A builder for Type.STRING.
+ * A base class for handlers which show images.
  *
  * @author nick &lt;palmer@cs.vu.nl&gt;
  *
  */
-class AvroStringBuilder extends AvroTypedTextViewBuilder {
+public class ImageHandler {
+	/**
+	 * Access to logger.
+	 */
+	private static final Logger LOG = LoggerFactory
+			.getLogger(ImageHandler.class);
+
+	/** The data model we work in. */
+	final AvroRecordModel mDataModel;
+	/** The activity we work for. */
+	final Activity mActivity;
+	/** The value handler for the photo. */
+	final ValueHandler mValueHandler;
+
+	public ImageHandler(final AvroRecordModel dataModel,
+			final Activity activity, final ValueHandler valueHandler) {
+		mDataModel = dataModel;
+		mValueHandler = valueHandler;
+		mActivity = activity;
+	}
 
 	/**
-	 * Construct a buidler for Type.STRING.
+	 * Sets the image view to display the photo in.
+	 * @param image the image view to use
 	 */
-	protected AvroStringBuilder() {
-		super(Type.STRING);
-	}
+	protected void setImageView(final ImageView image) {
+		if (mValueHandler.getValue() != null) {
+			LOG.debug("Setting bitmap.");
+			try {
+				final byte[] data = (byte[]) mValueHandler.getValue();
+				if (data != null && data.length > 0) {
+					final Bitmap bitmap =
+							BitmapFactory.decodeByteArray(data, 0, data.length);
+					mActivity.runOnUiThread(new Runnable() {
 
-	@Override
-	public final View buildEditViewImpl(final Activity activity,
-			final AvroRecordModel dataModel,
-			final ViewGroup viewGroup, final Schema schema,
-			final Field field, final Uri uri,
-			final ValueHandler valueHandler) throws NotBoundException {
-		EditText view = buildEditText(activity, viewGroup, schema,
-				InputType.TYPE_CLASS_TEXT);
-		new EditTextHandler(dataModel, schema.getType(), valueHandler, view);
-		return view;
-	}
+						@Override
+						public void run() {
+							image.setVisibility(View.VISIBLE);
+							image.setImageBitmap(bitmap);
+						}
 
-	@Override
-	final void bindListView(final View view, final Cursor cursor,
-			final Field field) {
-		TextView text = (TextView) view.findViewWithTag(field.name());
-		int index = DbUtil.getFieldIndex(cursor, field.name());
-		text.setText(cursor.getString(index));
+					});
+				} else {
+					mActivity.runOnUiThread(new Runnable() {
+
+						@Override
+						public void run() {
+							image.setImageBitmap(null);
+							image.setVisibility(View.INVISIBLE);
+						}
+
+					});
+
+				}
+				mDataModel.onChanged();
+			} catch (Exception e) {
+				LOG.error("Unable to set image.", e);
+			}
+		}
 	}
 
 }

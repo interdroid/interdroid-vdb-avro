@@ -32,7 +32,6 @@ package interdroid.vdb.avro.view.factory;
 
 import interdroid.util.DbUtil;
 import interdroid.util.view.LayoutUtil.LayoutParameters;
-import interdroid.util.view.ViewUtil;
 import interdroid.vdb.avro.R;
 import interdroid.vdb.avro.control.handler.CameraHandler;
 import interdroid.vdb.avro.control.handler.value.ValueHandler;
@@ -80,7 +79,7 @@ class AvroPhotoBuilder extends AvroTypedViewBuilder {
 	}
 
 	@Override
-	public final View buildEditView(final Activity activity,
+	public final View buildEditViewImpl(final Activity activity,
 			final AvroRecordModel dataModel, final ViewGroup viewGroup,
 			final Schema schema, final Field field, final Uri uri,
 			final ValueHandler valueHandler) throws NotBoundException {
@@ -97,9 +96,6 @@ class AvroPhotoBuilder extends AvroTypedViewBuilder {
 		Button cameraButton = new Button(activity);
 		cameraButton.setText(activity.getString(R.string.label_take_photo));
 		layout.addView(cameraButton);
-
-		// Add to the underlying view group
-		ViewUtil.addView(activity, viewGroup, layout);
 
 		// Build the handler
 		new CameraHandler(dataModel, activity, valueHandler, cameraButton,

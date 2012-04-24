@@ -32,7 +32,6 @@ package interdroid.vdb.avro.view.factory;
 
 import java.util.List;
 
-import interdroid.util.view.ViewUtil;
 import interdroid.vdb.avro.R;
 import interdroid.vdb.avro.control.handler.RecordTypeSelectHandler;
 import interdroid.vdb.avro.control.handler.value.ValueHandler;
@@ -68,7 +67,7 @@ class AvroRecordBuilder extends AvroTypedViewBuilder {
 	}
 
 	@Override
-	public final View buildEditView(final Activity activity,
+	public final View buildEditViewImpl(final Activity activity,
 			final AvroRecordModel dataModel, final ViewGroup viewGroup,
 			final Schema schema, final Field field, final Uri uri,
 			final ValueHandler valueHandler) throws NotBoundException {
@@ -86,7 +85,7 @@ class AvroRecordBuilder extends AvroTypedViewBuilder {
 		}
 		button.setOnClickListener(
 				getRecordTypeSelectorHandler(activity, schema, valueHandler));
-		ViewUtil.addView(activity, viewGroup, button);
+
 		return button;
 	}
 

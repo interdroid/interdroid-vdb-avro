@@ -67,7 +67,7 @@ public class AvroTimestampBuilder extends AvroTypedTextViewBuilder {
 	}
 
 	@Override
-	protected final View buildEditView(final Activity activity,
+	protected final View buildEditViewImpl(final Activity activity,
 			final AvroRecordModel dataModel, final ViewGroup viewGroup,
 			final Schema schema, final Field field,
 			final Uri uri, final ValueHandler valueHandler)

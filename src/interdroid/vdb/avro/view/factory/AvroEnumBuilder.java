@@ -31,7 +31,6 @@
 package interdroid.vdb.avro.view.factory;
 
 import interdroid.util.DbUtil;
-import interdroid.util.view.ViewUtil;
 import interdroid.vdb.avro.control.handler.EnumHandler;
 import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
@@ -67,7 +66,7 @@ class AvroEnumBuilder extends AvroTypedViewBuilder {
 	}
 
 	@Override
-	public final View buildEditView(final Activity activity,
+	public final View buildEditViewImpl(final Activity activity,
 			final AvroRecordModel dataModel,
 			final ViewGroup viewGroup, final Schema schema,
 			final Field field, final Uri uri,
@@ -75,9 +74,6 @@ class AvroEnumBuilder extends AvroTypedViewBuilder {
 
 		// Build the view
 		Button selectedText = new Button(activity);
-
-		// Add it to the view group
-		ViewUtil.addView(activity, viewGroup, selectedText);
 
 		// Build the handler
 		new EnumHandler(activity, dataModel, schema, selectedText,

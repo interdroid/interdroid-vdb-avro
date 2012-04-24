@@ -79,7 +79,7 @@ class AvroNumericBuilder extends AvroTypedTextViewBuilder {
 
 
 	@Override
-	public final View buildEditView(final Activity activity,
+	public final View buildEditViewImpl(final Activity activity,
 			final AvroRecordModel dataModel,
 			final ViewGroup viewGroup, final Schema schema,
 			final Field field, final Uri uri,
@@ -101,7 +101,7 @@ class AvroNumericBuilder extends AvroTypedTextViewBuilder {
 			throw new IllegalArgumentException("Unsupported type: " + schema);
 		}
 
-		EditText view = buildEditText(activity, viewGroup, schema, flags);
+		EditText view = buildEditText(activity, null, schema, flags);
 		new EditTextHandler(dataModel, schema.getType(), valueHandler, view);
 		return view;
 	}

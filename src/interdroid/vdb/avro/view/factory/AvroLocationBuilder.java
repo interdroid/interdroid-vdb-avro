@@ -30,23 +30,27 @@
  */
 package interdroid.vdb.avro.view.factory;
 
+import interdroid.util.DbUtil;
 import interdroid.util.view.LayoutUtil.LayoutParameters;
-import interdroid.util.view.ViewUtil;
 import interdroid.vdb.avro.R;
 import interdroid.vdb.avro.control.handler.LocationHandler;
 import interdroid.vdb.avro.control.handler.value.ValueHandler;
 import interdroid.vdb.avro.model.AvroRecordModel;
 import interdroid.vdb.avro.model.NotBoundException;
+import interdroid.vdb.avro.view.DataFormatUtil;
 
 import java.util.List;
 
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.view.View;
 import android.view.ViewGroup;
@@ -61,16 +65,21 @@ import android.widget.LinearLayout;
  *
  */
 class AvroLocationBuilder extends AvroTypedViewBuilder {
+	/**
+	 * Access to logger.
+	 */
+	private static final Logger LOG = LoggerFactory
+			.getLogger(AvroLocationBuilder.class);
 
 	/**
 	 * Construct a location builder.
 	 */
 	protected AvroLocationBuilder() {
-		super(Type.RECORD, "location");
+		super(Type.BYTES, "location");
 	}
 
 	@Override
-	public final View buildEditView(final Activity activity,
+	public final View buildEditViewImpl(final Activity activity,
 			final AvroRecordModel dataModel,
 			final ViewGroup viewGroup, final Schema schema,
 			final Field field, final Uri uri,
@@ -90,33 +99,37 @@ class AvroLocationBuilder extends AvroTypedViewBuilder {
 		cameraButton.setText(activity.getString(R.string.label_pick_location));
 		layout.addView(cameraButton);
 
-		// Add it to the viewGroup
-		ViewUtil.addView(activity, viewGroup, layout);
-
 		// Construct a handler
-		new LocationHandler(activity, schema, valueHandler, cameraButton,
+		new LocationHandler(dataModel, activity, valueHandler, cameraButton,
 				image);
 
 		return layout;
 	}
 
+
 	@Override
 	final View buildListView(final Context context, final Field field) {
-		// TODO Auto-generated method stub
-		return null;
+		ImageView image = new ImageView(context);
+		image.setTag(field.name());
+		return image;
 	}
 
 	@Override
 	final void bindListView(final View view, final Cursor cursor,
 			final Field field) {
-		// TODO Auto-generated method stub
-
+		LOG.debug("Binding view: {}", field.name());
+		ImageView image = (ImageView) view.findViewWithTag(field.name());
+		LOG.debug("Columns are: {} {}", cursor.getColumnNames(), cursor.getColumnCount());
+		int index = DbUtil.getFieldIndex(cursor, field.name());
+		Bitmap bitmap = DataFormatUtil.getBitmap(cursor.getBlob(index),
+				AvroViewFactory.MAX_LIST_IMAGE_SIZE);
+		image.setImageBitmap(bitmap);
 	}
 
 	@Override
 	final List<String> getProjectionFields(final Field field) {
-		// TODO Auto-generated method stub
-		return null;
+		return getFieldNameProjection(field);
 	}
+
 
 }

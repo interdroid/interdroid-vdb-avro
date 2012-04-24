@@ -137,6 +137,7 @@ public abstract class AvroTypedViewBuilder {
 				LayoutParameters.W_FILL_H_WRAP, text);
 		text.setGravity(Gravity.FILL_HORIZONTAL);
 		text.setInputType(inputType);
+
 		// Select all when the text is untitled.
 		text.setOnFocusChangeListener(new OnFocusChangeListener() {
 
@@ -152,7 +153,6 @@ public abstract class AvroTypedViewBuilder {
 
 		});
 
-		ViewUtil.addView(activity, viewGroup, text);
 		return text;
 	}
 
@@ -167,7 +167,6 @@ public abstract class AvroTypedViewBuilder {
 			final ViewGroup viewGroup, final int textId) {
 		TextView text = new TextView(activity);
 		text.setText(textId);
-		ViewUtil.addView(activity, viewGroup, text);
 		return text;
 	}
 
@@ -182,7 +181,6 @@ public abstract class AvroTypedViewBuilder {
 			final ViewGroup viewGroup, final String text) {
 		TextView textView = new TextView(activity);
 		textView.setText(text);
-		ViewUtil.addView(activity, viewGroup, textView);
 		return textView;
 	}
 
@@ -209,8 +207,6 @@ public abstract class AvroTypedViewBuilder {
 		return ret;
 	}
 
-	// =-=-=-=- Subclass methods -=-=-=-=
-
 	/**
 	 * Builds an edit view.
 	 * @param activity the activity the view goes in
@@ -223,7 +219,36 @@ public abstract class AvroTypedViewBuilder {
 	 * @return The view.
 	 * @throws NotBoundException if the model is not bound
 	 */
-	abstract View buildEditView(final Activity activity,
+	public final View buildEditView(final Activity activity,
+			final AvroRecordModel dataModel, final ViewGroup viewGroup,
+			final Schema schema, final Field field, final Uri uri,
+			final ValueHandler valueHandler) throws NotBoundException {
+
+		View view = buildEditViewImpl(activity, dataModel, viewGroup, schema,
+				field, uri, valueHandler);
+		AvroViewBuilder.setViewProperties(field, view);
+		ViewUtil.addView(activity, viewGroup, view);
+
+		return view;
+	}
+
+	// =-=-=-=- Subclass methods -=-=-=-=
+
+	/**
+	 * Implementation which builds an edit view.
+	 * This should NOT add the view to the viewGroup.
+	 *
+	 * @param activity the activity the view goes in
+	 * @param dataModel the data model to get data from
+	 * @param viewGroup the view group to add the view to
+	 * @param schema the schema for the data
+	 * @param field the field
+	 * @param uri the uri for the field
+	 * @param valueHandler the value handler to set data with
+	 * @return The view.
+	 * @throws NotBoundException if the model is not bound
+	 */
+	abstract View buildEditViewImpl(final Activity activity,
 			final AvroRecordModel dataModel, final ViewGroup viewGroup,
 			final Schema schema, final Field field, final Uri uri,
 			final ValueHandler valueHandler) throws NotBoundException;

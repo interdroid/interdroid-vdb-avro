@@ -80,4 +80,19 @@ public final class AvroSchemaProperties {
 	 */
 	public static final String	UI_LIST_RESOURCE	= "ui.resource.list";
 
+	/** The radius given in meters. */
+	public static final String RADIUS_IN_METERS = "_RadiusInMeters";
+	/** The longitude key. */
+	public static final String RADIUS_LONGITUDE = "_Longitude";
+	/** The latitude key. */
+	public static final String RADIUS_LATITUDE = "_Latitude";
+	/** The radius longitude key. */
+	public static final String LONGITUDE = "_RadiusLongitude";
+	/** The radius latitude key. */
+	public static final String LATITUDE = "_RadiusLatitude";
+	/** The altitude in meters. */
+	public static final String ALTITUDE = "_Altitude";
+	/** The accuracy of the measurement. */
+	public static final String ACCURACY = "_Accuracy";
+
 }

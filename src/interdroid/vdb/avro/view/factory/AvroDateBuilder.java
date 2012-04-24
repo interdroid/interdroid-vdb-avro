@@ -89,7 +89,7 @@ class AvroDateBuilder extends AvroTypedTextViewBuilder {
 	};
 
 	@Override
-	public final View buildEditView(final Activity activity,
+	public final View buildEditViewImpl(final Activity activity,
 			final AvroRecordModel dataModel,
 			final ViewGroup viewGroup, final Schema schema,
 			final Field field, final Uri uri,
@@ -107,9 +107,6 @@ class AvroDateBuilder extends AvroTypedTextViewBuilder {
 
 					// Build the handler
 					new DateHandler(viewHolder.view, valueHandler);
-
-					// Add it to the view group
-					viewGroup.addView(viewHolder.view);
 
 					viewHolder.notifyAll();
 				}

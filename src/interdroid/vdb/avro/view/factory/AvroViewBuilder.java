@@ -197,6 +197,7 @@ public final class AvroViewBuilder {
 			final Schema schema, final Field field, final Uri uri,
 			final ValueHandler valueHandler)
 					throws NotBoundException {
+		View view = null;
 
 		if (field != null
 				&& field.getProp(AvroSchemaProperties.UI_RESOURCE) != null) {
@@ -205,13 +206,11 @@ public final class AvroViewBuilder {
 					field.getProp(AvroSchemaProperties.UI_RESOURCE));
 			try {
 
-				View view = ViewUtil.getLayoutInflater(activity).inflate(
+				view = ViewUtil.getLayoutInflater(activity).inflate(
 						Integer.valueOf(
 								field.getProp(
 										AvroSchemaProperties.UI_RESOURCE)),
 										null);
-				return view;
-
 			} catch (Exception e) {
 				LOG.error("Unable to inflate resource: {}",
 						field.getProp(AvroSchemaProperties.UI_RESOURCE));
@@ -225,7 +224,7 @@ public final class AvroViewBuilder {
 			// Find the builder for this type
 			AvroTypedViewBuilder builder = null;
 
-			AvroViewType type = new AvroViewType(schema);
+			AvroViewType type = new AvroViewType(field);
 			LOG.debug("Getting builder for: {}", type);
 			builder = sBuilders.get(type);
 
@@ -238,8 +237,32 @@ public final class AvroViewBuilder {
 			LOG.debug("Building with: {} {}", builder, schema.getName());
 
 
-			return builder.buildEditView(activity, dataModel, viewGroup,
+			view = builder.buildEditView(activity, dataModel, viewGroup,
 					schema, field, uri, valueHandler);
+		}
+
+		final View runView = view;
+		activity.runOnUiThread(new Runnable() {
+			public void run() {
+				setViewProperties(field, runView);
+			}
+		});
+
+		return view;
+	}
+
+	public static void setViewProperties(final Field field, final View runView) {
+		if (field != null) {
+			if (field.getProp(
+					AvroSchemaProperties.UI_VISIBLE) != null) {
+				LOG.debug("Hiding view: {}", field.name());
+				runView.setVisibility(View.GONE);
+			}
+			if (field.getProp(
+					AvroSchemaProperties.UI_ENABLED) != null) {
+				LOG.debug("Disabling view.");
+				runView.setEnabled(false);
+			}
 		}
 	}
 

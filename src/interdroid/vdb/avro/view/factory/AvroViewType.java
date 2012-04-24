@@ -32,7 +32,6 @@ package interdroid.vdb.avro.view.factory;
 
 import interdroid.vdb.avro.AvroSchemaProperties;
 
-import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
 import org.slf4j.Logger;
@@ -70,10 +69,17 @@ class AvroViewType {
 	 * @param field the field to represent
 	 */
 	public AvroViewType(final Field field) {
+		// Widget may be either on schema or on field.
 		LOG.debug("View Type: {} {}", field.schema().getType(),
 				field.schema().getProp(AvroSchemaProperties.UI_WIDGET));
+		LOG.debug("View Type: {} {}", field.schema().getType(),
+				field.getProp(AvroSchemaProperties.UI_WIDGET));
+		if (field.schema().getProp(AvroSchemaProperties.UI_WIDGET) != null) {
+			mWidget = field.schema().getProp(AvroSchemaProperties.UI_WIDGET);
+		} else {
+			mWidget = field.getProp(AvroSchemaProperties.UI_WIDGET);
+		}
 		mType = field.schema().getType();
-		mWidget = field.schema().getProp(AvroSchemaProperties.UI_WIDGET);
 	}
 
 	/**
@@ -108,15 +114,6 @@ class AvroViewType {
 	public AvroViewType(final Type type) {
 		mType = type;
 		mWidget = null;
-	}
-
-	/**
-	 * Construct from only a schema.
-	 * @param schema the schema to repreent the type of
-	 */
-	public AvroViewType(final Schema schema) {
-		mType = schema.getType();
-		mWidget = schema.getProp(AvroSchemaProperties.UI_WIDGET);
 	}
 
 	/**
