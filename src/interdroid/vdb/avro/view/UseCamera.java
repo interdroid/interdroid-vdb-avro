@@ -124,10 +124,12 @@ public class UseCamera extends Activity {
 		}
 
 		@Override
-		public void onPictureTaken(final byte[] data) {
+		public void onPictureTaken(byte[] data) {
 			final ContentValues values = new ContentValues();
 			// TODO: We need to change these to store in a file.
 			values.put(mField, DataFormatUtil.fromatBitmapForStorage(data));
+			data = null;
+			System.gc();
 			getContentResolver().update(mUri, values, null, null);
 			finish();
 		}

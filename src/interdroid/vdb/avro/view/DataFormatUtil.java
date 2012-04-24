@@ -31,6 +31,7 @@
 package interdroid.vdb.avro.view;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -234,6 +235,15 @@ public final class DataFormatUtil {
 		Bitmap bitmap = getBitmap(data, 500);
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		bitmap.compress(CompressFormat.JPEG, 9, out);
-		return out.toByteArray();
+		byte[] ret = out.toByteArray();
+		try {
+			out.close();
+			out = null;
+			System.gc();
+		} catch (IOException e) {
+			// TODO: Auto-generated catch block
+			e.printStackTrace();
+		}
+		return ret;
 	}
 }

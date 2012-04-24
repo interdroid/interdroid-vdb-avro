@@ -241,7 +241,7 @@ public class CameraSurface extends SurfaceView implements Callback {
 		mCamera.takePicture(null, null, new PictureCallback() {
 
 			@Override
-			public void onPictureTaken(final byte[] data, final Camera camera) {
+			public void onPictureTaken(byte[] data, final Camera camera) {
 				LOG.debug("CameraPreview: picture taken");
 				mCamera.stopPreview();
 
@@ -250,8 +250,10 @@ public class CameraSurface extends SurfaceView implements Callback {
 				} catch (IOException e) {
 					LOG.error("Error resetting display!", e);
 				}
-				mCamera.startPreview();
+				// mCamera.startPreview();
 				bitmapCallback.onPictureTaken(data);
+				data = null;
+				System.gc();
 				LOG.debug("CameraPreview: preview restarted");
 			}
 		});
