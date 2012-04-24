@@ -35,9 +35,12 @@ import interdroid.vdb.avro.R;
 import interdroid.vdb.avro.control.AvroController;
 import interdroid.vdb.avro.model.NotBoundException;
 import interdroid.vdb.avro.view.factory.AvroViewFactory;
+import interdroid.vdb.content.EntityUriMatcher;
+import interdroid.vdb.content.EntityUriMatcher.UriMatch;
 import interdroid.vdb.content.avro.AvroProviderRegistry;
 
 import org.apache.avro.Schema;
+import org.apache.avro.Schema.Field;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,6 +156,15 @@ public class AvroBaseEditor extends Activity {
 			} else {
 				schema = Schema.parse(schemaJson);
 			}
+
+			UriMatch match = EntityUriMatcher.getMatch(defaultUri);
+			LOG.debug("entityName is: {}", match.entityName);
+			if (match.entityName != null) {
+				if (!schema.getName().equals(match.entityName)) {
+					LOG.debug("Entity is not the root. Looking for sub entity.");
+					schema = findEntity(schema, match.entityName);
+				}
+			}
 			LOG.debug("Building controller for: {} : {}", schema.getName(),
 					defaultUri);
 
@@ -179,6 +191,34 @@ public class AvroBaseEditor extends Activity {
 			resultIntent.setData(editUri);
 			setResult(RESULT_OK, resultIntent);
 		}
+	}
+
+	private Schema findEntity(Schema schema, String entityName) {
+		LOG.debug("Looking for {} in {}", entityName, schema);
+		switch (schema.getType()) {
+		case RECORD:
+			if (schema.getName().equals(entityName)) {
+				return schema;
+			}
+
+			for (Field field : schema.getFields()) {
+				schema = findEntity(field.schema(), entityName);
+				if (schema != null) {
+					return schema;
+				}
+			}
+			break;
+		case UNION:
+			for (Schema branch : schema.getTypes()) {
+				schema = findEntity(branch, entityName);
+				if (schema != null) {
+					return schema;
+				}
+			}
+		default:
+			break;
+		}
+		return null;
 	}
 
 	/**
