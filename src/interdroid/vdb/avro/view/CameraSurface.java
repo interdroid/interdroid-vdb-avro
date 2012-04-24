@@ -68,6 +68,8 @@ public class CameraSurface extends SurfaceView implements Callback {
 	/** The camera we are using. */
 	private Camera mCamera;
 
+	private boolean pictureTaken = false;
+
 	/**
 	 * Construct a CameraSurface for the given context.
 	 * @param context the context in which to work.
@@ -199,33 +201,35 @@ public class CameraSurface extends SurfaceView implements Callback {
 	 * @param directory the directory to write to
 	 * @param autofocus should we use autofocus
 	 */
-	public final void takePicture(final PictureTakenCallback bitmapCallback,
+	public synchronized final void takePicture(final PictureTakenCallback bitmapCallback,
 			final double cropSelectionFractionX,
 			final double cropSelectionFractionY,
 			final File directory,
 			final boolean autofocus) {
+		if (!pictureTaken) {
+			pictureTaken = true;
+			LOG.debug("CameraPreview: take picture");
+			bitmapCallback.onPrePictureTaken();
 
-		LOG.debug("CameraPreview: take picture");
-		bitmapCallback.onPrePictureTaken();
+			// TODO Auto-generated method stub
+			if (autofocus) {
+				try {
+					mCamera.autoFocus(new AutoFocusCallback() {
 
-		// TODO Auto-generated method stub
-		if (autofocus) {
-			try {
-				mCamera.autoFocus(new AutoFocusCallback() {
+						@Override
+						public void onAutoFocus(final boolean success,
+								final Camera camera) {
+							doTakePicture(bitmapCallback);
+						}
 
-					@Override
-					public void onAutoFocus(final boolean success,
-							final Camera camera) {
-						doTakePicture(bitmapCallback);
-					}
-
-				});
-			} catch (Exception e) {
-				LOG.warn("Auto focus failed. Taking without.", e);
+					});
+				} catch (Exception e) {
+					LOG.warn("Auto focus failed. Taking without.", e);
+					doTakePicture(bitmapCallback);
+				}
+			} else {
 				doTakePicture(bitmapCallback);
 			}
-		} else {
-			doTakePicture(bitmapCallback);
 		}
 	}
 
