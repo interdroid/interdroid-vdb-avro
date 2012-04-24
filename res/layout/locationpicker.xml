@@ -24,9 +24,9 @@
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
 				android:text="Reset"/>
-			<Button android:layout_width="wrap_content"
+<!-- 			<Button android:layout_width="wrap_content"
 				android:layout_height="wrap_content" android:id="@+id/DoneButton"
-				android:layout_weight="1.0" android:text="Done" />
+				android:layout_weight="1.0" android:text="Done" /> -->
 			<TextView android:id="@+id/StatusTextView"
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
