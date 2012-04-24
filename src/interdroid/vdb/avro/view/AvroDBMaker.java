@@ -679,10 +679,14 @@ public class AvroDBMaker extends Activity {
 		f.addProp("ui.visible", "false");
 		fields.add(f);
 
-		f = new Field(typeInfo.name,
-				Schema.create(Type.BYTES), "map image", null);
+		Schema schema = Schema.create(Type.BYTES);
+		schema.addProp("ui.widget", "location");
+		f = new Field(typeInfo.name, schema, "map image", null);
 		f.addProp("ui.label", typeInfo.label);
 		f.addProp("ui.widget", "location");
+		if (typeInfo.inList) {
+			f.addProp("ui.list", "true");
+		}
 		fields.add(f);
 
 		f = new Field(typeInfo.name + AvroSchemaProperties.ALTITUDE,
