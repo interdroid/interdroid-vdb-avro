@@ -24,16 +24,16 @@ import android.widget.Toast;
 
 /**
  * The AvroController manages the model writing it as required by the activity.
- *
+ * 
  * @author nick &lt;palmer@cs.vu.nl&gt;
- *
+ * 
  */
 public class AvroController {
 	/**
 	 * Access to logger.
 	 */
-	private static final Logger LOG =
-			LoggerFactory.getLogger(AvroController.class);
+	private static final Logger LOG = LoggerFactory
+			.getLogger(AvroController.class);
 
 	/** The edit state. */
 	public static final int STATE_EDIT = 0;
@@ -62,10 +62,15 @@ public class AvroController {
 
 	/**
 	 * Construct a controller.
-	 * @param activity the activity we are working for
-	 * @param typeName the name of the type
-	 * @param defaultUri the uri for the data
-	 * @param schema the schema for the data
+	 * 
+	 * @param activity
+	 *            the activity we are working for
+	 * @param typeName
+	 *            the name of the type
+	 * @param defaultUri
+	 *            the uri for the data
+	 * @param schema
+	 *            the schema for the data
 	 */
 	public AvroController(final AvroBaseEditor activity, final String typeName,
 			final Uri defaultUri, final Schema schema) {
@@ -77,7 +82,9 @@ public class AvroController {
 
 	/**
 	 * Take care of saving the current state in the model.
-	 * @throws NotBoundException if the model is not bound
+	 * 
+	 * @throws NotBoundException
+	 *             if the model is not bound
 	 */
 	public final void handleSave() throws NotBoundException {
 		if (mState != STATE_CANCELED && !mReadOnly) {
@@ -87,7 +94,7 @@ public class AvroController {
 
 	/**
 	 * Returns the name of the type the controller is currently handling.
-	 *
+	 * 
 	 * @return the name of the type
 	 */
 	public final String getTypeName() {
@@ -96,24 +103,36 @@ public class AvroController {
 
 	/**
 	 * Take care of loading the data from the database to the model.
-	 * @throws NotBoundException if the record is not bound
+	 * 
+	 * @throws NotBoundException
+	 *             if the record is not bound
 	 */
 	public final void loadData() throws NotBoundException {
 		mDataModel.loadData();
 
 		// Set the layout for this activity now that the model is ready.
-		AvroViewFactory.buildRootView(mActivity, mDataModel);
+		mActivity.runOnUiThread(new Runnable() {
+			public void run() {
+				try {
+					AvroViewFactory.buildRootView(mActivity, mDataModel);
+				} catch (NotBoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		});
+
 	}
 
 	/**
 	 * Take care of saving the current state of the model to the database.
-	 *
+	 * 
 	 * @param outState
 	 *            the bundle to save to
-	 * @throws NotBoundException if the record is not bound
+	 * @throws NotBoundException
+	 *             if the record is not bound
 	 */
-	public final void saveState(final Bundle outState)
-			throws NotBoundException {
+	public final void saveState(final Bundle outState) throws NotBoundException {
 		if (mState != STATE_CANCELED) {
 			mDataModel.saveState(outState);
 		}
@@ -121,7 +140,9 @@ public class AvroController {
 
 	/**
 	 * Take care of deleting the data for the model from the database.
-	 * @throws NotBoundException if the record is not bound
+	 * 
+	 * @throws NotBoundException
+	 *             if the record is not bound
 	 */
 	public final void handleDelete() throws NotBoundException {
 		mState = STATE_CANCELED;
@@ -131,7 +152,9 @@ public class AvroController {
 	/**
 	 * Take care of staring the data in the original version of the model to the
 	 * database.
-	 * @throws NotBoundException if the record is not bound
+	 * 
+	 * @throws NotBoundException
+	 *             if the record is not bound
 	 */
 	public final void storeOriginalValue() throws NotBoundException {
 		mDataModel.storeOriginalValue();
@@ -139,7 +162,9 @@ public class AvroController {
 
 	/**
 	 * Handle a cancel of the current operation.
-	 * @throws NotBoundException if the record is not bound
+	 * 
+	 * @throws NotBoundException
+	 *             if the record is not bound
 	 */
 	public final void handleCancel() throws NotBoundException {
 		if (mState == STATE_EDIT) {
@@ -154,13 +179,14 @@ public class AvroController {
 	/**
 	 * Setup the controller to handle the given intent and bundle Builds the
 	 * view and sets the activity to show it.
-	 *
+	 * 
 	 * @param intent
 	 *            the intent which is setting up this controller
 	 * @param savedState
 	 *            the saved state for the controller to load from
 	 * @return the uri of the data item.
-	 * @throws NotBoundException if the record is not bound
+	 * @throws NotBoundException
+	 *             if the record is not bound
 	 */
 	public final Uri setup(final Intent intent, final Bundle savedState)
 			throws NotBoundException {
@@ -198,7 +224,9 @@ public class AvroController {
 
 	/**
 	 * Figure out which entity we are intended to edit.
-	 * @param entity the entity requested in the intent if any
+	 * 
+	 * @param entity
+	 *            the entity requested in the intent if any
 	 */
 	private void setupUriEntity(final String entity) {
 		final UriMatch match = EntityUriMatcher.getMatch(mUri);
@@ -210,17 +238,17 @@ public class AvroController {
 				LOG.debug("Adding schema root entity: {}", mSchema.getName());
 				mUri = mUri.buildUpon().appendPath(mSchema.getName()).build();
 			} else {
-				LOG.debug("Adding intent entity: {}",
-						entity);
-				mUri = Uri.parse(mUri.toString() + "/"
-						+ entity);
+				LOG.debug("Adding intent entity: {}", entity);
+				mUri = Uri.parse(mUri.toString() + "/" + entity);
 			}
 		}
 	}
 
 	/**
 	 * Setup based on the action.
-	 * @param requestAction the action in the request intent
+	 * 
+	 * @param requestAction
+	 *            the action in the request intent
 	 */
 	private void setupAction(final String requestAction) {
 		String action;
@@ -260,14 +288,14 @@ public class AvroController {
 			// Whoops, unknown action! Bail.
 			LOG.error("Unknown action, exiting");
 			Toast.makeText(mActivity, "Unknown action.", Toast.LENGTH_SHORT)
-			.show();
+					.show();
 			mUri = null;
 		}
 	}
 
 	/**
 	 * Return the state the controller is in.
-	 *
+	 * 
 	 * @return either EDIT_STATE or INSERT_STATE
 	 */
 	public final int getState() {
@@ -276,7 +304,9 @@ public class AvroController {
 
 	/**
 	 * Sets the content resolver on the underlying data model.
-	 * @param contentResolver the resolver for the model to use
+	 * 
+	 * @param contentResolver
+	 *            the resolver for the model to use
 	 */
 	public final void setResolver(final ContentResolver contentResolver) {
 		mDataModel.setResolver(contentResolver);
